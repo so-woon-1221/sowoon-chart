@@ -1,21 +1,11 @@
 import React from "react";
 import { ComponentType, useEffect, useMemo, useState } from "react";
 import { LinearGradient } from "@visx/gradient";
-import {
-  max,
-  min,
-  scaleLinear,
-  scaleOrdinal,
-  scaleTime,
-  scaleBand,
-  ScaleTime,
-  ScaleBand,
-  area,
-  select,
-  line,
-  bisectLeft,
-  stack,
-} from "d3";
+import { max, min, bisectLeft } from "d3-array";
+import { scaleLinear, scaleOrdinal, scaleTime, scaleBand } from "d3-scale";
+import type { ScaleBand, ScaleTime } from "d3-scale";
+import { area, line, stack } from "d3-shape";
+import { select } from "d3-selection";
 import dayjs from "dayjs";
 import { GridRows } from "@visx/grid";
 import { useCallback } from "react";
@@ -25,6 +15,7 @@ import { Axis } from "@visx/axis";
 import { localPoint } from "@visx/event";
 import { TooltipWithBounds } from "@visx/tooltip";
 import useMeasure from "react-use-measure";
+import "./styles/global.css";
 
 interface Props {
   data: { x: string; [key: string]: string | number | JSX.Element }[];
@@ -334,7 +325,7 @@ const LineChart: ComponentType<Props> = ({
                 data[index].tooltipData ??
                 (tooltipMaker !== undefined
                   ? tooltipMaker!(data[index].x)
-                  : "");
+                  : data[index].x);
               setTooltipData({
                 x: tooltipX,
                 y: tooltipY,
@@ -432,9 +423,9 @@ const LineChart: ComponentType<Props> = ({
             {keyList.map((key, index) => {
               return (
                 <g key={`${id}-group-${index}`}>
-                  {/* <g id={`${id}-group-area-${key}`}> */}
-                  {/* <path /> */}
-                  {/* </g> */}
+                  <g id={`${id}-group-area-${key}`}>
+                    <path />
+                  </g>
                   <g id={`${id}-group-line-${key}`}>
                     <path />
                   </g>
@@ -448,9 +439,9 @@ const LineChart: ComponentType<Props> = ({
             {keyList.map((key, index) => {
               return (
                 <g key={`${id}-stack-${index}`}>
-                  {/* <g id={`${id}-stack-area-${key}`}>
-           <path />
-         </g> */}
+                  <g id={`${id}-stack-area-${key}`}>
+                    <path />
+                  </g>
                   <g id={`${id}-stack-line-${key}`}>
                     <path />
                   </g>
@@ -473,11 +464,7 @@ const LineChart: ComponentType<Props> = ({
         })}
       </svg>
       {tooltipData && (
-        <TooltipWithBounds
-          left={tooltipData.x}
-          top={tooltipData.y}
-          className={"dark:bg-zinc-900"}
-        >
+        <TooltipWithBounds left={tooltipData.x} top={margin.top}>
           {tooltipData.data}
         </TooltipWithBounds>
       )}

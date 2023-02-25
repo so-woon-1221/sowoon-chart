@@ -6,7 +6,6 @@ This is a React chart library that allows users to easily create customizable an
 - Multiple Chart Types: This library supports a variety of chart types including line, bar, pie, doughnut, and more.
 - Customizable Styles: Users can customize the styles of their charts including colors, font size, and font family.
 - Interactive: The charts are interactive and allow users to hover over data points to view more information.
-- Responsive: The library is designed to be responsive and works on all screen sizes.
 - Easy to Use: This library is designed to be easy to use for developers of all skill levels.
 
 ## Getting Started
@@ -14,17 +13,29 @@ To use this library, follow these steps:
 
 1. Install the library using npm:
 ```css
-npm install react-chart-library --save
+npm install sowoon-chart --save
 ```
 
 2. Import the chart you want to use from the library:
 ```tsx
-import { LineChart } from 'react-chart-library';
+import { LineChart } from 'sowoon-chart';
 ```
 
 3. Use the chart component in your application:
 ```tsx
-<LineChart data={data} options={options} />
+<LineChart
+  data={[
+    { x: "2020-01-01", y: 10 },
+    { x: "2020-01-02", y: 20 },
+    { x: "2020-01-03", y: 30 },
+  ]}
+  id="chart"
+  width={800}
+  height={500}
+  groupType="none"
+  xType="band"
+  colorList={["#000000"]}
+/>
 ```
 
 ## Example
@@ -34,27 +45,20 @@ Here's an example of how to use the library to create a line chart:
 import React from 'react';
 import { LineChart } from 'react-chart-library';
 
-const data = {
-  labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
-  datasets: [
-    {
-      label: 'Sales',
-      data: [12, 19, 3, 5, 2, 3, 7],
-      fill: false,
-      borderColor: '#4caf50',
-    },
-  ],
-};
-
-const options = {
-  title: {
-    display: true,
-    text: 'Sales Data',
-  },
-};
-
 const App = () => {
-  return <LineChart data={data} options={options} />;
+  return <LineChart
+    data={[
+      { x: "2020-01-01", y: 10 },
+      { x: "2020-01-02", y: 20 },
+      { x: "2020-01-03", y: 30 },
+    ]}
+    id="chart"
+    width={800}
+    height={500}
+    groupType="none"
+    xType="band"
+    colorList={["#000000"]}
+  />;
 };
 
 export default App;
