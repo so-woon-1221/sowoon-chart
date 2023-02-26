@@ -12,7 +12,7 @@ This is a React chart library that allows users to easily create customizable an
 To use this library, follow these steps:
 
 1. Install the library using npm:
-```css
+```bash
 npm install sowoon-chart --save
 ```
 
