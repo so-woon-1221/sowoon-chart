@@ -14,22 +14,106 @@ import { makeDisplayNum } from "./util";
 import { Axis } from "@visx/axis";
 import { localPoint } from "@visx/event";
 import { TooltipWithBounds } from "@visx/tooltip";
-import useMeasure from "react-use-measure";
 import "./styles/global.css";
+import withParentSize from "./hooks/withParentSize";
 
-interface Props {
-  data: { x: string; [key: string]: string | number | JSX.Element }[];
+export interface LineChartProps {
+  /**
+   * data
+   * - x :
+   *   - data that will be displayed on the x-axis
+   *   - type : string
+   * - The values on the y-axis can be freely named keys with numeric values.
+   */
+  data: { [key: string]: string | number; x: string }[];
+  /**
+   * id
+   * - id of svg
+   */
   id: string;
-  xType: ScaleType;
-  groupType: "stack" | "group" | "none";
+  /**
+   * scale type of x-axis
+   * - band : bandScale
+   * - time : timeScale
+   * - linear : linearScale
+   * - default : bandScale
+   * @default band
+   * @type ScaleType
+   */
+  xType?: ScaleType;
+  /**
+   * type of group
+   * - stack : stacked graph
+   * - group : group graph
+   * - single : single graph
+   * @default single
+   * @type "stack" | "group" | "single"
+   */
+  groupType?: "stack" | "group" | "single";
+  /**
+   * List of colors for the graph
+   * - Colors are applied in the order of the keyList
+   * - If the length of colorList is shorter than that of keyList, the last color in colorList is repeated.
+   * - If the length of colorList is longer than that of keyList, the excess part of colorList is ignored.
+   * @default ["#000000"]
+   * @type string[]
+   * @example
+   * colorList = ["#000000", "#ffffff"]
+   * keyList = ["y1", "y2"]
+   * => y1 : #000000, y2 : #ffffff
+   */
   colorList: string[];
-  keyArray?: string[];
+  /**
+   * max value of y-axis
+   * - max value of y-axis can be specified
+   * - If not specified, the smallest value of y-axis is specified as the smallest value of y-axis.
+   * @default undefined
+   * @type number
+   */
   maxLimitY?: number;
+  /**
+   * min value of y-axis
+   * - min value of y-axis can be specified
+   * - If not specified, the smallest value of y-axis is specified as the smallest value of y-axis.
+   * - If groupType is stack, minLimitY is 0.
+   * @default undefined
+   * @type number
+   */
   minLimitY?: number;
+  /**
+   * unit of y-axis
+   * - unit of y-axis can be specified
+   * - If not specified, the unit is not displayed.
+   */
   displayIndex?: string;
-  tooltipMaker?: (d: any) => JSX.Element | undefined;
+  /**
+   * function that returns tooltip
+   * @param d : x value of mouseover
+   */
+  tooltipMaker?: (d: string) => JSX.Element | string | undefined;
+  /**
+   * legend label list
+   * - legend label list can be specified
+   * - If not specified, keyList is used.
+   * @default keyList
+   * @type string[]
+   */
   legendLabelList?: string[];
+  /**
+   * width
+   * - width of svg
+   * - If not specified, the width of the parent component is used.
+   * @default undefined
+   * @type number
+   */
   width?: number;
+  /**
+   * height
+   * - height of svg
+   * - If not specified, the height of the parent component is used.
+   * @default undefined
+   * @type number
+   */
   height?: number;
 }
 
@@ -40,38 +124,23 @@ const margin = {
   bottom: 30,
 };
 
-const LineChart: ComponentType<Props> = ({
+const LineChart: ComponentType<LineChartProps> = ({
   data,
   id,
   xType = "band",
-  groupType = "normal",
+  groupType = "single",
   colorList,
-  keyArray,
   maxLimitY,
   minLimitY,
-  displayIndex = "개",
+  displayIndex,
   tooltipMaker,
   legendLabelList,
-  width: propsWidth,
-  height: propsHeight,
+  width,
+  height,
 }) => {
-  const [ref, bounds] = useMeasure();
-
-  const width = useMemo(() => {
-    return propsWidth ?? bounds.width;
-  }, []);
-
-  const height = useMemo(() => {
-    return propsHeight ?? bounds.height;
-  }, []);
-  // y축을 쌓기위한 Key List
   const keyList = useMemo(() => {
-    if (!!keyArray) {
-      return keyArray;
-    } else {
-      return Object.keys(data[0]).filter((k) => k !== "x");
-    }
-  }, [data, keyArray]);
+    return Object.keys(data[0]).filter((k) => k !== "x");
+  }, [data]);
 
   const colorScale = scaleOrdinal<string>().domain(keyList).range(colorList);
 
@@ -100,7 +169,7 @@ const LineChart: ComponentType<Props> = ({
   }, [maxLimitY, yList]);
 
   const minY = useMemo(() => {
-    return minLimitY ?? groupType == "stack" ? 0 : min(yList) ?? 0;
+    return groupType == "stack" ? 0 : minLimitY ?? min(yList) ?? 0;
   }, [groupType, minLimitY, yList]);
 
   const xScale: ScaleTime<any, any, any> | ScaleBand<any> = useMemo(() => {
@@ -126,21 +195,21 @@ const LineChart: ComponentType<Props> = ({
     return makeDisplayNum(yScale.ticks(data.length < 5 ? 3 : 5));
   }, [data.length, yScale]);
 
-  const [tooltipData, setTooltipData] = useState<
-    undefined | { x: number; y: number; data: any }
-  >(undefined);
+  const [tooltipData, setTooltipData] =
+    useState<undefined | { x: number; y: number; data: any }>(undefined);
 
   const drawLegend = useCallback(() => {
-    if (legendLabelList && legendLabelList.length > 0) {
+    const legendList = legendLabelList ?? keyList;
+    if (legendList && legendList.length > 0) {
       return (
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 translate-y-1/2">
+        <div className="absolute top-0 -translate-x-1/2 translate-y-1/2 left-1/2">
           <ul
             className="grid gap-x-2"
             style={{
-              gridTemplateColumns: `repeat(${legendLabelList.length}, minmax(0, 1fr))`,
+              gridTemplateColumns: `repeat(${legendList.length}, minmax(0, 1fr))`,
             }}
           >
-            {legendLabelList.map((d, i) => {
+            {legendList.map((d, i) => {
               return (
                 <li
                   key={`${id}-legend-${i}`}
@@ -222,14 +291,14 @@ const LineChart: ComponentType<Props> = ({
         .y((d: { [key: string]: any }) => yScale(d[key]));
 
     keyList.forEach((key) => {
-      select(`#${id}-group-area-${key}`)
+      select(`#${id}-${key}-area`)
         .selectAll("path")
         .data([data])
         .join("path")
         .attr("fill", `url(#${id}-gradient-${key})`)
         .attr("d", areaScale(key) as any);
 
-      select(`#${id}-group-line-${key}`)
+      select(`#${id}-${key}-line`)
         .selectAll("path")
         .data([data])
         .join("path")
@@ -265,7 +334,7 @@ const LineChart: ComponentType<Props> = ({
         .y((d) => yScale(d[1]));
 
     stackedData.forEach((d) => {
-      select(`#${id}-stack-area-${d.key}`)
+      select(`#${id}-${d.key}-area`)
         .selectAll("path")
         .data([d])
         .join("path")
@@ -273,7 +342,7 @@ const LineChart: ComponentType<Props> = ({
         .attr("d", (d) => areaScale()(d as any))
         .attr("stroke", "none");
 
-      select(`#${id}-stack-line-${d.key}`)
+      select(`#${id}-${d.key}-line`)
         .selectAll("path")
         .data([d])
         .join("path")
@@ -286,7 +355,7 @@ const LineChart: ComponentType<Props> = ({
 
   useEffect(() => {
     switch (groupType) {
-      case "none":
+      case "single":
         drawSingleLine();
         break;
       case "group":
@@ -299,11 +368,7 @@ const LineChart: ComponentType<Props> = ({
   }, [drawGroupLine, drawSingleLine, drawStackLine, groupType]);
 
   return (
-    <div
-      className="relative"
-      style={{ width: "100%", height: "100%" }}
-      ref={ref}
-    >
+    <div className="relative">
       {drawLegend()}
       <svg
         width={width}
@@ -320,7 +385,9 @@ const LineChart: ComponentType<Props> = ({
                   ? 0
                   : (xScale as ScaleBand<any>).bandwidth() / 2);
               const tooltipY =
-                groupType == "none" ? yScale(data[index].y as any) : margin.top;
+                groupType == "single"
+                  ? yScale(data[index].y as any)
+                  : margin.top;
               const tooltipData =
                 data[index].tooltipData ??
                 (tooltipMaker !== undefined
@@ -370,19 +437,19 @@ const LineChart: ComponentType<Props> = ({
           numTicks={width! < 500 ? 2 : 4}
         />
         <g className={"yAxis"}>
-          {displayIndex && (
-            <text
-              x={margin.left}
-              y={margin.top - 10}
-              textAnchor={"middle"}
-              alignmentBaseline={"baseline"}
-              style={{ fontSize: 11 }}
-              fill={"#666"}
-            >
-              단위 : {yAxisLabel[0] !== "" ? `${yAxisLabel[0]} ` : null}(
-              {displayIndex})
-            </text>
-          )}
+          <text
+            x={margin.left}
+            y={margin.top - 10}
+            textAnchor={"middle"}
+            alignmentBaseline={"baseline"}
+            style={{ fontSize: 11 }}
+            fill={"#666"}
+          >
+            <>
+              단위 : {yAxisLabel[0] !== "" ? `${yAxisLabel[0]} ` : null}
+              {displayIndex && { displayIndex }}
+            </>
+          </text>
           <line
             x1={margin.left}
             x2={margin.left}
@@ -408,7 +475,7 @@ const LineChart: ComponentType<Props> = ({
             })}
           />
         </g>
-        {groupType == "none" && (
+        {groupType == "single" ? (
           <g>
             <g id={`${id}-single-area`}>
               <path />
@@ -417,32 +484,15 @@ const LineChart: ComponentType<Props> = ({
               <path />
             </g>
           </g>
-        )}
-        {groupType == "group" && (
+        ) : (
           <g>
-            {keyList.map((key, index) => {
+            {keyList.map((key) => {
               return (
-                <g key={`${id}-group-${index}`}>
-                  <g id={`${id}-group-area-${key}`}>
+                <g key={`${id}-${key}`}>
+                  <g id={`${id}-${key}-area`}>
                     <path />
                   </g>
-                  <g id={`${id}-group-line-${key}`}>
-                    <path />
-                  </g>
-                </g>
-              );
-            })}
-          </g>
-        )}
-        {groupType == "stack" && (
-          <g id={`${id}-stack`}>
-            {keyList.map((key, index) => {
-              return (
-                <g key={`${id}-stack-${index}`}>
-                  <g id={`${id}-stack-area-${key}`}>
-                    <path />
-                  </g>
-                  <g id={`${id}-stack-line-${key}`}>
+                  <g id={`${id}-${key}-line`}>
                     <path />
                   </g>
                 </g>
@@ -472,4 +522,4 @@ const LineChart: ComponentType<Props> = ({
   );
 };
 
-export default LineChart;
+export default withParentSize(LineChart);

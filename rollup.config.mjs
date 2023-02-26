@@ -26,13 +26,27 @@ export default {
       file: "dist/index.min.js",
       format: "cjs",
       sourcemap: true,
-      plugins: [terser()],
+      plugins: [
+        terser({
+          mangle: false,
+          compress: {
+            drop_console: true,
+          },
+        }),
+      ],
     },
     {
       file: "dist/index.min.es.js",
       format: "es",
       sourcemap: true,
-      plugins: [terser()],
+      plugins: [
+        terser({
+          mangle: false,
+          compress: {
+            drop_console: true,
+          },
+        }),
+      ],
     },
   ],
   plugins: [
@@ -50,7 +64,6 @@ export default {
       plugins: [tailwindcss("./tailwind.config.js")],
       extract: true,
       minimize: true,
-      modules: true,
     }),
   ],
 };

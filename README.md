@@ -19,6 +19,7 @@ npm install sowoon-chart --save
 2. Import the chart you want to use from the library:
 ```tsx
 import { LineChart } from 'sowoon-chart';
+import 'sowoon-chart/dist/index.css';
 ```
 
 3. Use the chart component in your application:
@@ -30,7 +31,6 @@ import { LineChart } from 'sowoon-chart';
     { x: "2020-01-03", y: 30 },
   ]}
   id="chart"
-  width={800}
   height={500}
   groupType="none"
   xType="band"
