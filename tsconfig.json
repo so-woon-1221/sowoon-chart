@@ -10,7 +10,7 @@
     "target": "es5",
     "lib": ["dom", "es2015"],
     "allowSyntheticDefaultImports": true,
-    "module": "ESNext"
+    "module": "ESNext",
   },
   "include": ["lib/**/*"],
   "exclude": ["node_modules"]

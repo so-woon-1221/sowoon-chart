@@ -1,12 +1,12 @@
 import React from "react";
-import LineChart from "../lib/chart/LineChart";
+import BarChart from "../lib/chart/BarChart";
 import { ComponentStory, Meta } from "@storybook/react";
 import { max } from "d3-array";
 import type { ChartProps } from "../lib/types";
 
 export default {
-  title: "LineChart",
-  component: LineChart,
+  title: "BarChart",
+  component: BarChart,
   argTypes: {
     data: {
       control: {
@@ -45,8 +45,8 @@ export default {
   },
 } as Meta;
 
-const Template: ComponentStory<typeof LineChart> = (args) => (
-  <LineChart {...args} />
+const Template: ComponentStory<typeof BarChart> = (args) => (
+  <BarChart {...args} />
 );
 
 export const Single = Template.bind({});
@@ -54,6 +54,10 @@ const data = [
   { x: "2020-01-01", y: 100000 },
   { x: "2020-01-02", y: 200000 },
   { x: "2020-01-03", y: 300000 },
+  { x: "2020-01-04", y: 400000 },
+  { x: "2020-01-05", y: 500000 },
+  { x: "2020-01-06", y: 600000 },
+  { x: "2020-01-07", y: 700000 },
 ];
 Single.args = {
   data: data,

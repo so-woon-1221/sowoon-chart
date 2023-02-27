@@ -78,6 +78,7 @@
     "build": "rollup -c",
     "build:watch": "rm -r dist && rollup -c -w",
     "storybook": "start-storybook -p 6006",
+    "storybook2": "NODE_OPTIONS=--openssl-legacy-provider start-storybook -p 6006",
     "build-storybook": "build-storybook"
   },
   "version": "0.0.1",
