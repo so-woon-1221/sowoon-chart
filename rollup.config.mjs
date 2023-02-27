@@ -13,17 +13,7 @@ export default {
   input: "lib/index.tsx",
   output: [
     {
-      file: "dist/index.js",
-      format: "cjs",
-      sourcemap: true,
-    },
-    {
-      file: "dist/index.es.js",
-      format: "es",
-      sourcemap: true,
-    },
-    {
-      file: "dist/index.min.js",
+      file: "dist/index.cjs",
       format: "cjs",
       sourcemap: true,
       plugins: [
@@ -36,7 +26,7 @@ export default {
       ],
     },
     {
-      file: "dist/index.min.es.js",
+      file: "src/index.mjs",
       format: "es",
       sourcemap: true,
       plugins: [
@@ -48,6 +38,38 @@ export default {
         }),
       ],
     },
+    // {
+    //   file: "src/index.js",
+    //   format: "umd",
+    //   name: "sowoon-chart",
+    //   sourcemap: true,
+    // },
+    // {
+    //   file: "dist/index.min.cjs",
+    //   format: "cjs",
+    //   sourcemap: true,
+    //   plugins: [
+    //     terser({
+    //       mangle: false,
+    //       compress: {
+    //         drop_console: true,
+    //       },
+    //     }),
+    //   ],
+    // },
+    // {
+    //   file: "dist/index.min.es.mjs",
+    //   format: "es",
+    //   sourcemap: true,
+    //   plugins: [
+    //     terser({
+    //       mangle: false,
+    //       compress: {
+    //         drop_console: true,
+    //       },
+    //     }),
+    //   ],
+    // },
   ],
   plugins: [
     peerDepsExternal(),
@@ -58,12 +80,18 @@ export default {
     resolve({ extensions }),
     babel({
       exclude: "node_modules/**",
-      presets: ["@babel/preset-env", "@babel/preset-react"],
+      presets: [
+        ["@babel/preset-env", { targets: { node: "current" } }],
+        "@babel/preset-react",
+        "@babel/preset-typescript",
+      ],
+      plugins: [["@babel/plugin-transform-runtime", { useESModules: true }]],
     }),
     postcss({
-      plugins: [tailwindcss("./tailwind.config.js")],
+      plugins: [tailwindcss("./tailwind.config.cjs")],
       extract: true,
       minimize: true,
     }),
   ],
+  external: ["react", "react-dom", "d3", "@visx/visx"],
 };
