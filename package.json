@@ -6,6 +6,7 @@
     "@visx/clip-path": "^3.0.0",
     "@visx/responsive": "^3.0.0",
     "@visx/tooltip": "^3.0.0",
+    "@visx/wordcloud": "^3.0.0",
     "d3": "6",
     "d3-cloud": "^1.2.5",
     "dayjs": "^1.11.7",

@@ -3453,7 +3453,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/d3-cloud@npm:^1":
+"@types/d3-cloud@npm:1.2.5, @types/d3-cloud@npm:^1":
   version: 1.2.5
   resolution: "@types/d3-cloud@npm:1.2.5"
   dependencies:
@@ -4103,6 +4103,19 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@visx/group@npm:3.0.0":
+  version: 3.0.0
+  resolution: "@visx/group@npm:3.0.0"
+  dependencies:
+    "@types/react": "*"
+    classnames: ^2.3.1
+    prop-types: ^15.6.2
+  peerDependencies:
+    react: ^16.0.0-0 || ^17.0.0-0 || ^18.0.0-0
+  checksum: f52b946fb39cfcd4798bd5c77b729ceb41b2041e0464edeef2f15955c4022d51ed9f7626f2a7ac331f8430c84037254be5dd38f8282881a63d1680b27f41d04d
+  languageName: node
+  linkType: hard
+
 "@visx/responsive@npm:^3.0.0":
   version: 3.0.0
   resolution: "@visx/responsive@npm:3.0.0"
@@ -4130,6 +4143,19 @@ __metadata:
     react: ^16.8.0-0 || ^17.0.0-0 || ^18.0.0-0
     react-dom: ^16.8.0-0 || ^17.0.0-0 || ^18.0.0-0
   checksum: f3d9b62905424c8c3bd10f2fcbf6947da9adc7fff9a22aa961ce1c4523db4f0297b066a2fe27eeae7f4e45f0a4f7049067b6da71c6566a3991cb6fc53f6f8eb4
+  languageName: node
+  linkType: hard
+
+"@visx/wordcloud@npm:^3.0.0":
+  version: 3.0.0
+  resolution: "@visx/wordcloud@npm:3.0.0"
+  dependencies:
+    "@types/d3-cloud": 1.2.5
+    "@visx/group": 3.0.0
+    d3-cloud: ^1.2.5
+  peerDependencies:
+    react: ^16.8.0-0 || ^17.0.0-0 || ^18.0.0-0
+  checksum: f03f366ac00345d62a54d45cfe3187af1b90f504e9ca6ba9ecbf353851f177b1427bfe41eab272a5b2d11ad3fbc5f76df5431f15a4b6cf2f48df9b93ad36d1b0
   languageName: node
   linkType: hard
 
@@ -12723,7 +12749,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"prop-types@npm:^15.0.0, prop-types@npm:^15.5.10, prop-types@npm:^15.6.1, prop-types@npm:^15.7.2":
+"prop-types@npm:^15.0.0, prop-types@npm:^15.5.10, prop-types@npm:^15.6.1, prop-types@npm:^15.6.2, prop-types@npm:^15.7.2":
   version: 15.8.1
   resolution: "prop-types@npm:15.8.1"
   dependencies:
@@ -14187,6 +14213,7 @@ __metadata:
     "@visx/clip-path": ^3.0.0
     "@visx/responsive": ^3.0.0
     "@visx/tooltip": ^3.0.0
+    "@visx/wordcloud": ^3.0.0
     autoprefixer: latest
     babel-loader: ^8.3.0
     d3: 6
@@ -14207,14 +14234,8 @@ __metadata:
     tailwindcss: latest
     typescript: ^4.9.5
   peerDependencies:
-    "@visx/clip-path": ^3.0.0
-    "@visx/responsive": ^3.0.0
-    "@visx/tooltip": ^3.0.0
-    d3: 6
-    dayjs: ^1.11.7
     react: ^18.2.0
     react-dom: ^18.2.0
-    react-use-measure: ^2.1.1
   languageName: unknown
   linkType: soft
 
