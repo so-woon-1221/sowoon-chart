@@ -14160,7 +14160,8 @@ __metadata:
     tailwindcss: latest
     typescript: ^4.9.5
   peerDependencies:
-    d3: 6
+    "@visx/responsive": ^3.0.0
+    "@visx/tooltip": ^3.0.0
     dayjs: ^1.11.7
     react: ^18.2.0
     react-dom: ^18.2.0
