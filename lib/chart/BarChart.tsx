@@ -1,15 +1,12 @@
 import React from "react";
 import withParentSize from "../hooks/withParentSize";
 import { makeDisplayNum } from "../util";
-import dayjs from "dayjs";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   bisectLeft,
   max,
-  min,
   scaleOrdinal,
   scaleLinear,
-  scaleTime,
   scaleBand,
   select,
   stack,
@@ -20,7 +17,7 @@ import {
 import { TooltipWithBounds } from "@visx/tooltip";
 import type { ChartProps } from "../types";
 import type { ComponentType } from "react";
-import type { ScaleBand, ScaleTime } from "d3";
+import type { ScaleBand } from "d3";
 import "../styles/global.css";
 
 const margin = {
@@ -34,7 +31,7 @@ const BarChart: ComponentType<ChartProps> = ({
   id,
   width,
   height,
-  xType = "band",
+  // xType = "band",
   groupType = "single",
   colorList,
   maxLimitY,
@@ -77,19 +74,23 @@ const BarChart: ComponentType<ChartProps> = ({
     return minLimitY ?? 0;
   }, [minLimitY]);
 
-  const xScale: ScaleTime<any, any, any> | ScaleBand<any> = useMemo(() => {
-    return xType == "time"
-      ? scaleTime()
-          .domain([
-            dayjs(min(data.map((d) => d.x)), "YYYYMMDD").toDate(),
-            dayjs(max(data.map((d) => d.x)), "YYYYMMDD").toDate(),
-          ])
-          .range([margin.left, width! - margin.right])
-      : scaleBand()
-          .domain(data.map((d) => d.x))
-          .range([margin.left, width! - margin.right])
-          .padding(0.2);
-  }, [data, width, xType]);
+  const xScale: ScaleBand<string> = useMemo(() => {
+    return scaleBand()
+      .domain(data.map((d) => d.x as string))
+      .range([margin.left, width! - margin.right])
+      .padding(0.2);
+    // return xType == "time"
+    //   ? scaleTime()
+    //       .domain([
+    //         dayjs(min(data.map((d) => d.x as Date))),
+    //         dayjs(max(data.map((d) => d.x as Date))),
+    //       ])
+    //       .range([margin.left, width! - margin.right])
+    //   : scaleBand()
+    //       .domain(data.map((d) => d.x as string))
+    //       .range([margin.left, width! - margin.right])
+    //       .padding(0.2);
+  }, [data, width]);
 
   const yScale = useMemo(() => {
     return scaleLinear()
@@ -151,17 +152,14 @@ const BarChart: ComponentType<ChartProps> = ({
       .join("rect")
       // .attr("fill", `url(#${id}-gradient-${keyList[0]})`)
       .attr("fill", (d) => colorScale(keyList[0]) ?? "#e3e3e3")
-      .attr("x", (d) => xScale(d.x as unknown as number | Date))
+      .attr("x", (d) => (xScale as ScaleBand<any>)(d.x))
       .attr("y", (d) => yScale(d[keyList[0]] as number))
       .attr(
         "height",
         (d) => height! - margin.bottom - yScale(d[keyList[0]] as number)
       )
-      .attr(
-        "width",
-        xType == "band" ? (xScale as ScaleBand<any>).bandwidth() : 20
-      );
-  }, [data, height, id, keyList, xScale, xType, yScale]);
+      .attr("width", (xScale as ScaleBand<any>).bandwidth());
+  }, [data, height, id, keyList, xScale, yScale]);
 
   /**
    * groupType이 group일때 차트 그리기
@@ -183,7 +181,7 @@ const BarChart: ComponentType<ChartProps> = ({
         .data(data)
         .join("rect")
         .attr("fill", zColorScale(k))
-        .attr("x", (d) => xScale(d.x as unknown as number | Date) + zScale(k))
+        .attr("x", (d) => xScale(d.x) + zScale(k))
         .attr("y", (d) => yScale(d[k] as number))
         .attr("height", (d) => height! - margin.bottom - yScale(d[k] as number))
         .attr("width", zScale.bandwidth());
@@ -208,7 +206,7 @@ const BarChart: ComponentType<ChartProps> = ({
         .data(k)
         .join("rect")
         .attr("x", (d) => {
-          return xScale(d.data.x);
+          return xScale(d.data.x as unknown as string);
         })
         .attr("y", (d) => yScale(d[1]))
         .attr("height", (d) => yScale(d[0]) - yScale(d[1]))
@@ -233,23 +231,15 @@ const BarChart: ComponentType<ChartProps> = ({
 
   const xAxis = useCallback(() => {
     let axis: any;
-    if (xType == "band") {
-      const divider = Math.floor(data.length / 6);
-      axis = axisBottom(xScale)
-        .tickSize(3)
-        .tickValues(xScale.domain().filter((d, i) => !(i % divider)))
-        .tickPadding(5)
-        .tickFormat((d) => {
-          return d;
-        });
-    } else {
-      axis = axisBottom(xScale)
-        .tickSize(3)
-        .tickPadding(5)
-        .tickFormat((d) => {
-          return d;
-        });
-    }
+
+    const divider = Math.floor(data.length / 6);
+    axis = axisBottom(xScale)
+      .tickSize(3)
+      .tickValues(xScale.domain().filter((d, i) => !(i % divider)))
+      .tickPadding(5)
+      .tickFormat((d) => {
+        return d;
+      });
 
     const axisArea = select(`#${id}-x-axis`).attr(
       "transform",
@@ -314,11 +304,7 @@ const BarChart: ComponentType<ChartProps> = ({
               const xDomain = data.map((d) => xScale(d.x as any));
               const index = bisectLeft(xDomain, x) - 1;
               if (data[index]) {
-                const tooltipX =
-                  xScale(data[index].x as any) +
-                  (xType == "time"
-                    ? 0
-                    : (xScale as ScaleBand<any>).bandwidth() / 2);
+                const tooltipX = xScale(data[index].x) + xScale.bandwidth() / 2;
                 const tooltipY =
                   groupType == "single"
                     ? yScale(data[index].y as any)

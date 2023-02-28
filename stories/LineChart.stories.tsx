@@ -19,12 +19,6 @@ export default {
         options: ["none", "stack", "group"],
       },
     },
-    xType: {
-      control: {
-        type: "select",
-        options: ["band", "time"],
-      },
-    },
     maxLimitY: {
       control: {
         type: "number",
@@ -60,7 +54,6 @@ Single.args = {
   id: "chart",
   height: 500,
   groupType: "single",
-  xType: "band",
   colorList: ["#000000"],
   displayIndex: undefined,
   legendLabelList: ["y값"],
@@ -82,7 +75,6 @@ Group.args = {
   id: "chart",
   height: 500,
   groupType: "group",
-  xType: "band",
   colorList: ["#000000", "#ffaba1", "#abffff"],
   displayIndex: undefined,
   legendLabelList: ["y1", "y2", "y3"],
@@ -104,7 +96,6 @@ Stack.args = {
   id: "chart",
   height: 500,
   groupType: "stack",
-  xType: "band",
   colorList: ["#000000", "#ffaba1", "#abffff"],
   displayIndex: undefined,
   legendLabelList: ["y1", "y2", "y3"],

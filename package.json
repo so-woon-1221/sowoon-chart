@@ -3,9 +3,11 @@
   "dependencies": {
     "@storybook/builder-webpack5": "^6.5.16",
     "@storybook/manager-webpack5": "^6.5.16",
+    "@visx/clip-path": "^3.0.0",
     "@visx/responsive": "^3.0.0",
     "@visx/tooltip": "^3.0.0",
     "d3": "6",
+    "d3-cloud": "^1.2.5",
     "dayjs": "^1.11.7",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -32,6 +34,7 @@
     "@types/babel__plugin-transform-runtime": "^7",
     "@types/babel__preset-env": "^7",
     "@types/d3": "^6",
+    "@types/d3-cloud": "^1",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "@types/rollup-plugin-peer-deps-external": "^2",
@@ -49,12 +52,8 @@
     "tailwindcss": "latest"
   },
   "peerDependencies": {
-    "@visx/responsive": "^3.0.0",
-    "@visx/tooltip": "^3.0.0",
-    "dayjs": "^1.11.7",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-use-measure": "^2.1.1"
+    "react-dom": "^18.2.0"
   },
   "scripts": {
     "yalc": "rm -rf ./dist && tsc && yalc publish",

@@ -12,16 +12,16 @@ export interface ChartProps {
    * - id of svg
    */
   id: string;
-  /**
-   * scale type of x-axis
-   * - band : bandScale
-   * - time : timeScale
-   * - linear : linearScale
-   * - default : bandScale
-   * @default band
-   * @type ScaleType
-   */
-  xType?: "band" | "time" | "linear";
+  // /**
+  //  * scale type of x-axis
+  //  * - band : bandScale
+  //  * - time : timeScale
+  //  * - linear : linearScale
+  //  * - default : bandScale
+  //  * @default band
+  //  * @type ScaleType
+  //  */
+  // xType?: "band" | "time";
   /**
    * type of group
    * - stack : stacked graph

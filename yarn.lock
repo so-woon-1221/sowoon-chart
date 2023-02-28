@@ -3453,6 +3453,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/d3-cloud@npm:^1":
+  version: 1.2.5
+  resolution: "@types/d3-cloud@npm:1.2.5"
+  dependencies:
+    "@types/d3": ^3
+  checksum: 964faf5a2ee6d616d1c5ac10b7adf0d1924d6ddc0ad179489fa8b835d3a0d4fe9916672793444fc711c706a77ea0de8f841314c3f99558b450f0b5690c736dec
+  languageName: node
+  linkType: hard
+
 "@types/d3-color@npm:^2":
   version: 2.0.3
   resolution: "@types/d3-color@npm:2.0.3"
@@ -3652,6 +3661,13 @@ __metadata:
     "@types/d3-interpolate": ^2
     "@types/d3-selection": ^2
   checksum: e0cc3d089a1eed3019c3476a1f278a0148a5db2473e9e2ecb729e6f71196163ba2ea2e441d690ccfdd5dd9a14546e33d2feb7d16346869e601aba933e88ac97d
+  languageName: node
+  linkType: hard
+
+"@types/d3@npm:^3":
+  version: 3.5.47
+  resolution: "@types/d3@npm:3.5.47"
+  checksum: f49657cb30705125de0de0617194f78ca5c05c1e1900485f2ea4c438d5b7744ff7d53b31e814caf986b994d21997edcda9fd845df115193fca2667bd096d0fdf
   languageName: node
   linkType: hard
 
@@ -4072,6 +4088,18 @@ __metadata:
     react: ^16.0.0-0 || ^17.0.0-0 || ^18.0.0-0
     react-dom: ^16.0.0-0 || ^17.0.0-0 || ^18.0.0-0
   checksum: 3c50dad1c78b526bebe20a690360ae5ad3dd2a31c86150553071671e49309a9fcf3bca3303eab7f7ac2e28be8d7987ac9ce5daa28b8df32c647b0aa97f118fa9
+  languageName: node
+  linkType: hard
+
+"@visx/clip-path@npm:^3.0.0":
+  version: 3.0.0
+  resolution: "@visx/clip-path@npm:3.0.0"
+  dependencies:
+    "@types/react": "*"
+    prop-types: ^15.5.10
+  peerDependencies:
+    react: ^16.0.0-0 || ^17.0.0-0 || ^18.0.0-0
+  checksum: bb6478347c0d345f3108e2eec0c6d10371282da8326c0d5d701f461e7c1f857c8ab743a45079e3ba346006c3009ed019700785bbd71e8a981f1d8fb57ffd72fd
   languageName: node
   linkType: hard
 
@@ -6652,6 +6680,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"d3-cloud@npm:^1.2.5":
+  version: 1.2.5
+  resolution: "d3-cloud@npm:1.2.5"
+  dependencies:
+    d3-dispatch: ^1.0.3
+  checksum: e01d6f7adcc75d58b4de0f206cb2937bf840845efd7521e9530b81fa93524861e83884c0c9b75c86177619fbe64fefd54d654b6b51ab304267e795f4422c6080
+  languageName: node
+  linkType: hard
+
 "d3-color@npm:1 - 2, d3-color@npm:2":
   version: 2.0.0
   resolution: "d3-color@npm:2.0.0"
@@ -6681,6 +6718,13 @@ __metadata:
   version: 2.0.0
   resolution: "d3-dispatch@npm:2.0.0"
   checksum: cf473676ae0df1915d51d056d2c6734ceec480d258611d970a01847c50e8c273c185032bf9ed491abd077696bcbeeb491dc94af53e888871f3a1a0fac7365cec
+  languageName: node
+  linkType: hard
+
+"d3-dispatch@npm:^1.0.3":
+  version: 1.0.6
+  resolution: "d3-dispatch@npm:1.0.6"
+  checksum: b4ecb016b6dda8b99aa4263b2d0a0c7b12e7dea93e4b0ce3013c94dca4d360d9ba00f5bdc15dc944cc4543af8e341067bd628f061f7b8deb642257e2ac90d06c
   languageName: node
   linkType: hard
 
@@ -14136,14 +14180,17 @@ __metadata:
     "@types/babel__plugin-transform-runtime": ^7
     "@types/babel__preset-env": ^7
     "@types/d3": ^6
+    "@types/d3-cloud": ^1
     "@types/react": ^18
     "@types/react-dom": ^18
     "@types/rollup-plugin-peer-deps-external": ^2
+    "@visx/clip-path": ^3.0.0
     "@visx/responsive": ^3.0.0
     "@visx/tooltip": ^3.0.0
     autoprefixer: latest
     babel-loader: ^8.3.0
     d3: 6
+    d3-cloud: ^1.2.5
     dayjs: ^1.11.7
     postcss: latest
     react: ^18.2.0
@@ -14160,8 +14207,10 @@ __metadata:
     tailwindcss: latest
     typescript: ^4.9.5
   peerDependencies:
+    "@visx/clip-path": ^3.0.0
     "@visx/responsive": ^3.0.0
     "@visx/tooltip": ^3.0.0
+    d3: 6
     dayjs: ^1.11.7
     react: ^18.2.0
     react-dom: ^18.2.0

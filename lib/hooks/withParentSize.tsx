@@ -1,6 +1,6 @@
 import React from "react";
 import { ParentSize } from "@visx/responsive";
-import { ComponentType } from "react";
+import type { ComponentType } from "react";
 
 const withParentSize = <
   P extends {

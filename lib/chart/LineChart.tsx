@@ -1,19 +1,13 @@
 import React, { useCallback } from "react";
 import withParentSize from "../hooks/withParentSize";
 import { makeDisplayNum } from "../util";
-import dayjs from "dayjs";
 import { useEffect, useMemo, useState } from "react";
-// import { max, min, bisectLeft } from "d3-array";
-// import { scaleLinear, scaleOrdinal, scaleTime, scaleBand } from "d3-scale";
-// import { area, line, stack } from "d3-shape";
-// import { select } from "d3-selection";
 import {
   max,
   min,
   bisectLeft,
   scaleOrdinal,
   scaleLinear,
-  scaleTime,
   scaleBand,
   area,
   line,
@@ -23,16 +17,9 @@ import {
   axisBottom,
   axisLeft,
 } from "d3";
-
-// import { LinearGradient } from "@visx/gradient";
-// import { GridRows } from "@visx/grid";
-// import { useCallback } from "react";
-// import { Axis } from "@visx/axis";
-// import { localPoint } from "@visx/event";
 import { TooltipWithBounds } from "@visx/tooltip";
 import type { ComponentType } from "react";
-// import type { ScaleBand, ScaleTime } from "d3-scale";
-import type { ScaleBand, ScaleTime } from "d3";
+import type { ScaleBand } from "d3";
 import type { ChartProps } from "../types";
 import "../styles/global.css";
 
@@ -46,7 +33,6 @@ const margin = {
 const LineChart: ComponentType<ChartProps> = ({
   data,
   id,
-  xType = "band",
   groupType = "single",
   colorList,
   maxLimitY,
@@ -91,18 +77,21 @@ const LineChart: ComponentType<ChartProps> = ({
     return groupType == "stack" ? 0 : minLimitY ?? min(yList) ?? 0;
   }, [groupType, minLimitY, yList]);
 
-  const xScale: ScaleTime<any, any, any> | ScaleBand<any> = useMemo(() => {
-    return xType == "time"
-      ? scaleTime()
-          .domain([
-            dayjs(min(data.map((d) => d.x)), "YYYYMMDD").toDate(),
-            dayjs(max(data.map((d) => d.x)), "YYYYMMDD").toDate(),
-          ])
-          .range([margin.left, width! - margin.right])
-      : scaleBand()
-          .domain(data.map((d) => d.x))
-          .range([margin.left, width! - margin.right]);
-  }, [data, width, xType]);
+  const xScale: ScaleBand<string> = useMemo(() => {
+    return scaleBand()
+      .domain(data.map((d) => d.x))
+      .range([margin.left, width! - margin.right]);
+    // return xType == "time"
+    //   ? scaleTime()
+    //       .domain([
+    //         dayjs(min(data.map((d) => d.x)), "YYYYMMDD").toDate(),
+    //         dayjs(max(data.map((d) => d.x)), "YYYYMMDD").toDate(),
+    //       ])
+    //       .range([margin.left, width! - margin.right])
+    //   : scaleBand()
+    //       .domain(data.map((d) => d.x))
+    //       .range([margin.left, width! - margin.right]);
+  }, [data, width]);
 
   const yScale = useMemo(() => {
     return scaleLinear()
@@ -157,8 +146,7 @@ const LineChart: ComponentType<ChartProps> = ({
     const areaScale = area()
       .x(
         (d: { [key: string]: any }) =>
-          xScale(d.x) +
-          (xType == "time" ? 0 : (xScale as ScaleBand<any>).bandwidth() / 2)
+          xScale(d.x) + (xScale as ScaleBand<string>).bandwidth() / 2
       )
       .y0(yScale(minY))
       .y1((d: { [key: string]: any }) => yScale(d.y));
@@ -167,35 +155,31 @@ const LineChart: ComponentType<ChartProps> = ({
       .data([data])
       .join("path")
       .attr("fill", `url(#${id}-gradient-${keyList[0]})`)
-      // .transition()
       .attr("d", areaScale as any);
 
     const lineScale = line()
       .x(
         (d: { [key: string]: any }) =>
-          xScale(d.x) +
-          (xType == "time" ? 0 : (xScale as ScaleBand<any>).bandwidth() / 2)
+          xScale(d.x) + (xScale as ScaleBand<any>).bandwidth() / 2
       )
       .y((d: { [key: string]: any }) => yScale(d.y));
     const lineChart = select(`#${id}-single-line`)
       .selectAll("path")
       .data([data])
       .join("path")
-      // .transition()
       .attr("d", lineScale as any)
       .attr("stroke", colorList[0])
       .attr("fill", "none");
 
     return null;
-  }, [colorList, data, id, keyList, minY, xScale, xType, yScale]);
+  }, [colorList, data, id, keyList, minY, xScale, yScale]);
 
   const drawGroupLine = useCallback(() => {
     const areaScale = (key: string) =>
       area()
         .x(
           (d: { [key: string]: any }) =>
-            xScale(d.x) +
-            (xType == "time" ? 0 : (xScale as ScaleBand<any>).bandwidth() / 2)
+            xScale(d.x) + (xScale as ScaleBand<any>).bandwidth() / 2
         )
         .y0(yScale(minY))
         .y1((d: { [key: string]: any }) => yScale(d[key]));
@@ -204,8 +188,7 @@ const LineChart: ComponentType<ChartProps> = ({
       line()
         .x(
           (d: { [key: string]: any }) =>
-            xScale(d.x) +
-            (xType == "time" ? 0 : (xScale as ScaleBand<any>).bandwidth() / 2)
+            xScale(d.x) + (xScale as ScaleBand<any>).bandwidth() / 2
         )
         .y((d: { [key: string]: any }) => yScale(d[key]));
 
@@ -226,7 +209,7 @@ const LineChart: ComponentType<ChartProps> = ({
         .attr("stroke-width", 2)
         .attr("fill", "none");
     });
-  }, [colorScale, data, id, keyList, minY, xScale, xType, yScale]);
+  }, [colorScale, data, id, keyList, minY, xScale, yScale]);
 
   const drawStackLine = useCallback(() => {
     const stackedData = stack().keys(keyList)(data as { [key: string]: any }[]);
@@ -234,10 +217,7 @@ const LineChart: ComponentType<ChartProps> = ({
     const areaScale = () =>
       area()
         .x((d: any) => {
-          return (
-            xScale(d.data.x) +
-            (xType == "time" ? 0 : (xScale as ScaleBand<any>).bandwidth() / 2)
-          );
+          return xScale(d.data.x) + (xScale as ScaleBand<any>).bandwidth() / 2;
         })
         .y0((d) => yScale(d[0]))
         .y1((d) => yScale(d[1]));
@@ -245,10 +225,7 @@ const LineChart: ComponentType<ChartProps> = ({
     const lineScale = () =>
       line()
         .x((d: any) => {
-          return (
-            xScale(d.data.x) +
-            (xType == "time" ? 0 : (xScale as ScaleBand<any>).bandwidth() / 2)
-          );
+          return xScale(d.data.x) + (xScale as ScaleBand<any>).bandwidth() / 2;
         })
         .y((d) => yScale(d[1]));
 
@@ -270,7 +247,7 @@ const LineChart: ComponentType<ChartProps> = ({
         .attr("stroke-width", 2)
         .attr("fill", "none");
     });
-  }, [colorScale, data, id, keyList, xScale, xType, yScale]);
+  }, [colorScale, data, id, keyList, xScale, yScale]);
 
   const grid = useCallback(() => {
     const gridY = axisLeft(yScale)
@@ -357,9 +334,7 @@ const LineChart: ComponentType<ChartProps> = ({
             if (data[index]) {
               const tooltipX =
                 xScale(data[index].x as any) +
-                (xType == "time"
-                  ? 0
-                  : (xScale as ScaleBand<any>).bandwidth() / 2);
+                (xScale as ScaleBand<any>).bandwidth() / 2;
               const tooltipY =
                 groupType == "single"
                   ? yScale(data[index].y as any)
@@ -458,7 +433,7 @@ const LineChart: ComponentType<ChartProps> = ({
         })}
       </svg>
       {tooltipData && (
-        <TooltipWithBounds left={tooltipData.x} top={margin.top}>
+        <TooltipWithBounds left={tooltipData.x} top={tooltipData.y}>
           {tooltipData.data}
         </TooltipWithBounds>
       )}

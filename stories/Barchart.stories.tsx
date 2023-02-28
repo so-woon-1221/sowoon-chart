@@ -16,13 +16,7 @@ export default {
     groupType: {
       control: {
         type: "select",
-        options: ["none", "stack", "group"],
-      },
-    },
-    xType: {
-      control: {
-        type: "select",
-        options: ["band", "time"],
+        options: ["single", "stack", "group"],
       },
     },
     maxLimitY: {
@@ -33,6 +27,7 @@ export default {
     minLimitY: {
       control: {
         type: "number",
+        required: false,
       },
     },
   },
@@ -90,9 +85,7 @@ Single.args = {
   xType: "band",
   colorList: ["#354965"],
   displayIndex: undefined,
-  legendLabelList: ["y값"],
   maxLimitY: max(data, (d) => +d.y),
-  minLimitY: 0,
   tooltipMaker: (d) => {
     return data.find((a) => a.x == d) ? data.find((a) => a.x == d)!.y : "";
   },

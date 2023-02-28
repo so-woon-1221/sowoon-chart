@@ -1,4 +1,4 @@
-import { max } from "d3-array";
+import { max } from "d3";
 
 export const makeDisplayNum = (numbers: number[]) => {
   if (max(numbers)! >= 100000) {
