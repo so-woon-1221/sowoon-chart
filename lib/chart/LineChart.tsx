@@ -1,20 +1,38 @@
-import React from "react";
+import React, { useCallback } from "react";
 import withParentSize from "../hooks/withParentSize";
 import { makeDisplayNum } from "../util";
 import dayjs from "dayjs";
 import { useEffect, useMemo, useState } from "react";
-import { max, min, bisectLeft } from "d3-array";
-import { scaleLinear, scaleOrdinal, scaleTime, scaleBand } from "d3-scale";
-import { area, line, stack } from "d3-shape";
-import { select } from "d3-selection";
-import { LinearGradient } from "@visx/gradient";
-import { GridRows } from "@visx/grid";
-import { useCallback } from "react";
-import { Axis } from "@visx/axis";
-import { localPoint } from "@visx/event";
+// import { max, min, bisectLeft } from "d3-array";
+// import { scaleLinear, scaleOrdinal, scaleTime, scaleBand } from "d3-scale";
+// import { area, line, stack } from "d3-shape";
+// import { select } from "d3-selection";
+import {
+  max,
+  min,
+  bisectLeft,
+  scaleOrdinal,
+  scaleLinear,
+  scaleTime,
+  scaleBand,
+  area,
+  line,
+  stack,
+  select,
+  pointer,
+  axisBottom,
+  axisLeft,
+} from "d3";
+
+// import { LinearGradient } from "@visx/gradient";
+// import { GridRows } from "@visx/grid";
+// import { useCallback } from "react";
+// import { Axis } from "@visx/axis";
+// import { localPoint } from "@visx/event";
 import { TooltipWithBounds } from "@visx/tooltip";
 import type { ComponentType } from "react";
-import type { ScaleBand, ScaleTime } from "d3-scale";
+// import type { ScaleBand, ScaleTime } from "d3-scale";
+import type { ScaleBand, ScaleTime } from "d3";
 import type { ChartProps } from "../types";
 import "../styles/global.css";
 
@@ -254,6 +272,63 @@ const LineChart: ComponentType<ChartProps> = ({
     });
   }, [colorScale, data, id, keyList, xScale, xType, yScale]);
 
+  const grid = useCallback(() => {
+    const gridY = axisLeft(yScale)
+      .ticks(data.length < 5 ? 3 : 5)
+      .tickSize(-width + margin.left + margin.right)
+      .tickFormat(() => "");
+
+    const gridArea = select(`#${id}-grid-y`).attr(
+      "transform",
+      `translate(${margin.left}, 0)`
+    );
+    gridArea.selectAll("line").attr("stroke", "#eee");
+    gridArea.selectAll("path").attr("stroke", "none");
+    gridArea.call(gridY as any);
+  }, [yScale, width, id]);
+
+  const xAxis = useCallback(() => {
+    const axis = axisBottom(xScale)
+      .tickSize(3)
+      .tickPadding(5)
+      .tickFormat((d) => {
+        return d;
+      });
+
+    const axisArea = select(`#${id}-x-axis`).attr(
+      "transform",
+      `translate(0, ${height - margin.bottom})`
+    );
+    axisArea.selectAll("path").attr("stroke", "black");
+    axisArea.call(axis as any);
+  }, [xScale, height, id]);
+
+  const yAxis = useCallback(() => {
+    const axis = axisLeft(yScale)
+      .ticks(data.length < 5 ? 3 : 5)
+      .tickSize(3)
+      .tickPadding(5)
+      .tickFormat((d) => {
+        const newTickLabel = +d / +yAxisLabel[1];
+        if (+newTickLabel % 1 == 0) {
+          return newTickLabel.toLocaleString("ko");
+        }
+      });
+
+    const axisArea = select(`#${id}-y-axis`).attr(
+      "transform",
+      `translate(${margin.left}, 0)`
+    );
+    axisArea.selectAll("path").attr("display", "none");
+    axisArea.call(axis as any);
+  }, [yScale, id]);
+
+  useEffect(() => {
+    grid();
+    xAxis();
+    yAxis();
+  }, [grid, xAxis, yAxis]);
+
   useEffect(() => {
     switch (groupType) {
       case "single":
@@ -275,7 +350,7 @@ const LineChart: ComponentType<ChartProps> = ({
         width={width}
         height={height}
         onPointerMove={(e) => {
-          const x = localPoint(e)?.x;
+          const x = pointer(e)[0];
           if (x) {
             const xDomain = data.map((d) => xScale(d.x as any));
             const index = bisectLeft(xDomain, x) - 1;
@@ -316,27 +391,8 @@ const LineChart: ComponentType<ChartProps> = ({
             strokeDasharray={3}
           />
         )}
-        <GridRows
-          width={width! - margin.left - margin.bottom}
-          left={margin.left}
-          scale={yScale}
-          numTicks={3}
-          stroke={"#e3e3e3"}
-        />
-        <Axis
-          scale={xScale}
-          orientation={"bottom"}
-          top={height! - margin.bottom}
-          stroke={"black"}
-          tickLabelProps={() => ({
-            textAnchor: "middle",
-            fill: "black",
-          })}
-          tickLineProps={{
-            stroke: "black",
-          }}
-          numTicks={width! < 500 ? 2 : 4}
-        />
+        <g id={`${id}-grid-y`} />
+        <g id={`${id}-x-axis`} />
         <g className={"yAxis"}>
           <text
             x={margin.left}
@@ -358,23 +414,7 @@ const LineChart: ComponentType<ChartProps> = ({
             y2={height! - margin.bottom}
             stroke={"black"}
           />
-          <Axis
-            scale={yScale}
-            orientation={"left"}
-            left={margin.left}
-            tickFormat={(d) => {
-              const newTickLabel = +d / +yAxisLabel[1];
-              if (+newTickLabel % 1 == 0) {
-                return newTickLabel.toLocaleString("ko");
-              }
-            }}
-            numTicks={data.length < 5 ? 3 : 5}
-            strokeWidth={0}
-            tickLabelProps={() => ({
-              textAnchor: "end",
-              fill: "black",
-            })}
-          />
+          <g id={`${id}-y-axis`} />
         </g>
         {groupType == "single" ? (
           <g>
@@ -401,16 +441,19 @@ const LineChart: ComponentType<ChartProps> = ({
             })}
           </g>
         )}
-        {keyList.map((key, index) => {
+        {keyList.map((key) => {
           return (
-            <LinearGradient
+            <linearGradient
               key={`${id}-gradient-${key}`}
               id={`${id}-gradient-${key}`}
-              from={colorList[index]}
-              fromOpacity={0.6}
-              to={colorList[index]}
-              toOpacity={0}
-            />
+              x1="0%"
+              y1="0%"
+              x2="0%"
+              y2="100%"
+            >
+              <stop offset="0%" stopColor={colorScale(key)} stopOpacity={0.4} />
+              <stop offset="100%" stopColor={colorScale(key)} stopOpacity={0} />
+            </linearGradient>
           );
         })}
       </svg>

@@ -3,18 +3,24 @@ import withParentSize from "../hooks/withParentSize";
 import { makeDisplayNum } from "../util";
 import dayjs from "dayjs";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { bisectLeft, max, min } from "d3-array";
-import { scaleOrdinal, scaleLinear, scaleTime, scaleBand } from "d3-scale";
-import { select } from "d3-selection";
-import { stack } from "d3-shape";
-import { Axis } from "@visx/axis";
-import { GridRows } from "@visx/grid";
+import {
+  bisectLeft,
+  max,
+  min,
+  scaleOrdinal,
+  scaleLinear,
+  scaleTime,
+  scaleBand,
+  select,
+  stack,
+  pointer,
+  axisBottom,
+  axisLeft,
+} from "d3";
 import { TooltipWithBounds } from "@visx/tooltip";
-import { localPoint } from "@visx/event";
-import { LinearGradient } from "@visx/gradient";
 import type { ChartProps } from "../types";
 import type { ComponentType } from "react";
-import type { ScaleBand, ScaleTime } from "d3-scale";
+import type { ScaleBand, ScaleTime } from "d3";
 import "../styles/global.css";
 
 const margin = {
@@ -143,7 +149,8 @@ const BarChart: ComponentType<ChartProps> = ({
       .selectAll("rect")
       .data(data)
       .join("rect")
-      .attr("fill", `url(#${id}-gradient-${keyList[0]})`)
+      // .attr("fill", `url(#${id}-gradient-${keyList[0]})`)
+      .attr("fill", (d) => colorScale(keyList[0]) ?? "#e3e3e3")
       .attr("x", (d) => xScale(d.x as unknown as number | Date))
       .attr("y", (d) => yScale(d[keyList[0]] as number))
       .attr(
@@ -209,6 +216,75 @@ const BarChart: ComponentType<ChartProps> = ({
     });
   }, [colorScale, data, id, keyList, xScale, yScale]);
 
+  const grid = useCallback(() => {
+    const gridY = axisLeft(yScale)
+      .ticks(data.length < 5 ? 3 : 5)
+      .tickSize(-width + margin.left + margin.right)
+      .tickFormat(() => "");
+
+    const gridArea = select(`#${id}-grid-y`).attr(
+      "transform",
+      `translate(${margin.left}, 0)`
+    );
+    gridArea.selectAll("line").attr("stroke", "#eee");
+    gridArea.selectAll("path").attr("stroke", "none");
+    gridArea.call(gridY as any);
+  }, [yScale, width, id, data.length]);
+
+  const xAxis = useCallback(() => {
+    let axis: any;
+    if (xType == "band") {
+      const divider = Math.floor(data.length / 6);
+      axis = axisBottom(xScale)
+        .tickSize(3)
+        .tickValues(xScale.domain().filter((d, i) => !(i % divider)))
+        .tickPadding(5)
+        .tickFormat((d) => {
+          return d;
+        });
+    } else {
+      axis = axisBottom(xScale)
+        .tickSize(3)
+        .tickPadding(5)
+        .tickFormat((d) => {
+          return d;
+        });
+    }
+
+    const axisArea = select(`#${id}-x-axis`).attr(
+      "transform",
+      `translate(0, ${height - margin.bottom})`
+    );
+    axisArea.selectAll("path").attr("stroke", "black");
+    axisArea.call(axis as any);
+  }, [xScale, height, id, data.length]);
+
+  const yAxis = useCallback(() => {
+    const axis = axisLeft(yScale)
+      .ticks(data.length < 5 ? 3 : 5)
+      .tickSize(3)
+      .tickPadding(5)
+      .tickFormat((d) => {
+        const newTickLabel = +d / +yAxisLabel[1];
+        if (+newTickLabel % 1 == 0) {
+          return newTickLabel.toLocaleString("ko");
+        }
+      });
+
+    const axisArea = select(`#${id}-y-axis`).attr(
+      "transform",
+      `translate(${margin.left}, 0)`
+    );
+    axisArea.selectAll("path").attr("display", "none");
+    axisArea.call(axis as any);
+  }, [yScale, id, data.length, yAxisLabel]);
+
+  useEffect(() => {
+    grid();
+    xAxis();
+    yAxis();
+  }, [grid, xAxis, yAxis]);
+
   useEffect(() => {
     switch (groupType) {
       case "single":
@@ -233,7 +309,7 @@ const BarChart: ComponentType<ChartProps> = ({
         height={height}
         onPointerMove={(e) => {
           if (tooltipMaker) {
-            const x = localPoint(e)?.x;
+            const x = pointer(e)[0];
             if (x) {
               const xDomain = data.map((d) => xScale(d.x as any));
               const index = bisectLeft(xDomain, x) - 1;
@@ -264,33 +340,12 @@ const BarChart: ComponentType<ChartProps> = ({
             x2={tooltipData.x}
             y1={margin.top}
             y2={height! - margin.bottom}
-            stroke={"#e3e3e3" }
+            stroke={"#e3e3e3"}
             strokeDasharray={3}
           />
         )}
-        <GridRows
-          width={width! - margin.left - margin.right}
-          left={margin.left}
-          scale={yScale}
-          numTicks={3}
-          stroke={"#e3e3e3" }
-        />
-        {/* xAxis */}
-        <Axis
-          scale={xScale}
-          orientation={"bottom"}
-          top={height! - margin.bottom}
-          stroke={"black"}
-          tickLabelProps={() => ({
-            textAnchor: "middle",
-            fill: "black",
-          })}
-          tickLineProps={{
-            stroke: "black",
-          }}
-          numTicks={width! < 500 ? 2 : 4}
-        />
-        {/* yAxis */}
+        <g id={`${id}-grid-y`} />
+        <g id={`${id}-x-axis`} />
         <g className={"yAxis"}>
           {displayIndex && (
             <text
@@ -312,23 +367,7 @@ const BarChart: ComponentType<ChartProps> = ({
             y2={height! - margin.bottom}
             stroke={"black"}
           />
-          <Axis
-            scale={yScale}
-            orientation={"left"}
-            left={margin.left}
-            tickFormat={(d) => {
-              const newTickLabel = +d / +yAxisLabel[1];
-              if (+newTickLabel % 1 == 0) {
-                return newTickLabel.toLocaleString("ko");
-              }
-            }}
-            numTicks={data.length < 5 ? 3 : 5}
-            strokeWidth={0}
-            tickLabelProps={() => ({
-              textAnchor: "end",
-              fill: "black",
-            })}
-          />
+          <g id={`${id}-y-axis`} />
         </g>
         <g id={`${id}-bar-area`}>
           {groupType == "group" &&
@@ -340,16 +379,19 @@ const BarChart: ComponentType<ChartProps> = ({
               <g key={`${id}-stack-${i}`} id={`${id}-stack-${i}`} />
             ))}
         </g>
-        {keyList.map((key, index) => {
+        {keyList.map((key) => {
           return (
-            <LinearGradient
+            <linearGradient
               key={`${id}-gradient-${key}`}
               id={`${id}-gradient-${key}`}
-              from={colorList[index]}
-              fromOpacity={1}
-              to={colorList[index]}
-              toOpacity={0.4}
-            />
+              x1="0%"
+              y1="0%"
+              x2="0%"
+              y2="100%"
+            >
+              <stop offset="0%" stopColor={colorScale(key)} stopOpacity={0.4} />
+              <stop offset="100%" stopColor={colorScale(key)} stopOpacity={0} />
+            </linearGradient>
           );
         })}
       </svg>

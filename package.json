@@ -3,8 +3,9 @@
   "dependencies": {
     "@storybook/builder-webpack5": "^6.5.16",
     "@storybook/manager-webpack5": "^6.5.16",
-    "@visx/visx": "^3.0.1",
-    "d3": "^7.8.2",
+    "@visx/responsive": "^3.0.0",
+    "@visx/tooltip": "^3.0.0",
+    "d3": "6",
     "dayjs": "^1.11.7",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -30,7 +31,7 @@
     "@types/babel__core": "^7",
     "@types/babel__plugin-transform-runtime": "^7",
     "@types/babel__preset-env": "^7",
-    "@types/d3": "^7",
+    "@types/d3": "^6",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "@types/rollup-plugin-peer-deps-external": "^2",
@@ -48,8 +49,9 @@
     "tailwindcss": "latest"
   },
   "peerDependencies": {
-    "@visx/visx": "^3.0.1",
-    "d3": "^7.8.2",
+    "d3": "6",
+    "@visx/responsive": "^3.0.0",
+    "@visx/tooltip": "^3.0.0",
     "dayjs": "^1.11.7",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -64,22 +66,15 @@
     "storybook2": "NODE_OPTIONS=--openssl-legacy-provider start-storybook -p 6006",
     "build-storybook": "build-storybook"
   },
-  "version": "0.0.1",
+  "version": "0.0.5",
   "description": "",
-  "main": "dist/index.cjs",
-  "module": "src/index.mjs",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
+  "typings": "dist/index.d.ts",
   "files": [
-    "dist",
-    "src"
+    "dist"
   ],
-  "exports": {
-    ".": {
-      "import": "./src/index.mjs",
-      "require": "./dist/index.cjs"
-    },
-    "./package.json": "./package.json"
-  },
   "browserslist": {
     "production": [
       ">0.2%",
