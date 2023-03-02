@@ -1,7 +1,10 @@
 import React, { useCallback, useEffect } from "react";
 import withParentSize from "../hooks/withParentSize";
 import { useMemo } from "react";
-import { extent, scaleLog, select } from "d3";
+// import { extent, scaleLog, select } from "d3";
+import { extent } from "d3-array";
+import { scaleLog } from "d3-scale";
+import { select } from "d3-selection";
 import type { ComponentType } from "react";
 import cloud from "d3-cloud";
 

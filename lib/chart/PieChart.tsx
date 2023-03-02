@@ -1,13 +1,35 @@
 import React, { useState, useCallback, useMemo } from "react";
-import { select, arc, pie, scaleOrdinal } from "d3";
+// import { select, arc, pie, scaleOrdinal } from "d3";
+import { select } from "d3-selection";
+import { arc, pie } from "d3-shape";
+import { scaleOrdinal } from "d3-scale";
 import withParentSize from "../hooks/withParentSize";
 import type { ComponentType } from "react";
 
 interface Props {
+  /**
+   * data
+   * - key :
+   *   - key of the data
+   *   - type: string
+   * - value :
+   *  - value of the data
+   *  - type: number
+   */
   data: Array<{ key: string; value: number }>;
+  /**
+   * List of colors for the graph
+   * - Colors are applied in the order of the keyList
+   * - If the length of colorList is shorter than that of keyList, the last color in colorList is repeated.
+   * - If the length of colorList is longer than that of keyList, the excess part of colorList is ignored.
+   */
   colorList: Array<string>;
   width?: number;
   height?: number;
+  /**
+   * id
+   * - id of svg
+   */
   id: string;
 }
 

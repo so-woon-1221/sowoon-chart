@@ -1,19 +1,19 @@
-import babel from "rollup-plugin-babel";
-import resolve from "rollup-plugin-node-resolve";
-import commonjs from "rollup-plugin-commonjs";
-import { terser } from "rollup-plugin-terser";
-import peerDepsExternal from "rollup-plugin-peer-deps-external";
-import typescript from "rollup-plugin-typescript2";
-import postcss from "rollup-plugin-postcss";
-import tailwindcss from "tailwindcss";
+const babel = require("rollup-plugin-babel");
+const resolve = require("rollup-plugin-node-resolve");
+const commonjs = require("rollup-plugin-commonjs");
+const { terser } = require("rollup-plugin-terser");
+const peerDepsExternal = require("rollup-plugin-peer-deps-external");
+const typescript = require("rollup-plugin-typescript2");
+const postcss = require("rollup-plugin-postcss");
+const tailwindcss = require("tailwindcss");
+const multiInput = require("rollup-plugin-multi-input").default;
 
-const extensions = [".js", ".jsx", ".ts", ".tsx"];
-
-export default {
-  input: "lib/index.tsx",
+module.exports = {
+  input: "lib/**/*.tsx",
   output: [
     {
-      file: "dist/index.js",
+      // file: "dist/index.js",
+      dir: "src",
       format: "cjs",
       sourcemap: true,
       plugins: [
@@ -26,7 +26,8 @@ export default {
       ],
     },
     {
-      file: "dist/index.mjs",
+      // file: "dist/index.mjs",
+      dir: "dist",
       format: "es",
       sourcemap: true,
       plugins: [
@@ -40,9 +41,10 @@ export default {
     },
   ],
   plugins: [
+    multiInput({ relative: "lib" }),
     peerDepsExternal(),
+    resolve(),
     commonjs(),
-    resolve({ extensions }),
     typescript({
       tsconfig: "tsconfig.json",
     }),
@@ -64,10 +66,17 @@ export default {
   external: [
     "react",
     "react-dom",
-    "d3",
+    // "d3",
+    "d3-scale",
+    "d3-shape",
+    "d3-array",
+    "d3-selection",
+    "d3-axis",
+    "d3-brush",
     "@visx/tooltip",
     "@visx/responsive",
     "@visx/clip-path",
+    "@visx/pattern",
     "d3-cloud",
   ],
 };

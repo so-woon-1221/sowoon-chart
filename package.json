@@ -1,9 +1,8 @@
 {
   "name": "sowoon-chart",
   "dependencies": {
-    "@storybook/builder-webpack5": "^6.5.16",
-    "@storybook/manager-webpack5": "^6.5.16",
     "@visx/clip-path": "^3.0.0",
+    "@visx/pattern": "^3.0.0",
     "@visx/responsive": "^3.0.0",
     "@visx/tooltip": "^3.0.0",
     "d3": "6",
@@ -11,8 +10,7 @@
     "dayjs": "^1.11.7",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-use-measure": "^2.1.1",
-    "typescript": "^4.9.5"
+    "react-use-measure": "^2.1.1"
   },
   "devDependencies": {
     "@babel/core": "^7.21.0",
@@ -28,6 +26,8 @@
     "@storybook/addon-interactions": "^6.5.16",
     "@storybook/addon-links": "^6.5.16",
     "@storybook/addon-postcss": "^2.0.0",
+    "@storybook/builder-webpack5": "^6.5.16",
+    "@storybook/manager-webpack5": "^6.5.16",
     "@storybook/react": "^6.5.16",
     "@storybook/testing-library": "^0.0.13",
     "@types/babel__core": "^7",
@@ -35,21 +35,32 @@
     "@types/babel__preset-env": "^7",
     "@types/d3": "^6",
     "@types/d3-cloud": "^1",
+    "@types/eslint": "^8",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "@types/rollup-plugin-peer-deps-external": "^2",
+    "@typescript-eslint/eslint-plugin": "^5.0.0",
     "autoprefixer": "latest",
     "babel-loader": "^8.3.0",
+    "eslint": "^8.0.1",
+    "eslint-config-standard-with-typescript": "latest",
+    "eslint-plugin-import": "^2.25.2",
+    "eslint-plugin-n": "^15.0.0",
+    "eslint-plugin-promise": "^6.0.0",
+    "eslint-plugin-react": "latest",
     "postcss": "latest",
+    "prettier": "^2.8.4",
     "rollup": "^3.17.2",
     "rollup-plugin-babel": "^4.4.0",
     "rollup-plugin-commonjs": "^10.1.0",
+    "rollup-plugin-multi-input": "^1.3.3",
     "rollup-plugin-node-resolve": "^5.2.0",
     "rollup-plugin-peer-deps-external": "^2.2.4",
     "rollup-plugin-postcss": "^4.0.2",
     "rollup-plugin-terser": "^7.0.2",
     "rollup-plugin-typescript2": "^0.34.1",
-    "tailwindcss": "latest"
+    "tailwindcss": "latest",
+    "typescript": "*"
   },
   "peerDependencies": {
     "react": "^18.2.0",
@@ -62,17 +73,20 @@
     "build:watch": "rm -r dist && rollup -c -w",
     "storybook": "start-storybook -p 6006",
     "storybook2": "NODE_OPTIONS=--openssl-legacy-provider start-storybook -p 6006",
-    "build-storybook": "build-storybook"
+    "build-storybook": "build-storybook",
+    "lint": "eslint --ext .js,.jsx,.ts,.tsx,.mdx ."
   },
   "version": "0.0.5",
   "description": "",
-  "main": "dist/index.js",
+  "main": "src/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "typings": "dist/index.d.ts",
   "files": [
-    "dist"
+    "dist",
+    "src"
   ],
+  "sideEffects": false,
   "browserslist": {
     "production": [
       ">0.2%",

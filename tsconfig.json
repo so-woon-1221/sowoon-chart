@@ -11,6 +11,7 @@
     "lib": ["dom", "es2015"],
     "allowSyntheticDefaultImports": true,
     "module": "ESNext",
+    "strictNullChecks": true
   },
   "include": ["lib/**/*"],
   "exclude": ["node_modules"]

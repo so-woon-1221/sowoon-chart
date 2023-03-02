@@ -1,18 +1,31 @@
 import React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+// import {
+//   forceCenter,
+//   forceLink,
+//   forceManyBody,
+//   forceSimulation,
+//   select,
+//   forceX,
+//   forceY,
+//   drag,
+//   scaleLinear,
+//   extent,
+//   zoom,
+// } from "d3";
 import {
   forceCenter,
   forceLink,
   forceManyBody,
   forceSimulation,
-  select,
   forceX,
   forceY,
-  drag,
-  scaleLinear,
-  extent,
-  zoom,
-} from "d3";
+} from "d3-force";
+import { select } from "d3-selection";
+import { drag } from "d3-drag";
+import { scaleLinear } from "d3-scale";
+import { extent } from "d3-array";
+import { zoom } from "d3-zoom";
 import { RectClipPath } from "@visx/clip-path";
 import withParentSize from "../hooks/withParentSize";
 import type { ComponentType } from "react";

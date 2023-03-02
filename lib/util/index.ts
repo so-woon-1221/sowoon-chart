@@ -1,4 +1,4 @@
-import { max } from "d3";
+import { max } from "d3-array";
 
 export interface ChartProps {
   /**
