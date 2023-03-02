@@ -15,7 +15,7 @@ import {
   axisLeft,
 } from "d3";
 import { TooltipWithBounds } from "@visx/tooltip";
-import type { ChartProps } from "../types";
+import type { ChartProps } from "../util";
 import type { ComponentType } from "react";
 import type { ScaleBand } from "d3";
 import "../styles/global.css";
@@ -26,6 +26,7 @@ const margin = {
   right: 20,
   bottom: 30,
 };
+
 const BarChart: ComponentType<ChartProps> = ({
   data,
   id,

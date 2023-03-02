@@ -2,7 +2,7 @@ import React from "react";
 import LineChart from "../lib/chart/LineChart";
 import { ComponentStory, Meta } from "@storybook/react";
 import { max } from "d3-array";
-import type { ChartProps } from "../lib/types";
+import type { ChartProps } from "../lib/util";
 
 export default {
   title: "LineChart",
@@ -51,7 +51,7 @@ const data = [
 ];
 Single.args = {
   data: data,
-  id: "chart",
+  id: "single",
   height: 500,
   groupType: "single",
   colorList: ["#000000"],
@@ -72,7 +72,7 @@ const groupedData = [
 ];
 Group.args = {
   data: groupedData,
-  id: "chart",
+  id: "group-line-chart",
   height: 500,
   groupType: "group",
   colorList: ["#000000", "#ffaba1", "#abffff"],
@@ -93,7 +93,7 @@ const stackedData = [
 ];
 Stack.args = {
   data: stackedData,
-  id: "chart",
+  id: "stack-line-chart",
   height: 500,
   groupType: "stack",
   colorList: ["#000000", "#ffaba1", "#abffff"],

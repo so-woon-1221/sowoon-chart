@@ -3,7 +3,7 @@ import WordCloudChart from "../lib/chart/WordCloud";
 import { ComponentStory, Meta } from "@storybook/react";
 
 export default {
-  title: "WorldCloud",
+  title: "WordCloud",
   component: WordCloudChart,
   argTypes: {
     data: {
@@ -35,4 +35,5 @@ WordCloud.args = {
   id: "word-cloud-chart",
   type: "rectangular",
   height: 500,
+  width: 1000,
 };

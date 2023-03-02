@@ -61,5 +61,13 @@ export default {
       minimize: true,
     }),
   ],
-  external: ["react", "react-dom", "d3", "@visx/tooltip", "@visx/responsive"],
+  external: [
+    "react",
+    "react-dom",
+    "d3",
+    "@visx/tooltip",
+    "@visx/responsive",
+    "@visx/clip-path",
+    "d3-cloud",
+  ],
 };

@@ -2,7 +2,7 @@ import React from "react";
 import BarChart from "../lib/chart/BarChart";
 import { ComponentStory, Meta } from "@storybook/react";
 import { max } from "d3-array";
-import type { ChartProps } from "../lib/types";
+import type { ChartProps } from "../lib/util";
 
 export default {
   title: "BarChart",
@@ -79,7 +79,7 @@ const data = [
 ];
 Single.args = {
   data: data,
-  id: "chart",
+  id: "single-bar-chart",
   height: 500,
   groupType: "single",
   xType: "band",
@@ -99,7 +99,7 @@ const groupedData = [
 ];
 Group.args = {
   data: groupedData,
-  id: "chart",
+  id: "grouped-bar-chart",
   height: 500,
   groupType: "group",
   xType: "band",
@@ -121,7 +121,7 @@ const stackedData = [
 ];
 Stack.args = {
   data: stackedData,
-  id: "chart",
+  id: "stacked-bar-chart",
   height: 500,
   groupType: "stack",
   xType: "band",

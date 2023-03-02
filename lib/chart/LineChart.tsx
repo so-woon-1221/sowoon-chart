@@ -20,7 +20,7 @@ import {
 import { TooltipWithBounds } from "@visx/tooltip";
 import type { ComponentType } from "react";
 import type { ScaleBand } from "d3";
-import type { ChartProps } from "../types";
+import type { ChartProps } from "../util";
 import "../styles/global.css";
 
 const margin = {

@@ -3453,7 +3453,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/d3-cloud@npm:1.2.5, @types/d3-cloud@npm:^1":
+"@types/d3-cloud@npm:^1":
   version: 1.2.5
   resolution: "@types/d3-cloud@npm:1.2.5"
   dependencies:
@@ -4103,19 +4103,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@visx/group@npm:3.0.0":
-  version: 3.0.0
-  resolution: "@visx/group@npm:3.0.0"
-  dependencies:
-    "@types/react": "*"
-    classnames: ^2.3.1
-    prop-types: ^15.6.2
-  peerDependencies:
-    react: ^16.0.0-0 || ^17.0.0-0 || ^18.0.0-0
-  checksum: f52b946fb39cfcd4798bd5c77b729ceb41b2041e0464edeef2f15955c4022d51ed9f7626f2a7ac331f8430c84037254be5dd38f8282881a63d1680b27f41d04d
-  languageName: node
-  linkType: hard
-
 "@visx/responsive@npm:^3.0.0":
   version: 3.0.0
   resolution: "@visx/responsive@npm:3.0.0"
@@ -4143,19 +4130,6 @@ __metadata:
     react: ^16.8.0-0 || ^17.0.0-0 || ^18.0.0-0
     react-dom: ^16.8.0-0 || ^17.0.0-0 || ^18.0.0-0
   checksum: f3d9b62905424c8c3bd10f2fcbf6947da9adc7fff9a22aa961ce1c4523db4f0297b066a2fe27eeae7f4e45f0a4f7049067b6da71c6566a3991cb6fc53f6f8eb4
-  languageName: node
-  linkType: hard
-
-"@visx/wordcloud@npm:^3.0.0":
-  version: 3.0.0
-  resolution: "@visx/wordcloud@npm:3.0.0"
-  dependencies:
-    "@types/d3-cloud": 1.2.5
-    "@visx/group": 3.0.0
-    d3-cloud: ^1.2.5
-  peerDependencies:
-    react: ^16.8.0-0 || ^17.0.0-0 || ^18.0.0-0
-  checksum: f03f366ac00345d62a54d45cfe3187af1b90f504e9ca6ba9ecbf353851f177b1427bfe41eab272a5b2d11ad3fbc5f76df5431f15a4b6cf2f48df9b93ad36d1b0
   languageName: node
   linkType: hard
 
@@ -8444,7 +8418,7 @@ __metadata:
 
 "fsevents@patch:fsevents@^1.2.7#~builtin<compat/fsevents>":
   version: 1.2.13
-  resolution: "fsevents@patch:fsevents@npm%3A1.2.13#~builtin<compat/fsevents>::version=1.2.13&hash=18f3a7"
+  resolution: "fsevents@patch:fsevents@npm%3A1.2.13#~builtin<compat/fsevents>::version=1.2.13&hash=d11327"
   dependencies:
     bindings: ^1.5.0
     nan: ^2.12.1
@@ -8454,7 +8428,7 @@ __metadata:
 
 "fsevents@patch:fsevents@^2.1.2#~builtin<compat/fsevents>, fsevents@patch:fsevents@~2.3.2#~builtin<compat/fsevents>":
   version: 2.3.2
-  resolution: "fsevents@patch:fsevents@npm%3A2.3.2#~builtin<compat/fsevents>::version=2.3.2&hash=18f3a7"
+  resolution: "fsevents@patch:fsevents@npm%3A2.3.2#~builtin<compat/fsevents>::version=2.3.2&hash=df0bf1"
   dependencies:
     node-gyp: latest
   conditions: os=darwin
@@ -12749,7 +12723,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"prop-types@npm:^15.0.0, prop-types@npm:^15.5.10, prop-types@npm:^15.6.1, prop-types@npm:^15.6.2, prop-types@npm:^15.7.2":
+"prop-types@npm:^15.0.0, prop-types@npm:^15.5.10, prop-types@npm:^15.6.1, prop-types@npm:^15.7.2":
   version: 15.8.1
   resolution: "prop-types@npm:15.8.1"
   dependencies:
@@ -13448,7 +13422,7 @@ __metadata:
 
 "resolve@patch:resolve@^1.1.7#~builtin<compat/resolve>, resolve@patch:resolve@^1.10.0#~builtin<compat/resolve>, resolve@patch:resolve@^1.11.0#~builtin<compat/resolve>, resolve@patch:resolve@^1.11.1#~builtin<compat/resolve>, resolve@patch:resolve@^1.14.2#~builtin<compat/resolve>, resolve@patch:resolve@^1.19.0#~builtin<compat/resolve>, resolve@patch:resolve@^1.22.1#~builtin<compat/resolve>, resolve@patch:resolve@^1.3.2#~builtin<compat/resolve>":
   version: 1.22.1
-  resolution: "resolve@patch:resolve@npm%3A1.22.1#~builtin<compat/resolve>::version=1.22.1&hash=07638b"
+  resolution: "resolve@patch:resolve@npm%3A1.22.1#~builtin<compat/resolve>::version=1.22.1&hash=c3c19d"
   dependencies:
     is-core-module: ^2.9.0
     path-parse: ^1.0.7
@@ -14213,7 +14187,6 @@ __metadata:
     "@visx/clip-path": ^3.0.0
     "@visx/responsive": ^3.0.0
     "@visx/tooltip": ^3.0.0
-    "@visx/wordcloud": ^3.0.0
     autoprefixer: latest
     babel-loader: ^8.3.0
     d3: 6
@@ -15120,11 +15093,11 @@ __metadata:
 
 "typescript@patch:typescript@^4.9.5#~builtin<compat/typescript>":
   version: 4.9.5
-  resolution: "typescript@patch:typescript@npm%3A4.9.5#~builtin<compat/typescript>::version=4.9.5&hash=f456af"
+  resolution: "typescript@patch:typescript@npm%3A4.9.5#~builtin<compat/typescript>::version=4.9.5&hash=23ec76"
   bin:
     tsc: bin/tsc
     tsserver: bin/tsserver
-  checksum: 2eee5c37cad4390385db5db5a8e81470e42e8f1401b0358d7390095d6f681b410f2c4a0c496c6ff9ebd775423c7785cdace7bcdad76c7bee283df3d9718c0f20
+  checksum: ab417a2f398380c90a6cf5a5f74badd17866adf57f1165617d6a551f059c3ba0a3e4da0d147b3ac5681db9ac76a303c5876394b13b3de75fdd5b1eaa06181c9d
   languageName: node
   linkType: hard
 

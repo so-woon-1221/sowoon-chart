@@ -1,9 +1,9 @@
-import React from "react";
+import React, { useCallback, useEffect } from "react";
 import withParentSize from "../hooks/withParentSize";
 import { useMemo } from "react";
-import { extent, scaleLog } from "d3";
+import { extent, scaleLog, select } from "d3";
 import type { ComponentType } from "react";
-import { Wordcloud } from "@visx/wordcloud";
+import cloud from "d3-cloud";
 
 interface Props {
   /**
@@ -56,7 +56,7 @@ const WordCloud: ComponentType<Props> = ({
 }) => {
   const fontScale = useMemo(() => {
     return scaleLog()
-      .domain(extent(data.map((d) => +d.value)) as any)
+      .domain(extent(data.map((d) => +d.value)) as [number, number])
       .range([15, 80]);
   }, [data]);
 
@@ -69,116 +69,74 @@ const WordCloud: ComponentType<Props> = ({
     return map;
   }, [colorList, data]);
 
-  // const drawChart = useCallback(() => {
-  //   const cloud2 = cloud()
-  //     .size([width!, height!])
-  //     .words(
-  //       data.map((d) => {
-  //         return { text: d.text, size: d.value };
-  //       }),
-  //     )
-  //     // .padding(4)
-  //     .rotate(0)
-  //     // .spiral('rectangular')
-  //     .random(() => 0.5)
-  //     .font('Impact')
-  //     .fontSize((d) => fontScale(d.size!) as any)
-  //     .on('end', draw);
-  //
-  //   cloud2.start();
-  //
-  //   function draw(words: any) {
-  //     select(`#${id}-svg`)
-  //       .attr(
-  //         'transform',
-  //         `translate(${cloud2.size()[0] / 2},${cloud2.size()[1] / 2})`,
-  //       )
-  //       .selectAll('text')
-  //       .data(words)
-  //       .join('text')
-  //       .style('font-size', function (d: any) {
-  //         return d.size + 'px';
-  //       })
-  //       .style('font-weight', 600)
-  //       .style('font-family', 'Impact')
-  //       .attr('text-anchor', 'middle')
-  //       .attr('transform', function (d: any) {
-  //         return `translate(${d.x}, ${d.y}) rotate(${d.rotate})`;
-  //       })
-  //       .style('fill', (d: any) => {
-  //         return colorMap.get(d.text);
-  //       })
-  //       .on('mouseover', function (e, d: any) {
-  //         const texts = (
-  //           select(select(e.target).node().parentNode).selectAll('text') as any
-  //         )._groups[0];
-  //         for (let text of texts) {
-  //           if (select(text).text() !== d.text) {
-  //             select(text).transition().attr('opacity', 0.1);
-  //           } else {
-  //             select(text).attr('opacity', 1);
-  //           }
-  //         }
-  //       })
-  //       .on('mouseleave', function (e, d: any) {
-  //         select(select(e.target).node().parentNode)
-  //           .selectAll('text')
-  //           .transition()
-  //           .attr('opacity', 1);
-  //       })
-  //       .text(function (d: any) {
-  //         return d.text;
-  //       });
-  //   }
-  //
-  //   return null;
-  // }, [colorMap, data, fontScale, height, id, setSelectedText, width]);
+  const wordData = useMemo(() => {
+    return data.map((d) => ({ text: d.text, size: fontScale(d.value) }));
+  }, [data, fontScale]);
 
-  // useEffect(() => {
-  //   drawChart();
-  // }, [drawChart]);
+  const drawChart = useCallback(() => {
+    if (width && height) {
+      const layout = cloud()
+        .size([width!, height!])
+        .words(wordData)
+        .padding(2)
+        .rotate(0)
+        .font("Impact")
+        .fontSize((d) => d.size)
+        .spiral(type)
+        .on("end", (words) => {
+          select(`#${id}-svg`)
+            .attr("transform", `translate(${width! / 2}, ${height! / 2})`)
+            .selectAll("text")
+            .data(words)
+            .join("text")
+            .style("font-size", (d) => `${d.size}px`)
+            .style("font-family", "Impact")
+            .attr("text-anchor", "middle")
+            .attr(
+              "transform",
+              (d) => `translate(${d.x}, ${d.y}) rotate(${d.rotate})`
+            )
+            .text((d) => d.text)
+            .attr("fill", (d) => colorMap.get(d.text))
+            .attr("cursor", "pointer")
+            .on("mouseover", function (e, d: any) {
+              const texts = (
+                select(select(e.target).node().parentNode).selectAll(
+                  "text"
+                ) as any
+              )._groups[0];
+              for (let text of texts) {
+                if (select(text).text() !== d.text) {
+                  select(text).transition().attr("opacity", 0.1);
+                } else {
+                  select(text).attr("opacity", 1);
+                }
+              }
+            })
+            .on("mouseleave", function (e, d: any) {
+              select(select(e.target).node().parentNode)
+                .selectAll("text")
+                .transition()
+                .attr("opacity", 1);
+            });
+        });
+
+      layout.start();
+
+      return () => {
+        layout.stop();
+      };
+    }
+  }, [colorMap, height, id, type, wordData, width]);
+
+  useEffect(() => {
+    drawChart();
+  }, [drawChart]);
 
   return (
     <div className="h-full w-full select-text">
       <svg width={width} height={height}>
-        {/*<g id={`${id}-svg`} />*/}
-        <Wordcloud
-          words={data}
-          height={height!}
-          width={width!}
-          font={"Impact"}
-          fontSize={(datum) => fontScale(datum.value)}
-          random={() => 0.5}
-          // padding={2}
-          spiral={"archimedean"}
-          rotate={0}
-        >
-          {(cloudWords) =>
-            cloudWords.map((w) => {
-              return (
-                <text
-                  key={w.text}
-                  style={{ fontSize: w.size }}
-                  transform={`translate(${w.x}, ${w.y}) rotate(${w.rotate})`}
-                  textAnchor={"middle"}
-                  fill={colorMap.get(w.text)}
-                >
-                  {w.text}
-                </text>
-                // <Text
-                //   key={w.text}
-                //   fill={'black'}
-                //   textAnchor={'middle'}
-                //   transform={`translate(${w.x}, ${w.y}) rotate(${w.rotate})`}
-                //   fontSize={w.size}
-                //   fontFamily={w.font}
-                // >
-                //   {w.text}
-                // </Text>
-              );
-            })
-          }
-        </Wordcloud>
+        <g id={`${id}-svg`}></g>
       </svg>
     </div>
   );
