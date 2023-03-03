@@ -5,8 +5,9 @@ import React, {
   useCallback,
   useEffect,
 } from 'react';
-import { max, scaleBand, scaleLinear } from 'd3';
-import type { ScaleBand } from 'd3';
+import { max } from 'd3-array';
+import { scaleBand, scaleLinear } from 'd3-scale';
+import type { ScaleBand } from 'd3-scale';
 import { TooltipWithBounds } from '@visx/tooltip';
 import { select } from 'd3-selection';
 import { axisBottom, axisLeft } from 'd3-axis';

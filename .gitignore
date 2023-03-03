@@ -20,3 +20,5 @@ src
 build
 
 .vscode
+
+storybook-static/

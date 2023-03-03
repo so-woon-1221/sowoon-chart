@@ -79,6 +79,7 @@
     "storybook": "start-storybook -p 6006",
     "storybook2": "NODE_OPTIONS=--openssl-legacy-provider start-storybook -p 6006",
     "build-storybook": "build-storybook",
+    "build-storybook2": "NODE_OPTIONS=--openssl-legacy-provider build-storybook",
     "lint": "eslint --ext .js,.jsx,.ts,.tsx,.mdx ."
   },
   "version": "0.0.5",

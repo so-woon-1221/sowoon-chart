@@ -6,7 +6,7 @@ import { stack } from 'd3-shape';
 import { axisBottom, axisLeft } from 'd3-axis';
 import { TooltipWithBounds } from '@visx/tooltip';
 import type { ComponentType } from 'react';
-import type { ScaleBand } from 'd3';
+import type { ScaleBand } from 'd3-scale';
 import type { ChartProps } from '../util';
 import { makeDisplayNum } from '../util';
 import withParentSize from '../hooks/withParentSize';
