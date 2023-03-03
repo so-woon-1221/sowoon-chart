@@ -1,12 +1,10 @@
-import React, { useCallback, useEffect } from "react";
-import withParentSize from "../hooks/withParentSize";
-import { useMemo } from "react";
-// import { extent, scaleLog, select } from "d3";
-import { extent } from "d3-array";
-import { scaleLog } from "d3-scale";
-import { select } from "d3-selection";
-import type { ComponentType } from "react";
-import cloud from "d3-cloud";
+import React, { useCallback, useEffect, useMemo } from 'react';
+import { extent } from 'd3-array';
+import { scaleLog } from 'd3-scale';
+import { select } from 'd3-selection';
+import type { ComponentType } from 'react';
+import cloud from 'd3-cloud';
+import withParentSize from '../hooks/withParentSize';
 
 interface Props {
   /**
@@ -39,7 +37,7 @@ interface Props {
    * - "rectangular" or "archimedean"
    * @default "rectangular"
    * */
-  type?: "rectangular" | "archimedean";
+  type?: 'rectangular' | 'archimedean';
 }
 
 const WordCloud: ComponentType<Props> = ({
@@ -48,20 +46,22 @@ const WordCloud: ComponentType<Props> = ({
   height,
   id,
   colorList = [
-    "#0A0908",
-    "#0891b2",
-    "#C6AC8F",
-    "#60D394",
-    "#D1495B",
-    "#9b5de5",
+    '#0A0908',
+    '#0891b2',
+    '#C6AC8F',
+    '#60D394',
+    '#D1495B',
+    '#9b5de5',
   ],
-  type = "rectangular",
+  type = 'rectangular',
 }) => {
-  const fontScale = useMemo(() => {
-    return scaleLog()
-      .domain(extent(data.map((d) => +d.value)) as [number, number])
-      .range([15, 80]);
-  }, [data]);
+  const fontScale = useMemo(
+    () =>
+      scaleLog()
+        .domain(extent(data.map(d => +d.value)) as [number, number])
+        .range([15, 80]),
+    [data],
+  );
 
   const colorMap = useMemo(() => {
     const map = new Map();
@@ -72,9 +72,10 @@ const WordCloud: ComponentType<Props> = ({
     return map;
   }, [colorList, data]);
 
-  const wordData = useMemo(() => {
-    return data.map((d) => ({ text: d.text, size: fontScale(d.value) }));
-  }, [data, fontScale]);
+  const wordData = useMemo(
+    () => data.map(d => ({ text: d.text, size: fontScale(d.value) })),
+    [data, fontScale],
+  );
 
   const drawChart = useCallback(() => {
     if (width && height) {
@@ -83,44 +84,44 @@ const WordCloud: ComponentType<Props> = ({
         .words(wordData)
         .padding(2)
         .rotate(0)
-        .font("Impact")
-        .fontSize((d) => d.size)
+        .font('Impact')
+        .fontSize(d => d.size as number)
         .spiral(type)
-        .on("end", (words) => {
+        .on('end', words => {
           select(`#${id}-svg`)
-            .attr("transform", `translate(${width! / 2}, ${height! / 2})`)
-            .selectAll("text")
+            .attr('transform', `translate(${width! / 2}, ${height! / 2})`)
+            .selectAll('text')
             .data(words)
-            .join("text")
-            .style("font-size", (d) => `${d.size}px`)
-            .style("font-family", "Impact")
-            .attr("text-anchor", "middle")
+            .join('text')
+            .style('font-size', d => `${d.size}px`)
+            .style('font-family', 'Impact')
+            .attr('text-anchor', 'middle')
             .attr(
-              "transform",
-              (d) => `translate(${d.x}, ${d.y}) rotate(${d.rotate})`
+              'transform',
+              d => `translate(${d.x}, ${d.y}) rotate(${d.rotate})`,
             )
-            .text((d) => d.text)
-            .attr("fill", (d) => colorMap.get(d.text))
-            .attr("cursor", "pointer")
-            .on("mouseover", function (e, d: any) {
+            .text(d => d.text as string)
+            .attr('fill', d => colorMap.get(d.text))
+            .attr('cursor', 'pointer')
+            .on('mouseover', (e, d: any) => {
               const texts = (
                 select(select(e.target).node().parentNode).selectAll(
-                  "text"
+                  'text',
                 ) as any
               )._groups[0];
-              for (let text of texts) {
+              texts.forEach((text: string) => {
                 if (select(text).text() !== d.text) {
-                  select(text).transition().attr("opacity", 0.1);
+                  select(text).transition().attr('opacity', 0.1);
                 } else {
-                  select(text).attr("opacity", 1);
+                  select(text).attr('opacity', 1);
                 }
-              }
+              });
             })
-            .on("mouseleave", function (e, d: any) {
+            .on('mouseleave', e => {
               select(select(e.target).node().parentNode)
-                .selectAll("text")
+                .selectAll('text')
                 .transition()
-                .attr("opacity", 1);
+                .attr('opacity', 1);
             });
         });
 
@@ -130,6 +131,7 @@ const WordCloud: ComponentType<Props> = ({
         layout.stop();
       };
     }
+    return null;
   }, [colorMap, height, id, type, wordData, width]);
 
   useEffect(() => {
@@ -139,7 +141,7 @@ const WordCloud: ComponentType<Props> = ({
   return (
     <div className="h-full w-full select-text">
       <svg width={width} height={height}>
-        <g id={`${id}-svg`}></g>
+        <g id={`${id}-svg`} />
       </svg>
     </div>
   );

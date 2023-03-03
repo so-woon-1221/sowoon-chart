@@ -13,6 +13,6 @@
     "module": "ESNext",
     "strictNullChecks": true
   },
-  "include": ["lib/**/*"],
+  "include": ["lib/**/*", "stories/**/*"],
   "exclude": ["node_modules"]
 }

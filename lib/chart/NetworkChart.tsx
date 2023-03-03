@@ -1,18 +1,10 @@
-import React from "react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-// import {
-//   forceCenter,
-//   forceLink,
-//   forceManyBody,
-//   forceSimulation,
-//   select,
-//   forceX,
-//   forceY,
-//   drag,
-//   scaleLinear,
-//   extent,
-//   zoom,
-// } from "d3";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
   forceCenter,
   forceLink,
@@ -20,16 +12,16 @@ import {
   forceSimulation,
   forceX,
   forceY,
-} from "d3-force";
-import { select } from "d3-selection";
-import { drag } from "d3-drag";
-import { scaleLinear } from "d3-scale";
-import { extent } from "d3-array";
-import { zoom } from "d3-zoom";
-import { RectClipPath } from "@visx/clip-path";
-import withParentSize from "../hooks/withParentSize";
-import type { ComponentType } from "react";
-import type { SimulationLinkDatum, NumberValue } from "d3";
+} from 'd3-force';
+import { select } from 'd3-selection';
+import { drag } from 'd3-drag';
+import { scaleLinear } from 'd3-scale';
+import { extent } from 'd3-array';
+import { zoom } from 'd3-zoom';
+import { RectClipPath } from '@visx/clip-path';
+import type { ComponentType } from 'react';
+import type { SimulationLinkDatum, NumberValue } from 'd3';
+import withParentSize from '../hooks/withParentSize';
 
 interface Props {
   /**
@@ -49,7 +41,7 @@ interface Props {
 
 const NetworkChart: ComponentType<Props> = ({ id, data, width, height }) => {
   const svgRef = useRef<SVGSVGElement>(null);
-  const [isZoom, _] = useState(false);
+  const [isZoom] = useState(false);
 
   // const colorScale = useMemo(
   //   () =>
@@ -61,58 +53,66 @@ const NetworkChart: ComponentType<Props> = ({ id, data, width, height }) => {
   const strokeScale = useMemo(
     () =>
       scaleLinear()
-        .domain(extent(data.links.map((d) => +d.value)) as NumberValue[])
+        .domain(extent(data.links.map(d => +d.value)) as NumberValue[])
         .range([1, 10]),
-    [data.links]
+    [data.links],
   );
-  const circleScale = useMemo(() => {
-    return scaleLinear()
-      .domain(extent(data.nodes.map((d) => +d.value)) as NumberValue[])
-      .range([5, 30]);
-  }, [data.nodes]);
+  const circleScale = useMemo(
+    () =>
+      scaleLinear()
+        .domain(extent(data.nodes.map(d => +d.value)) as NumberValue[])
+        .range([5, 30]),
+    [data.nodes],
+  );
 
   const nodeDrag = (simulation: any) => {
     const dragstarted = (event: any) => {
       if (!event.active) simulation.alphaTarget(0.3).restart();
+      // eslint-disable-next-line no-param-reassign
       event.subject.fx = event.subject.x;
+      // eslint-disable-next-line no-param-reassign
       event.subject.fy = event.subject.y;
     };
 
     const dragged = (event: any) => {
+      // eslint-disable-next-line no-param-reassign
       event.subject.fx = event.x;
+      // eslint-disable-next-line no-param-reassign
       event.subject.fy = event.y;
     };
 
     const dragended = (event: any) => {
       if (!event.active) simulation.alphaTarget(0);
+      // eslint-disable-next-line no-param-reassign
       event.subject.fx = null;
+      // eslint-disable-next-line no-param-reassign
       event.subject.fy = null;
     };
 
     return drag()
-      .on("start", dragstarted)
-      .on("drag", dragged)
-      .on("end", dragended);
+      .on('start', dragstarted)
+      .on('drag', dragged)
+      .on('end', dragended);
   };
 
   const drawChart = useCallback(() => {
     const svg = select(svgRef.current);
 
-    const chartArea = svg.select("g.chart");
+    const chartArea = svg.select('g.chart');
 
     const simulation = forceSimulation(data.nodes as any)
       .force(
-        "link",
+        'link',
         forceLink(data.links)
           .id((d: any) => d.id)
-          .distance(250)
+          .distance(250),
       )
-      .force("center", forceCenter(width! / 2, height! / 2))
-      .force("charge", forceManyBody().strength(-300))
-      .force("x", forceX(width!))
-      .force("y", forceY(height!));
+      .force('center', forceCenter(width! / 2, height! / 2))
+      .force('charge', forceManyBody().strength(-300))
+      .force('x', forceX(width!))
+      .force('y', forceY(height!));
 
-    const nodeLinkStatus = Object.assign({});
+    const nodeLinkStatus = {};
     data.links.forEach((d: any) => {
       nodeLinkStatus[`${d.source.index},${d.target.index}`] = 1;
       nodeLinkStatus[`${d.target.index},${d.source.index}`] = 1;
@@ -127,40 +127,54 @@ const NetworkChart: ComponentType<Props> = ({ id, data, width, height }) => {
     }
 
     const link = chartArea
-      .select("g.link")
-      .selectAll("line")
+      .select('g.link')
+      .selectAll('line')
       .data(data.links)
-      .join("line")
-      .style("stroke-width", (d) => strokeScale(+d.value))
-      .attr("stroke", "#aaa")
-      .attr("x1", (d: SimulationLinkDatum<any>) => d.source.x)
-      .attr("y1", (d: SimulationLinkDatum<any>) => d.source.y)
-      .attr("x2", (d: SimulationLinkDatum<any>) => d.target.x)
-      .attr("y2", (d: SimulationLinkDatum<any>) => d.target.y);
+      .join('line')
+      .style('stroke-width', d => strokeScale(+d.value))
+      .attr('stroke', '#aaa')
+      .attr('x1', (d: SimulationLinkDatum<any>) => d.source.x)
+      .attr('y1', (d: SimulationLinkDatum<any>) => d.source.y)
+      .attr('x2', (d: SimulationLinkDatum<any>) => d.target.x)
+      .attr('y2', (d: SimulationLinkDatum<any>) => d.target.y);
+
+    const text = chartArea
+      .select('g.text')
+      .selectAll('text')
+      .data(data.nodes)
+      .join('text')
+      .text(d => d.id)
+      .attr('fill', 'white')
+      .attr('text-anchor', 'middle')
+      .attr('alignment-baseline', 'middle')
+      .attr('font-size', d => `${circleScale(d.value) / 1.5}px`)
+      // .attr("font-size", "10px")
+      .attr('pointer-events', 'none')
+      .attr('x', (d: any) => d.x)
+      .attr('y', (d: any) => d.y);
 
     const node = chartArea
-      .select("g.node")
-      .selectAll("circle")
+      .select('g.node')
+      .selectAll('circle')
       .data(data.nodes)
-      .join("circle")
-      .attr("r", (d) => circleScale(+d.value))
+      .join('circle')
+      .attr('r', d => circleScale(+d.value))
       // .attr("r", 10)
       //   .attr("fill", (d) => colorScale(d.group) as string)
-      .attr("fill", "#354965")
-      .attr("cx", (d: any) => d.x)
-      .attr("cy", (d: any) => d.y)
-      .on("mouseover", function (e, d: any) {
+      .attr('fill', '#354965')
+      .attr('cx', (d: any) => d.x)
+      .attr('cy', (d: any) => d.y)
+      .on('mouseover', (_e, d: any) => {
         node
           .transition()
-          .attr("r", (o) => {
+          .attr('r', o => {
             if (isConnected(d, o)) {
               return 30;
-            } else {
-              return circleScale(o.value);
-              // return 10;
             }
+            return circleScale(o.value);
+            // return 10;
           })
-          .style("opacity", function (o) {
+          .style('opacity', o => {
             let thisOpacity: number;
             if (isConnected(d, o)) {
               thisOpacity = 1;
@@ -169,64 +183,47 @@ const NetworkChart: ComponentType<Props> = ({ id, data, width, height }) => {
             }
             return thisOpacity;
           });
-        link.transition().style("opacity", function (l) {
-          if (d == l.source || d == l.target) {
+        link.transition().style('opacity', l => {
+          if (d === l.source || d === l.target) {
             return 1;
-          } else {
-            return 0.1;
           }
+          return 0.1;
         });
-        text.transition().attr("font-size", (o) => {
+        text.transition().attr('font-size', o => {
           if (isConnected(d, o)) {
-            return "20px";
-          } else {
-            return circleScale(o.value) / 1.5 + "px";
-            // return "10px";
+            return '20px';
           }
+          return `${circleScale(o.value) / 1.5}px`;
+          // return "10px";
         });
       })
-      .on("mouseleave", () => {
+      .on('mouseleave', () => {
         node
           .transition()
-          .attr("r", (d) => circleScale(d.value))
+          .attr('r', d => circleScale(d.value))
           // .attr("r", 10)
-          .style("opacity", 1);
-        link.transition().style("opacity", 1);
+          .style('opacity', 1);
+        link.transition().style('opacity', 1);
         text
           .transition()
-          .attr("font-size", (d) => circleScale(d.value) / 1.5 + "px");
+          .attr('font-size', d => `${circleScale(d.value) / 1.5}px`);
         // .attr("font-size", "10px");
       })
       .call(nodeDrag(simulation) as any);
 
-    const text = chartArea
-      .select("g.text")
-      .selectAll("text")
-      .data(data.nodes)
-      .join("text")
-      .text((d) => d.id)
-      .attr("fill", "white")
-      .attr("text-anchor", "middle")
-      .attr("alignment-baseline", "middle")
-      .attr("font-size", (d) => circleScale(d.value) / 1.5 + "px")
-      // .attr("font-size", "10px")
-      .attr("pointer-events", "none")
-      .attr("x", (d: any) => d.x)
-      .attr("y", (d: any) => d.y);
-
     function ticked() {
       link
-        .attr("x1", (d: SimulationLinkDatum<any>) => d.source.x)
-        .attr("y1", (d: SimulationLinkDatum<any>) => d.source.y)
-        .attr("x2", (d: SimulationLinkDatum<any>) => d.target.x)
-        .attr("y2", (d: SimulationLinkDatum<any>) => d.target.y);
+        .attr('x1', (d: SimulationLinkDatum<any>) => d.source.x)
+        .attr('y1', (d: SimulationLinkDatum<any>) => d.source.y)
+        .attr('x2', (d: SimulationLinkDatum<any>) => d.target.x)
+        .attr('y2', (d: SimulationLinkDatum<any>) => d.target.y);
 
-      node.attr("cx", (d: any) => d.x).attr("cy", (d: any) => d.y);
+      node.attr('cx', (d: any) => d.x).attr('cy', (d: any) => d.y);
 
-      text.attr("x", (d: any) => d.x).attr("y", (d: any) => d.y);
+      text.attr('x', (d: any) => d.x).attr('y', (d: any) => d.y);
     }
 
-    simulation.on("tick", ticked);
+    simulation.on('tick', ticked);
 
     svg.call(
       zoom()
@@ -235,9 +232,9 @@ const NetworkChart: ComponentType<Props> = ({ id, data, width, height }) => {
           [0, 0],
           [width!, height!],
         ])
-        .on("zoom", (e) => {
-          svg.selectAll("g").attr("transform", e.transform);
-        }) as any
+        .on('zoom', e => {
+          svg.selectAll('g').attr('transform', e.transform);
+        }) as any,
     );
   }, [circleScale, data.links, data.nodes, height, isZoom, strokeScale, width]);
 
@@ -256,20 +253,18 @@ const NetworkChart: ComponentType<Props> = ({ id, data, width, height }) => {
         clipPath={`url(#${id}-chart-clipPath)`}
         ref={svgRef}
       >
-        <>
-          <RectClipPath
-            id={`${id}-chart-clipPath`}
-            x={0}
-            y={0}
-            width={width}
-            height={height}
-          />
-          <g className="chart">
-            <g className="link" />
-            <g className="node" />
-            <g className="text" />
-          </g>
-        </>
+        <RectClipPath
+          id={`${id}-chart-clipPath`}
+          x={0}
+          y={0}
+          width={width}
+          height={height}
+        />
+        <g className="chart">
+          <g className="link" />
+          <g className="node" />
+          <g className="text" />
+        </g>
       </svg>
     </div>
   );

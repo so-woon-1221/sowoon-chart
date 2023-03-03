@@ -1,10 +1,9 @@
-import React, { useState, useCallback, useMemo } from "react";
-// import { select, arc, pie, scaleOrdinal } from "d3";
-import { select } from "d3-selection";
-import { arc, pie } from "d3-shape";
-import { scaleOrdinal } from "d3-scale";
-import withParentSize from "../hooks/withParentSize";
-import type { ComponentType } from "react";
+import React, { useState, useCallback, useMemo } from 'react';
+import { select } from 'd3-selection';
+import { arc, pie } from 'd3-shape';
+import { scaleOrdinal } from 'd3-scale';
+import type { ComponentType } from 'react';
+import withParentSize from '../hooks/withParentSize';
 
 interface Props {
   /**
@@ -47,17 +46,18 @@ const PieChart: ComponentType<Props> = ({
   height,
   id,
 }) => {
-  const [tooltipData, setTooltipData] =
-    useState<{
-      key: string;
-      value: number;
-    }>();
+  const [tooltipData, setTooltipData] = useState<{
+    key: string;
+    value: number;
+  }>();
 
-  const color = useMemo(() => {
-    return scaleOrdinal()
-      .domain(data.map((d) => d.key))
-      .range(colorList);
-  }, [colorList, data]);
+  const color = useMemo(
+    () =>
+      scaleOrdinal()
+        .domain(data.map(d => d.key))
+        .range(colorList),
+    [colorList, data],
+  );
 
   const drawChart = useCallback(() => {
     const pieWidth = width! - margin.left - margin.right;
@@ -77,55 +77,53 @@ const PieChart: ComponentType<Props> = ({
     const chartData = pieGenerator(data as any);
 
     select(`#${id}-pie-chart`)
-      .selectAll("path")
+      .selectAll('path')
       .data(chartData)
-      .join("path")
+      .join('path')
       .attr(
-        "transform",
+        'transform',
         `translate(${pieWidth / 2}, ${
           pieHeight! / 2 + margin.top + margin.bottom
-        })`
+        })`,
       )
-      .attr("fill", (d: any) => {
-        return color(d.data.key) as string;
-      })
-      .attr("stroke", "rgba(0,0,0,0.3)")
-      .on("mouseover touchmove", function (_, d: any) {
+      .attr('fill', (d: any) => color(d.data.key) as string)
+      .attr('stroke', 'rgba(0,0,0,0.3)')
+      .on('mouseover touchmove', function handler(_, d: any) {
         select(this)
           .transition()
           .attr(
-            "transform",
+            'transform',
             `translate(${pieWidth / 2}, ${
               pieHeight! / 2 + margin.top + margin.bottom
-            }) scale(1.05)`
+            }) scale(1.05)`,
           )
-          .attr("filter", "drop-shadow(1px 1px 4px rgba(0,0,0,0.4))");
+          .attr('filter', 'drop-shadow(1px 1px 4px rgba(0,0,0,0.4))');
         setTooltipData({ key: d.data.key, value: d.data.value });
       })
-      .on("mouseleave touchend", function () {
+      .on('mouseleave touchend', function handler() {
         select(this)
           .transition()
           .attr(
-            "transform",
+            'transform',
             `translate(${pieWidth / 2}, ${
               pieHeight! / 2 + margin.top + margin.bottom
-            }) scale(1)`
+            }) scale(1)`,
           )
-          .attr("filter", "");
+          .attr('filter', '');
         setTooltipData(undefined);
       });
-    select(`#${id}-pie-chart`).selectAll("path").attr("d", arcValue);
-    /////
-    return <g id={`${id}-pie-chart`}></g>;
+    select(`#${id}-pie-chart`).selectAll('path').attr('d', arcValue);
+    /// //
+    return <g id={`${id}-pie-chart`} />;
   }, [color, data, height, id, width]);
 
-  const drawLegend = useCallback(() => {
-    return color.domain().map((d: any, i: number) => {
-      return (
+  const drawLegend = useCallback(
+    () =>
+      color.domain().map((d: string) => (
         <li
-          key={`legend-${i}`}
+          key={`legend-${d}`}
           className="flex items-center gap-1"
-          style={{ fontSize: "14px" }}
+          style={{ fontSize: '14px' }}
         >
           <svg width={15} height={15}>
             <rect
@@ -138,15 +136,15 @@ const PieChart: ComponentType<Props> = ({
           </svg>
           <span>{d}</span>
         </li>
-      );
-    });
-  }, [color]);
+      )),
+    [color],
+  );
 
   return (
     <div className="flex h-full w-full items-center relative justify-center">
       <div className="flex justify-center overflow-y-auto absolute top-0 left-1/2 -translate-x-1/2 translate-y-1/2">
         <ul
-          id={`pie-legend`}
+          id="pie-legend"
           className="my-auto flex w-full gap-3 overflow-x-auto"
         >
           {drawLegend()}

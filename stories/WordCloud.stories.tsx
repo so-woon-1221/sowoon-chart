@@ -1,39 +1,39 @@
-import React from "react";
-import WordCloudChart from "../lib/chart/WordCloud";
-import { ComponentStory, Meta } from "@storybook/react";
+import React from 'react';
+import { ComponentStory, Meta } from '@storybook/react';
+import WordCloudChart from '../lib/chart/WordCloud';
 
 export default {
-  title: "WordCloud",
+  title: 'WordCloud',
   component: WordCloudChart,
   argTypes: {
     data: {
       control: {
-        type: "object",
+        type: 'object',
       },
     },
     type: {
       control: {
-        type: "select",
+        type: 'select',
       },
-      options: ["rectangular", "archimedean"],
+      options: ['rectangular', 'archimedean'],
     },
   },
 } as Meta;
 
-const Template: ComponentStory<typeof WordCloudChart> = (args) => (
+const Template: ComponentStory<typeof WordCloudChart> = args => (
   <WordCloudChart {...args} />
 );
 
 export const WordCloud = Template.bind({});
 WordCloud.args = {
   data: [
-    { text: "A", value: 100 },
-    { text: "B", value: 200 },
-    { text: "C", value: 300 },
-    { text: "D", value: 400 },
+    { text: 'A', value: 100 },
+    { text: 'B', value: 200 },
+    { text: 'C', value: 300 },
+    { text: 'D', value: 400 },
   ],
-  id: "word-cloud-chart",
-  type: "rectangular",
+  id: 'word-cloud-chart',
+  type: 'rectangular',
   height: 500,
   width: 1000,
 };
