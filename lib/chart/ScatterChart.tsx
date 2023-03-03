@@ -101,10 +101,10 @@ const Scatter: ComponentType<Props> = ({
   }, [yScale, width, id]);
 
   const xAxis = useCallback(() => {
-    const divider = Math.floor(data.length / 6);
+    const divider = data.length <= 5 ? 1 : Math.floor(data.length / 6);
     const axis = axisBottom(xScale)
       .tickSize(3)
-      .tickValues(xScale.domain().filter((d, i) => i % divider === 0))
+      .tickValues(xScale.domain().filter((_d, i) => i % divider === 0))
       .tickPadding(5)
       .tickFormat(d => d);
 

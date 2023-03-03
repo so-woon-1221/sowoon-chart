@@ -19,8 +19,8 @@ const Template: ComponentStory<typeof ScatterChart> = args => (
 );
 
 export const Scatter = Template.bind({});
-const data = Array.from({ length: 100 }, (_, i) => ({
-  x: i.toString(),
+const data = Array.from({ length: 100 }, () => ({
+  x: Math.random().toString(36).substring(2),
   y: Math.random() * 100,
 }));
 Scatter.args = {

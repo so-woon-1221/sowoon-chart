@@ -209,7 +209,7 @@ const BarChart: ComponentType<ChartProps> = ({
   }, [yScale, width, id, data.length]);
 
   const xAxis = useCallback(() => {
-    const divider = Math.floor(data.length / 6);
+    const divider = data.length <= 5 ? 1 : Math.floor(data.length / 6);
     const axis = axisBottom(xScale)
       .tickSize(3)
       .tickValues(xScale.domain().filter((d, i) => i % divider === 0))
