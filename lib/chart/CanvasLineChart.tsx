@@ -54,7 +54,10 @@ const LineCanvasChart: ComponentType<ChartProps> = ({
     [data],
   );
 
-  const colorScale = scaleOrdinal<string>().domain(keyList).range(colorList);
+  const colorScale = useMemo(
+    () => scaleOrdinal<string>().domain(keyList).range(colorList),
+    [colorList, keyList],
+  );
 
   const yList = useMemo(() => {
     const yArray: number[] = [];
