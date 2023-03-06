@@ -1,12 +1,12 @@
 import React from 'react';
 import { ComponentStory, Meta } from '@storybook/react';
 import { max } from 'd3-array';
-import LineChart from '../lib/chart/LineChart';
+import CanvasLineChart from '../lib/chart/CanvasLineChart';
 import type { ChartProps } from '../lib/util';
 
 export default {
-  title: 'LineChart',
-  component: LineChart,
+  title: 'Canvas Line Chart',
+  component: CanvasLineChart,
   argTypes: {
     data: {
       control: {
@@ -39,16 +39,15 @@ export default {
   },
 } as Meta;
 
-const Template: ComponentStory<typeof LineChart> = args => (
-  <LineChart {...args} />
+const Template: ComponentStory<typeof CanvasLineChart> = args => (
+  <CanvasLineChart {...args} />
 );
 
 export const Single = Template.bind({});
-const data = [
-  { x: '2020-01-01', y: 100000 },
-  { x: '2020-01-02', y: 200000 },
-  { x: '2020-01-03', y: 300000 },
-];
+const data = Array.from({ length: 100 }, (_d, i) => ({
+  x: i.toString(),
+  y: Math.random() * 100,
+}));
 Single.args = {
   data,
   id: 'single',

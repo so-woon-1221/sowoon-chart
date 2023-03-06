@@ -124,7 +124,7 @@ const LineChart: ComponentType<ChartProps> = ({
       );
     }
     return null;
-  }, [colorList, id, legendLabelList]);
+  }, [colorList, id, keyList, legendLabelList]);
 
   const drawSingleLine = useCallback(() => {
     const areaScale = area()
@@ -153,6 +153,7 @@ const LineChart: ComponentType<ChartProps> = ({
       .join('path')
       .attr('d', lineScale as any)
       .attr('stroke', colorList[0])
+      .attr('stroke-width', 2)
       .attr('fill', 'none');
 
     return null;
@@ -252,7 +253,7 @@ const LineChart: ComponentType<ChartProps> = ({
     gridArea.selectAll('line').attr('stroke', '#eee');
     gridArea.selectAll('path').attr('stroke', 'none');
     gridArea.call(gridY as any);
-  }, [yScale, width, id]);
+  }, [yScale, data.length, width, id]);
 
   const xAxis = useCallback(() => {
     const divider = data.length <= 5 ? 1 : Math.floor(data.length / 6);
@@ -289,7 +290,7 @@ const LineChart: ComponentType<ChartProps> = ({
     );
     axisArea.selectAll('path').attr('display', 'none');
     axisArea.call(axis as any);
-  }, [yScale, id]);
+  }, [yScale, data.length, id, yAxisLabel]);
 
   useEffect(() => {
     grid();

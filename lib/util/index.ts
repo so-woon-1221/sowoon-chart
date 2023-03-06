@@ -103,20 +103,22 @@ export interface ChartProps {
 export const makeDisplayNum = (numbers: number[]) => {
   if (max(numbers)! >= 100000) {
     let checkIndex = 10;
+    // eslint-disable-next-line no-constant-condition
     while (true) {
       let count = 0;
+      // eslint-disable-next-line no-restricted-syntax
       for (const number of numbers) {
-        if (number % checkIndex == 0) {
-          count++;
+        if (number % checkIndex === 0) {
+          count += 1;
         }
       }
-      if (count == numbers.length) {
+      if (count === numbers.length) {
         checkIndex *= 10;
       } else {
         break;
       }
     }
-    checkIndex = checkIndex / 10;
+    checkIndex /= 10;
     switch (checkIndex) {
       case 1:
         return ['', checkIndex];

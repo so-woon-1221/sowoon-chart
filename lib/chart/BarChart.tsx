@@ -120,7 +120,7 @@ const BarChart: ComponentType<ChartProps> = ({
       );
     }
     return null;
-  }, [colorList, id, legendLabelList]);
+  }, [colorList, id, keyList, legendLabelList]);
 
   /**
    * groupType이 none일때 차트 그리기
@@ -140,7 +140,7 @@ const BarChart: ComponentType<ChartProps> = ({
         d => height! - margin.bottom - yScale(d[keyList[0]] as number),
       )
       .attr('width', (xScale as ScaleBand<any>).bandwidth());
-  }, [data, height, id, keyList, xScale, yScale]);
+  }, [colorScale, data, height, id, keyList, xScale, yScale]);
 
   /**
    * groupType이 group일때 차트 그리기

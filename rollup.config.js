@@ -9,11 +9,12 @@ const tailwindcss = require('tailwindcss');
 const multiInput = require('rollup-plugin-multi-input').default;
 
 module.exports = {
-  input: 'lib/**/*.tsx',
+  // input: 'lib/**/*.tsx',
+  input: 'lib/index.tsx',
   output: [
     {
-      // file: "dist/index.js",
-      dir: 'src',
+      file: 'dist/index.js',
+      // dir: 'src',
       format: 'cjs',
       sourcemap: true,
       plugins: [
@@ -26,22 +27,22 @@ module.exports = {
       ],
     },
     {
-      // file: "dist/index.mjs",
-      dir: 'dist',
+      file: 'dist/index.mjs',
+      // dir: 'dist',
       format: 'es',
       sourcemap: true,
-      plugins: [
-        terser({
-          mangle: false,
-          compress: {
-            drop_console: true,
-          },
-        }),
-      ],
+      // plugins: [
+      //   terser({
+      //     mangle: false,
+      //     compress: {
+      //       drop_console: true,
+      //     },
+      //   }),
+      // ],
     },
   ],
   plugins: [
-    multiInput({ relative: 'lib' }),
+    // multiInput({ relative: 'lib' }),
     peerDepsExternal(),
     resolve(),
     commonjs(),
@@ -87,5 +88,6 @@ module.exports = {
     '@visx/clip-path',
     '@visx/pattern',
     'd3-cloud',
+    'lodash',
   ],
 };

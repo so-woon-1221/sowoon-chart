@@ -6,7 +6,9 @@ module.exports = {
   },
   extends: [
     'plugin:react/recommended',
+    'plugin:react-hooks/recommended',
     'airbnb',
+    'airbnb/hooks',
     'airbnb-typescript',
     'prettier',
   ],
@@ -44,5 +46,12 @@ module.exports = {
     ],
     'no-underscore-dangle': 'off',
     'react/jsx-props-no-spreading': 'off',
+    // unused vars
+    '@typescript-eslint/no-unused-vars': 'warn',
+    'no-unused-vars': 'warn',
+    // line between class members
+    '@typescript-eslint/lines-between-class-members': 'off',
+    // hooks
+    'react-hooks/exhaustive-deps': 'warn',
   },
 };

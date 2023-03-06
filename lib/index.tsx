@@ -1,4 +1,9 @@
-export { default as LineChart } from "./chart/LineChart";
-export { default as BarChart } from "./chart/BarChart";
-export { default as NetworkChart } from "./chart/NetworkChart";
-export { default as WordCloudChart } from "./chart/WordCloud";
+export { default as LineChart } from './chart/LineChart';
+export { default as BarChart } from './chart/BarChart';
+export { default as NetworkChart } from './chart/NetworkChart';
+export { default as WordCloudChart } from './chart/WordCloud';
+export { default as PieChart } from './chart/PieChart';
+export { default as ScatterChart } from './chart/ScatterChart';
+export { default as LineWithBrushChart } from './chart/LineWithBrushChart';
+export { default as BrushLineChart } from './chart/BrushLineChart';
+export { default as CanvasLineChart } from './chart/CanvasLineChart';

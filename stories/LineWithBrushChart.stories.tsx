@@ -5,7 +5,7 @@ import LineWithBrushChart from '../lib/chart/LineWithBrushChart';
 import { ChartProps } from '../lib/util';
 
 export default {
-  title: 'LineWithBrushChart',
+  title: 'Line With Brush Chart',
   component: LineWithBrushChart,
   argTypes: {
     data: {

@@ -98,7 +98,7 @@ const Scatter: ComponentType<Props> = ({
     gridArea.selectAll('line').attr('stroke', '#eee');
     gridArea.selectAll('path').attr('stroke', 'none');
     gridArea.call(gridY as any);
-  }, [yScale, width, id]);
+  }, [yScale, data.length, width, id]);
 
   const xAxis = useCallback(() => {
     const divider = data.length <= 5 ? 1 : Math.floor(data.length / 6);
@@ -135,7 +135,7 @@ const Scatter: ComponentType<Props> = ({
     );
     axisArea.selectAll('path').attr('display', 'none');
     axisArea.call(axis as any);
-  }, [yScale, id]);
+  }, [yScale, data.length, id, yAxisLabel]);
 
   useEffect(() => {
     grid();

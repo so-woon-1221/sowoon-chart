@@ -1,15 +1,15 @@
-import React from "react";
-import { ParentSize } from "@visx/responsive";
-import type { ComponentType } from "react";
+import React from 'react';
+import { ParentSize } from '@visx/responsive';
+import type { ComponentType } from 'react';
 
 const withParentSize = <
   P extends {
     data: any;
     id: string;
     height?: number;
-  }
+  },
 >(
-  ChartComponent: ComponentType<P>
+  ChartComponent: ComponentType<P>,
 ): ComponentType<
   {
     data: any;
@@ -23,20 +23,18 @@ const withParentSize = <
     }
   >
 > => {
-  const Component = (props: { data: any; id: string; height?: number }) => {
-    return (
-      <ParentSize>
-        {({ width: parentWidth, height: parentHeight }) => {
-          const combinedProps = {
-            ...props,
-            width: parentWidth,
-            height: props.height ?? parentHeight,
-          };
-          return <ChartComponent {...(combinedProps as unknown as P)} />;
-        }}
-      </ParentSize>
-    );
-  };
+  const Component = props => (
+    <ParentSize>
+      {({ width: parentWidth, height: parentHeight }) => {
+        const combinedProps = {
+          ...props,
+          width: parentWidth,
+          height: props?.height ?? parentHeight,
+        };
+        return <ChartComponent {...(combinedProps as unknown as P)} />;
+      }}
+    </ParentSize>
+  );
   return Component;
 };
 export default withParentSize;

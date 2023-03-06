@@ -176,13 +176,13 @@ const SparkLineCanvas: ComponentType<Props> = ({
             const index = bisectLeft(xDomain, x0 - margin.left) - 1;
             const index2 = bisectLeft(xDomain, x1 - margin.left) - 1;
             const domain = data
-              .filter((d, i) => i >= index && i <= index2)
+              .filter((_, i) => i >= index && i <= index2)
               .map(d => d.x);
 
             setBrushDomain(domain);
           }
         }),
-    [height, width, margin, data, xScale],
+    [width, height, data, setBrushDomain, xScale],
   );
 
   useEffect(() => {
