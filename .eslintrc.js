@@ -53,5 +53,7 @@ module.exports = {
     '@typescript-eslint/lines-between-class-members': 'off',
     // hooks
     'react-hooks/exhaustive-deps': 'warn',
+    // no webpack loader syntax in imports
+    'import/no-webpack-loader-syntax': 'off',
   },
 };

@@ -1,9 +1,10 @@
-import React, { useCallback, useEffect, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { extent } from 'd3-array';
-import { scaleLog } from 'd3-scale';
+import { scaleLinear } from 'd3-scale';
 import { select } from 'd3-selection';
 import type { ComponentType } from 'react';
-import cloud from 'd3-cloud';
+// @ts-ignore
+import WordCloudWorker from 'worker-loader!./canvas/wordcloud.worker';
 import withParentSize from '../hooks/withParentSize';
 
 interface Props {
@@ -55,9 +56,10 @@ const WordCloud: ComponentType<Props> = ({
   ],
   type = 'rectangular',
 }) => {
+  const [loading, setLoading] = useState(false);
   const fontScale = useMemo(
     () =>
-      scaleLog()
+      scaleLinear()
         .domain(extent(data.map(d => +d.value)) as [number, number])
         .range([15, 80]),
     [data],
@@ -79,60 +81,39 @@ const WordCloud: ComponentType<Props> = ({
 
   const drawChart = useCallback(() => {
     if (width && height) {
-      const layout = cloud()
-        .size([width!, height!])
-        .words(wordData)
-        .padding(2)
-        .rotate(0)
-        .font('Impact')
-        .fontSize(d => d.size as number)
-        .spiral(type)
-        .on('end', words => {
-          select(`#${id}-svg`)
-            .attr('transform', `translate(${width! / 2}, ${height! / 2})`)
-            .selectAll('text')
-            .data(words)
-            .join('text')
-            .style('font-size', d => `${d.size}px`)
-            .style('font-family', 'Impact')
-            .attr('text-anchor', 'middle')
-            .attr(
-              'transform',
-              d => `translate(${d.x}, ${d.y}) rotate(${d.rotate})`,
-            )
-            .text(d => d.text as string)
-            .attr('fill', d => colorMap.get(d.text))
-            .attr('cursor', 'pointer')
-            .on('mouseover', (e, d: any) => {
-              const texts = (
-                select(select(e.target).node().parentNode).selectAll(
-                  'text',
-                ) as any
-              )._groups[0];
-              texts.forEach((text: string) => {
-                if (select(text).text() !== d.text) {
-                  select(text).transition().attr('opacity', 0.1);
-                } else {
-                  select(text).attr('opacity', 1);
-                }
-              });
-            })
-            .on('mouseleave', e => {
-              select(select(e.target).node().parentNode)
-                .selectAll('text')
-                .transition()
-                .attr('opacity', 1);
-            });
-        });
+      const worker: Worker = new WordCloudWorker();
 
-      layout.start();
+      worker.postMessage({
+        width,
+        height,
+        data: wordData,
+        padding: 0,
+        fontFamily: 'Impact',
+        type,
+      });
+      worker.onmessage = e => {
+        console.log(e);
 
-      return () => {
-        layout.stop();
+        const words = e.data;
+
+        select(`#${id}-svg`)
+          .attr('transform', `translate(${width! / 2}, ${height! / 2})`)
+          .selectAll('text')
+          .data(words)
+          .join('text')
+          .style('font-size', (d: any) => `${d.size}px`)
+          .style('font-family', 'Impact')
+          .attr('text-anchor', 'middle')
+          .attr(
+            'transform',
+            (d: any) => `translate(${d.x}, ${d.y}) rotate(${d.rotate})`,
+          )
+          .text((d: any) => d.text as string)
+          .attr('fill', (d: any) => colorMap.get(d.text));
       };
     }
     return null;
-  }, [colorMap, height, id, type, wordData, width]);
+  }, [width, height, wordData, type, id, colorMap]);
 
   useEffect(() => {
     drawChart();
@@ -143,6 +124,7 @@ const WordCloud: ComponentType<Props> = ({
       <svg width={width} height={height}>
         <g id={`${id}-svg`} />
       </svg>
+      <div>로딩중</div>
     </div>
   );
 };

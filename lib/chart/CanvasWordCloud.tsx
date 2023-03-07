@@ -6,13 +6,11 @@ import React, {
   useState,
 } from 'react';
 import { extent } from 'd3-array';
-import { scaleLinear, scaleLog } from 'd3-scale';
+import { scaleLinear } from 'd3-scale';
 import type { ComponentType } from 'react';
 import cloud from 'd3-cloud';
-import { hierarchy, pack } from 'd3-hierarchy';
-
-import CanvasText from './canvas/CanvasText';
 import withParentSize from '../hooks/withParentSize';
+import CanvasText from './canvas/CanvasText';
 
 interface Props {
   /**
@@ -123,6 +121,33 @@ const WordCloud: ComponentType<Props> = ({
       return () => {
         layout.stop();
       };
+
+      // const hie = hierarchy({ children: wordData })
+      //   .sum(d => d.size)
+      //   .sort((a, b) => b.size - a.size);
+
+      // const pac = pack().size([width!, height!]).padding(1);
+
+      // const root = pac(hie);
+
+      // const packNodes = root.descendants().slice(1);
+
+      // const simulation = forceSimulation(packNodes)
+      //   .force('collide', forceCollide(d => d.r + 15).iterations(2))
+      //   .on('tick', () => {
+      //     context!.clearRect(0, 0, width!, height!);
+      //     packNodes.forEach((d: any) => {
+      //       const text = new CanvasText({
+      //         text: d.data.text,
+      //         x: d.x,
+      //         y: d.y,
+      //         fontSize: d.r,
+      //         fontStyle: 'Impact',
+      //         color: colorMap.get(d.data.text),
+      //       });
+      //       text.draw(context);
+      //     });
+      //   });
     }
     return null;
   }, [colorMap, context, height, type, width, wordData]);

@@ -25,7 +25,7 @@ const Template: ComponentStory<typeof WordCloudChart> = args => (
 );
 
 export const WordCloud = Template.bind({});
-const data = Array.from({ length: 200 }, () => ({
+const data = Array.from({ length: 390 }, () => ({
   text: Math.random().toString(36).substring(2),
   value: Math.random() * 100,
 }));
@@ -34,5 +34,4 @@ WordCloud.args = {
   id: 'word-cloud-chart',
   type: 'rectangular',
   height: 500,
-  width: 1000,
 };
