@@ -11,45 +11,11 @@ import type { ComponentType } from 'react';
 // @ts-ignore
 import WordCloudWorker from 'worker-loader!./canvas/wordcloud.worker';
 import type { Word } from 'd3-cloud';
-import cloud from 'd3-cloud';
 import withParentSize from '../hooks/withParentSize';
 import CanvasText from './canvas/CanvasText';
+import { WordCloudProps } from '../util';
 
-interface Props {
-  /**
-   * Data for the chart.
-   * Each element of the array should have the following format:
-   * {
-   *  text: string;
-   *  value: number;
-   * }
-   */
-  data: {
-    text: string;
-    value: number;
-  }[];
-  /**
-   * ID of the chart
-   * */
-  id: string;
-  width?: number;
-  height?: number;
-  /**
-   * Color list for the chart
-   * - five colors are used by default
-   * - rotate when the number of data points exceeds the number of colors
-   * @default ["#0A0908", "#0891b2", "#C6AC8F", "#60D394", "#D1495B", "#9b5de5"]
-   */
-  colorList?: string[];
-  /**
-   * Type of the spiral
-   * - "rectangular" or "archimedean"
-   * @default "rectangular"
-   * */
-  type?: 'rectangular' | 'archimedean';
-}
-
-const WordCloud: ComponentType<Props> = ({
+const WordCloud: ComponentType<WordCloudProps> = ({
   data,
   width,
   height,
@@ -63,9 +29,11 @@ const WordCloud: ComponentType<Props> = ({
     '#9b5de5',
   ],
   type = 'rectangular',
+  spinner = 'Loading...',
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [context, setContext] = useState<CanvasRenderingContext2D | null>(null);
+  const spinnerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (canvasRef.current) {
@@ -109,15 +77,9 @@ const WordCloud: ComponentType<Props> = ({
       });
       worker.onmessage = e => {
         if (e.data.type === 'start') {
-          context.clearRect(0, 0, width, height);
-
-          context.font = '30px Sans-serif';
-          context.fillStyle = '#000';
-          context.fillText('Loading...', width / 2, height / 2);
-          context.textAlign = 'center';
-          context.textBaseline = 'middle';
+          spinnerRef.current!.style.display = 'block';
         } else if (e.data.type === 'end') {
-          context.clearRect(0, 0, width, height);
+          spinnerRef.current!.style.display = 'none';
 
           const words: Word[] = e.data.data;
           words.forEach(d => {
@@ -143,6 +105,12 @@ const WordCloud: ComponentType<Props> = ({
   return (
     <div className="h-full w-full select-text">
       <canvas width={width} height={height} ref={canvasRef} />
+      <div
+        ref={spinnerRef}
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+      >
+        {spinner}
+      </div>
     </div>
   );
 };

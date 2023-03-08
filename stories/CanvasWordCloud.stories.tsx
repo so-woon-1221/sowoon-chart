@@ -34,4 +34,5 @@ CanvasWordCloud.args = {
   id: 'word-cloud-chart',
   type: 'rectangular',
   height: 500,
+  // spinner: '워드클라우드 로딩중',
 };

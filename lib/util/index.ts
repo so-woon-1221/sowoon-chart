@@ -100,6 +100,47 @@ export interface ChartProps {
   height?: number;
 }
 
+export interface WordCloudProps {
+  /**
+   * Data for the chart.
+   * Each element of the array should have the following format:
+   * {
+   *  text: string;
+   *  value: number;
+   * }
+   */
+  data: {
+    text: string;
+    value: number;
+  }[];
+  /**
+   * ID of the chart
+   * */
+  id: string;
+  width?: number;
+  height?: number;
+  /**
+   * Color list for the chart
+   * - five colors are used by default
+   * - rotate when the number of data points exceeds the number of colors
+   * @default ["#0A0908", "#0891b2", "#C6AC8F", "#60D394", "#D1495B", "#9b5de5"]
+   */
+  colorList?: string[];
+  /**
+   * Type of the spiral
+   * - "rectangular" or "archimedean"
+   * @default "rectangular"
+   * */
+  type?: 'rectangular' | 'archimedean';
+  /**
+   * WordCloud Web worker spinner
+   * - the spinner is displayed while the Web worker is running.
+   * - If not specified, the default spinner is used.
+   * @default undefined
+   * */
+  spinner?: JSX.Element | string;
+}
+
 export const makeDisplayNum = (numbers: number[]) => {
   if (max(numbers)! >= 100000) {
     let checkIndex = 10;

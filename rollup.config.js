@@ -6,7 +6,7 @@ const peerDepsExternal = require('rollup-plugin-peer-deps-external');
 const typescript = require('rollup-plugin-typescript2');
 const postcss = require('rollup-plugin-postcss');
 const tailwindcss = require('tailwindcss');
-const multiInput = require('rollup-plugin-multi-input').default;
+// const multiInput = require('rollup-plugin-multi-input').default;
 const webWorkerLoader = require('rollup-plugin-web-worker-loader');
 
 module.exports = {
@@ -18,28 +18,28 @@ module.exports = {
       // dir: 'src',
       format: 'cjs',
       sourcemap: true,
-      // plugins: [
-      //   terser({
-      //     mangle: false,
-      //     compress: {
-      //       drop_console: true,
-      //     },
-      //   }),
-      // ],
+      plugins: [
+        terser({
+          mangle: false,
+          compress: {
+            drop_console: true,
+          },
+        }),
+      ],
     },
     {
-      file: 'dist/index.mjs',
+      file: 'src/index.mjs',
       // dir: 'dist',
       format: 'es',
       sourcemap: true,
-      // plugins: [
-      //   terser({
-      //     mangle: false,
-      //     compress: {
-      //       drop_console: true,
-      //     },
-      //   }),
-      // ],
+      plugins: [
+        terser({
+          mangle: false,
+          compress: {
+            drop_console: true,
+          },
+        }),
+      ],
     },
   ],
   plugins: [
@@ -71,12 +71,12 @@ module.exports = {
     webWorkerLoader({
       pattern: /worker-loader!(.+)/,
       targetPlatform: 'browser',
+      // inline: false,
     }),
   ],
   external: [
     'react',
     'react-dom',
-    // "d3",
     'd3-scale',
     'd3-shape',
     'd3-array',
@@ -93,7 +93,6 @@ module.exports = {
     '@visx/responsive',
     '@visx/clip-path',
     '@visx/pattern',
-    'd3-cloud',
     'lodash',
   ],
 };

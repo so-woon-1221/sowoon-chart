@@ -1,48 +1,19 @@
-import React, { useCallback, useEffect, useMemo } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  ComponentType,
+  useRef,
+} from 'react';
 import { extent } from 'd3-array';
 import { scaleLinear } from 'd3-scale';
 import { select } from 'd3-selection';
-import type { ComponentType } from 'react';
 // @ts-ignore
 import WordCloudWorker from 'worker-loader!./canvas/wordcloud.worker';
-import cloud from 'd3-cloud';
 import withParentSize from '../hooks/withParentSize';
+import { WordCloudProps } from '../util';
 
-interface Props {
-  /**
-   * Data for the chart.
-   * Each element of the array should have the following format:
-   * {
-   *  text: string;
-   *  value: number;
-   * }
-   */
-  data: {
-    text: string;
-    value: number;
-  }[];
-  /**
-   * ID of the chart
-   * */
-  id: string;
-  width?: number;
-  height?: number;
-  /**
-   * Color list for the chart
-   * - five colors are used by default
-   * - rotate when the number of data points exceeds the number of colors
-   * @default ["#0A0908", "#0891b2", "#C6AC8F", "#60D394", "#D1495B", "#9b5de5"]
-   */
-  colorList?: string[];
-  /**
-   * Type of the spiral
-   * - "rectangular" or "archimedean"
-   * @default "rectangular"
-   * */
-  type?: 'rectangular' | 'archimedean';
-}
-
-const WordCloud: ComponentType<Props> = ({
+const WordCloud: ComponentType<WordCloudProps> = ({
   data,
   width,
   height,
@@ -56,7 +27,9 @@ const WordCloud: ComponentType<Props> = ({
     '#9b5de5',
   ],
   type = 'rectangular',
+  spinner = 'Loading...',
 }) => {
+  const spinnerRef = useRef<HTMLDivElement>(null);
   const fontScale = useMemo(
     () =>
       scaleLinear()
@@ -93,19 +66,12 @@ const WordCloud: ComponentType<Props> = ({
       });
       worker.onmessage = e => {
         if (e.data.type === 'start') {
-          select(`#${id}-svg`).selectAll('*').remove();
-
-          select(`#${id}-loader`)
-            .style('display', 'block')
-            .text('Loading...')
-            .attr('text-anchor', 'middle')
-            .style('font-size', '30px')
-            .attr('fill', '#000')
-            .attr('transform', `translate(${width! / 2}, ${height! / 2})`);
+          spinnerRef.current!.style.display = 'block';
         }
         if (e.data.type === 'end') {
+          spinnerRef.current!.style.display = 'none';
+
           const words = e.data.data;
-          select(`#${id}-loader`).style('display', 'none');
           select(`#${id}-svg`)
             .attr('transform', `translate(${width! / 2}, ${height! / 2})`)
             .selectAll('text')
@@ -157,6 +123,12 @@ const WordCloud: ComponentType<Props> = ({
         <g id={`${id}-svg`} />
         <text id={`${id}-loader`} />
       </svg>
+      <div
+        ref={spinnerRef}
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+      >
+        {spinner}
+      </div>
     </div>
   );
 };
