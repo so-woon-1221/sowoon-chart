@@ -7,6 +7,7 @@ const typescript = require('rollup-plugin-typescript2');
 const postcss = require('rollup-plugin-postcss');
 const tailwindcss = require('tailwindcss');
 const multiInput = require('rollup-plugin-multi-input').default;
+const webWorkerLoader = require('rollup-plugin-web-worker-loader');
 
 module.exports = {
   // input: 'lib/**/*.tsx',
@@ -17,14 +18,14 @@ module.exports = {
       // dir: 'src',
       format: 'cjs',
       sourcemap: true,
-      plugins: [
-        terser({
-          mangle: false,
-          compress: {
-            drop_console: true,
-          },
-        }),
-      ],
+      // plugins: [
+      //   terser({
+      //     mangle: false,
+      //     compress: {
+      //       drop_console: true,
+      //     },
+      //   }),
+      // ],
     },
     {
       file: 'dist/index.mjs',
@@ -60,11 +61,16 @@ module.exports = {
         '@babel/preset-typescript',
       ],
       plugins: [['@babel/plugin-transform-runtime', { useESModules: true }]],
+      runtimeHelpers: true,
     }),
     postcss({
       plugins: [tailwindcss('./tailwind.config.cjs')],
       extract: true,
       minimize: true,
+    }),
+    webWorkerLoader({
+      pattern: /worker-loader!(.+)/,
+      targetPlatform: 'browser',
     }),
   ],
   external: [

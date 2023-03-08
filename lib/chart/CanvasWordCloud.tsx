@@ -8,6 +8,9 @@ import React, {
 import { extent } from 'd3-array';
 import { scaleLinear } from 'd3-scale';
 import type { ComponentType } from 'react';
+// @ts-ignore
+import WordCloudWorker from 'worker-loader!./canvas/wordcloud.worker';
+import type { Word } from 'd3-cloud';
 import cloud from 'd3-cloud';
 import withParentSize from '../hooks/withParentSize';
 import CanvasText from './canvas/CanvasText';
@@ -94,60 +97,41 @@ const WordCloud: ComponentType<Props> = ({
 
   const drawChart = useCallback(() => {
     if (width && height && context) {
-      const layout = cloud()
-        .size([width!, height!])
-        .words(wordData)
-        .rotate(0)
-        .font('Impact')
-        .fontSize(d => d.size as number)
-        .spiral(type)
-        .on('end', words => {
-          context!.clearRect(0, 0, width!, height!);
-          words.forEach((d: any) => {
+      const worker: Worker = new WordCloudWorker();
+
+      worker.postMessage({
+        width,
+        height,
+        data: wordData,
+        padding: 0,
+        fontFamily: 'Impact',
+        type,
+      });
+      worker.onmessage = e => {
+        if (e.data.type === 'start') {
+          context.clearRect(0, 0, width, height);
+
+          context.font = '30px Sans-serif';
+          context.fillStyle = '#000';
+          context.fillText('Loading...', width / 2, height / 2);
+          context.textAlign = 'center';
+          context.textBaseline = 'middle';
+        } else if (e.data.type === 'end') {
+          context.clearRect(0, 0, width, height);
+
+          const words: Word[] = e.data.data;
+          words.forEach(d => {
             const text = new CanvasText({
-              text: d.text,
-              x: d.x + width! / 2,
-              y: d.y + height! / 2,
-              fontSize: d.size,
-              fontStyle: 'Impact',
               color: colorMap.get(d.text),
+              text: d.text ?? '',
+              fontSize: d.size ?? 0,
+              x: (d.x ?? 0) + width / 2,
+              y: (d.y ?? 0) + height / 2,
             });
             text.draw(context);
           });
-        });
-
-      layout.start();
-
-      return () => {
-        layout.stop();
+        }
       };
-
-      // const hie = hierarchy({ children: wordData })
-      //   .sum(d => d.size)
-      //   .sort((a, b) => b.size - a.size);
-
-      // const pac = pack().size([width!, height!]).padding(1);
-
-      // const root = pac(hie);
-
-      // const packNodes = root.descendants().slice(1);
-
-      // const simulation = forceSimulation(packNodes)
-      //   .force('collide', forceCollide(d => d.r + 15).iterations(2))
-      //   .on('tick', () => {
-      //     context!.clearRect(0, 0, width!, height!);
-      //     packNodes.forEach((d: any) => {
-      //       const text = new CanvasText({
-      //         text: d.data.text,
-      //         x: d.x,
-      //         y: d.y,
-      //         fontSize: d.r,
-      //         fontStyle: 'Impact',
-      //         color: colorMap.get(d.data.text),
-      //       });
-      //       text.draw(context);
-      //     });
-      //   });
     }
     return null;
   }, [colorMap, context, height, type, width, wordData]);

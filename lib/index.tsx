@@ -7,3 +7,4 @@ export { default as ScatterChart } from './chart/ScatterChart';
 export { default as LineWithBrushChart } from './chart/LineWithBrushChart';
 export { default as BrushLineChart } from './chart/BrushLineChart';
 export { default as CanvasLineChart } from './chart/CanvasLineChart';
+export { default as CanvasWordCloud } from './chart/CanvasWordCloud';
