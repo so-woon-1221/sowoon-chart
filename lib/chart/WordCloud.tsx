@@ -66,6 +66,7 @@ const WordCloud: ComponentType<WordCloudProps> = ({
       });
       worker.onmessage = e => {
         if (e.data.type === 'start') {
+          select(`#${id}-svg`).selectAll('text').remove();
           spinnerRef.current!.style.display = 'block';
         }
         if (e.data.type === 'end') {
@@ -108,6 +109,10 @@ const WordCloud: ComponentType<WordCloudProps> = ({
                 .attr('opacity', 1);
             });
         }
+      };
+
+      return () => {
+        worker.terminate();
       };
     }
     return null;

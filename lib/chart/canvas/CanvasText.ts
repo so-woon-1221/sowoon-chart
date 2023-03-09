@@ -47,14 +47,12 @@ export default class CanvasText {
     ctx.restore();
   }
 
-  // public hitText(x: number, y: number) {
-  //   const dx = this.font;
-  //   const dy = this.y2 - this.y1;
-
-  //   const dist =
-  //     Math.abs(dy * x - dx * y + this.x2 * this.y1 - this.y2 * this.x1) /
-  //     Math.sqrt(dx * dx + dy * dy);
-
-  //   return dist < 5;
-  // }
+  public hitText(x: number, y: number, ctx: CanvasRenderingContext2D) {
+    if (x > this.x && x < x + ctx.measureText(this.text).width) {
+      if (y > this.y && y < y + this.fontSize) {
+        return true;
+      }
+    }
+    return false;
+  }
 }

@@ -34,12 +34,13 @@ const WordCloud: ComponentType<WordCloudProps> = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [context, setContext] = useState<CanvasRenderingContext2D | null>(null);
   const spinnerRef = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
     if (canvasRef.current) {
       setContext(canvasRef.current.getContext('2d'));
     }
   }, []);
+
+  const [clickPosition, setClickPosition] = useState<[number, number]>([0, 0]);
 
   const fontScale = useMemo(
     () =>
@@ -77,10 +78,12 @@ const WordCloud: ComponentType<WordCloudProps> = ({
       });
       worker.onmessage = e => {
         if (e.data.type === 'start') {
+          context.clearRect(0, 0, width, height);
           spinnerRef.current!.style.display = 'block';
         } else if (e.data.type === 'end') {
           spinnerRef.current!.style.display = 'none';
 
+          context.clearRect(0, 0, width, height);
           const words: Word[] = e.data.data;
           words.forEach(d => {
             const text = new CanvasText({
@@ -93,6 +96,10 @@ const WordCloud: ComponentType<WordCloudProps> = ({
             text.draw(context);
           });
         }
+      };
+
+      return () => {
+        worker.terminate();
       };
     }
     return null;
