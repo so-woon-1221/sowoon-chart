@@ -22,3 +22,5 @@ build
 .vscode
 
 storybook-static/
+
+.turbo

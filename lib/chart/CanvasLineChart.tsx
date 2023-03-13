@@ -64,14 +64,14 @@ const LineCanvasChart: ComponentType<ChartProps> = ({
     if (groupType !== 'stack') {
       data.forEach(d => {
         keyList.forEach(k => {
-          yArray.push(+d[`${k}`]);
+          yArray.push(+d[`${k}`]!);
         });
       });
     } else {
       data.forEach(d => {
         let sum = 0;
         keyList.forEach(k => {
-          sum += +d[`${k}`];
+          sum += +d[`${k}`]!;
         });
         yArray.push(sum);
       });
@@ -115,7 +115,7 @@ const LineCanvasChart: ComponentType<ChartProps> = ({
     const legendList = legendLabelList ?? keyList;
     if (legendList && legendList.length > 0) {
       return (
-        <div className="absolute top-0 -translate-x-1/2 translate-y-1/2 left-1/2">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 translate-y-1/2">
           <ul
             className="grid gap-x-2"
             style={{
@@ -412,10 +412,11 @@ const LineCanvasChart: ComponentType<ChartProps> = ({
               groupType === 'single'
                 ? yScale(data[index].y as any)
                 : margin.top;
-            const tooltip =
-              tooltipMaker !== undefined
-                ? tooltipMaker!(data[index].x)
-                : data[index].x;
+            const tooltip = data[index].tooltipData
+              ? data[index].tooltipData
+              : tooltipMaker !== undefined
+              ? tooltipMaker!(data[index].x)
+              : data[index].x;
             setTooltipData({
               x: tooltipX,
               y: tooltipY,

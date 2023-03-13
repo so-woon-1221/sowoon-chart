@@ -43,14 +43,14 @@ const SparkLineCanvas: ComponentType<Props> = ({
     if (groupType !== 'stack') {
       data.forEach(d => {
         keyList.forEach(k => {
-          yArray.push(+d[`${k}`]);
+          yArray.push(+d[`${k}`]!);
         });
       });
     } else {
       data.forEach(d => {
         let sum = 0;
         keyList.forEach(k => {
-          sum += +d[`${k}`];
+          sum += +d[`${k}`]!;
         });
         yArray.push(sum);
       });
@@ -186,9 +186,13 @@ const SparkLineCanvas: ComponentType<Props> = ({
   );
 
   useEffect(() => {
-    select(`#${id}-brush`).attr('class', 'brush').call(brush);
+    select(`#${id}-brush`)
+      .attr('class', 'brush')
+      .call(brush as any);
 
-    select('rect.selection').attr('fill', `url(#${id}-pattern)`);
+    select(`#${id}-brush`)
+      .select('rect.selection')
+      .attr('fill', `url(#${id}-pattern)`);
   }, [brush, id]);
 
   return (

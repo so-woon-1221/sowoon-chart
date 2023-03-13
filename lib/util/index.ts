@@ -8,7 +8,11 @@ export interface ChartProps {
    *   - type : string
    * - The values on the y-axis can be freely named keys with numeric values.
    */
-  data: Array<{ [key: string]: string | number; x: string }>;
+  data: Array<{
+    [key: string]: string | number | JSX.Element | undefined;
+    x: string;
+    tooltipData?: JSX.Element;
+  }>;
   /**
    * id
    * - id of svg

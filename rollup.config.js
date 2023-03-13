@@ -28,7 +28,7 @@ module.exports = {
       ],
     },
     {
-      file: 'src/index.mjs',
+      file: 'dist/index.mjs',
       // dir: 'dist',
       format: 'es',
       sourcemap: true,
@@ -71,7 +71,6 @@ module.exports = {
     webWorkerLoader({
       pattern: /worker-loader!(.+)/,
       targetPlatform: 'browser',
-      // inline: false,
     }),
   ],
   external: [

@@ -34,7 +34,7 @@ const BarChart: ComponentType<ChartProps> = ({
 }) => {
   // y축을 쌓기위한 key List
   const keyList = useMemo(
-    () => Object.keys(data[0]).filter(k => k !== 'x'),
+    () => Object.keys(data[0]).filter(k => k !== 'x' && k !== 'tooltipData'),
     [data],
   );
 
@@ -45,12 +45,12 @@ const BarChart: ComponentType<ChartProps> = ({
     if (groupType !== 'stack') {
       data.forEach(d => {
         keyList.forEach(k => {
-          yArray.push(+d[`${k}`]);
+          yArray.push(+d[`${k}`]!);
         });
       });
     } else {
       data.forEach(d => {
-        const sum = keyList.reduce((acc, k) => acc + +d[`${k}`], 0);
+        const sum = keyList.reduce((acc, k) => acc + +d[`${k}`]!, 0);
         yArray.push(sum);
       });
     }
@@ -221,7 +221,7 @@ const BarChart: ComponentType<ChartProps> = ({
       `translate(0, ${height! - margin.bottom})`,
     );
     axisArea.selectAll('path').attr('stroke', 'black');
-    axisArea.call(axis);
+    axisArea.call(axis as any);
   }, [xScale, height, id, data.length]);
 
   const yAxis = useCallback(() => {
@@ -287,11 +287,17 @@ const BarChart: ComponentType<ChartProps> = ({
                   groupType === 'single'
                     ? yScale(data[index].y as any)
                     : margin.top;
-                const tooltip =
-                  tooltipMaker !== undefined
-                    ? tooltipMaker!(data[index].x)
-                    : data[index].x;
-                setTooltipData({ x: tooltipX, y: tooltipY, data: tooltip });
+                let tooltip: any;
+                if (tooltipMaker) {
+                  tooltip = tooltipMaker(data[index].x);
+                } else {
+                  tooltip = data[index].tooltipData ?? '';
+                }
+                setTooltipData({
+                  x: tooltipX,
+                  y: tooltipY,
+                  data: tooltip,
+                });
               }
             }
           }

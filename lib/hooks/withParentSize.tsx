@@ -23,7 +23,7 @@ const withParentSize = <
     }
   >
 > => {
-  const Component = props => (
+  const Component = (props: any) => (
     <ParentSize>
       {({ width: parentWidth, height: parentHeight }) => {
         const combinedProps = {

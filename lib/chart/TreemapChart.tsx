@@ -25,7 +25,7 @@ const Treemap: ComponentType<Props> = ({
   height,
   colorSet = ['#ef4444', '#0891b2'],
 }) => {
-  const [isTransitionEnd, setIsTransitionEnd] = useState(true);
+  const [isTransitionEnd] = useState(true);
 
   const colorScale = useMemo(
     () =>

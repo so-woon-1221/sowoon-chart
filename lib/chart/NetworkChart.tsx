@@ -114,14 +114,18 @@ const NetworkChart: ComponentType<Props> = ({ id, data, width, height }) => {
 
     const nodeLinkStatus = {};
     data.links.forEach((d: any) => {
+      // @ts-ignore
       nodeLinkStatus[`${d.source.index},${d.target.index}`] = 1;
+      // @ts-ignore
       nodeLinkStatus[`${d.target.index},${d.source.index}`] = 1;
     });
 
     function isConnected(a: any, b: any) {
       return (
+        // @ts-ignore
         nodeLinkStatus[`${a.index},${b.index}`] ||
         a.index === b.index ||
+        // @ts-ignore
         nodeLinkStatus[`${b.index},${a.index}`]
       );
     }

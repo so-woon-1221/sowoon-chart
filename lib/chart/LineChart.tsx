@@ -19,7 +19,11 @@ const margin = {
   bottom: 30,
 };
 
-const LineChart: ComponentType<ChartProps> = ({
+interface Props extends ChartProps {
+  fill?: boolean;
+}
+
+const LineChart: ComponentType<Props> = ({
   data,
   id,
   groupType = 'single',
@@ -31,9 +35,10 @@ const LineChart: ComponentType<ChartProps> = ({
   legendLabelList,
   width,
   height,
+  fill,
 }) => {
   const keyList = useMemo(
-    () => Object.keys(data[0]).filter(k => k !== 'x'),
+    () => Object.keys(data[0]).filter(k => k !== 'x' && k !== 'tooltipData'),
     [data],
   );
 
@@ -44,14 +49,14 @@ const LineChart: ComponentType<ChartProps> = ({
     if (groupType !== 'stack') {
       data.forEach(d => {
         keyList.forEach(k => {
-          yArray.push(+d[`${k}`]);
+          yArray.push(+d[`${k}`]!);
         });
       });
     } else {
       data.forEach(d => {
         let sum = 0;
         keyList.forEach(k => {
-          sum += +d[`${k}`];
+          sum += +d[`${k}`]!;
         });
         yArray.push(sum);
       });
@@ -95,12 +100,13 @@ const LineChart: ComponentType<ChartProps> = ({
     const legendList = legendLabelList ?? keyList;
     if (legendList && legendList.length > 0) {
       return (
-        <div className="absolute top-0 -translate-x-1/2 translate-y-1/2 left-1/2">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 translate-y-1/2">
           <ul
-            className="grid gap-x-2"
-            style={{
-              gridTemplateColumns: `repeat(${legendList.length}, minmax(0, 1fr))`,
-            }}
+            className="flex gap-3"
+            // className="grid gap-x-2"
+            // style={{
+            //   gridTemplateColumns: `repeat(${legendList.length}, minmax(0, 1fr))`,
+            // }}
           >
             {legendList.map((d, i) => (
               <li
@@ -127,19 +133,21 @@ const LineChart: ComponentType<ChartProps> = ({
   }, [colorList, id, keyList, legendLabelList]);
 
   const drawSingleLine = useCallback(() => {
-    const areaScale = area()
-      .x(
-        (d: { [key: string]: any }) =>
-          xScale(d.x)! + (xScale as ScaleBand<string>).bandwidth() / 2,
-      )
-      .y0(yScale(minY))
-      .y1((d: { [key: string]: any }) => yScale(d.y));
-    select(`#${id}-single-area`)
-      .selectAll('path')
-      .data([data])
-      .join('path')
-      .attr('fill', `url(#${id}-gradient-${keyList[0]})`)
-      .attr('d', areaScale as any);
+    if (fill) {
+      const areaScale = area()
+        .x(
+          (d: { [key: string]: any }) =>
+            xScale(d.x)! + (xScale as ScaleBand<string>).bandwidth() / 2,
+        )
+        .y0(yScale(minY))
+        .y1((d: { [key: string]: any }) => yScale(d.y));
+      select(`#${id}-single-area`)
+        .selectAll('path')
+        .data([data])
+        .join('path')
+        .attr('fill', `url(#${id}-gradient-${keyList[0]})`)
+        .attr('d', areaScale as any);
+    }
 
     const lineScale = line()
       .x(
@@ -157,18 +165,21 @@ const LineChart: ComponentType<ChartProps> = ({
       .attr('fill', 'none');
 
     return null;
-  }, [colorList, data, id, keyList, minY, xScale, yScale]);
+  }, [colorList, data, fill, id, keyList, minY, xScale, yScale]);
 
   const drawGroupLine = useCallback(() => {
-    const areaScale = (key: string) =>
-      area()
-        .x(
-          (d: { [key: string]: any }) =>
-            (xScale(d.x) as number) +
-            (xScale as ScaleBand<any>).bandwidth() / 2,
-        )
-        .y0(yScale(minY))
-        .y1((d: { [key: string]: any }) => yScale(d[key]));
+    let areaScale: any;
+    if (fill) {
+      areaScale = (key: string) =>
+        area()
+          .x(
+            (d: { [key: string]: any }) =>
+              (xScale(d.x) as number) +
+              (xScale as ScaleBand<any>).bandwidth() / 2,
+          )
+          .y0(yScale(minY))
+          .y1((d: { [key: string]: any }) => yScale(d[key]));
+    }
 
     const lineScale = (key: string) =>
       line()
@@ -180,12 +191,14 @@ const LineChart: ComponentType<ChartProps> = ({
         .y((d: { [key: string]: any }) => yScale(d[key]));
 
     keyList.forEach(key => {
-      select(`#${id}-${key}-area`)
-        .selectAll('path')
-        .data([data])
-        .join('path')
-        .attr('fill', `url(#${id}-gradient-${key})`)
-        .attr('d', areaScale(key) as any);
+      if (fill) {
+        select(`#${id}-${key}-area`)
+          .selectAll('path')
+          .data([data])
+          .join('path')
+          .attr('fill', `url(#${id}-gradient-${key})`)
+          .attr('d', areaScale(key) as any);
+      }
 
       select(`#${id}-${key}-line`)
         .selectAll('path')
@@ -196,20 +209,23 @@ const LineChart: ComponentType<ChartProps> = ({
         .attr('stroke-width', 2)
         .attr('fill', 'none');
     });
-  }, [colorScale, data, id, keyList, minY, xScale, yScale]);
+  }, [colorScale, data, fill, id, keyList, minY, xScale, yScale]);
 
   const drawStackLine = useCallback(() => {
     const stackedData = stack().keys(keyList)(data as { [key: string]: any }[]);
 
-    const areaScale = () =>
-      area()
-        .x(
-          (d: any) =>
-            (xScale(d.data.x) as number) +
-            (xScale as ScaleBand<any>).bandwidth() / 2,
-        )
-        .y0(d => yScale(d[0]))
-        .y1(d => yScale(d[1]));
+    let areaScale: any;
+    if (fill) {
+      areaScale = () =>
+        area()
+          .x(
+            (d: any) =>
+              (xScale(d.data.x) as number) +
+              (xScale as ScaleBand<any>).bandwidth() / 2,
+          )
+          .y0(d => yScale(d[0]))
+          .y1(d => yScale(d[1]));
+    }
 
     const lineScale = () =>
       line()
@@ -221,13 +237,15 @@ const LineChart: ComponentType<ChartProps> = ({
         .y(d => yScale(d[1]));
 
     stackedData.forEach(d => {
-      select(`#${id}-${d.key}-area`)
-        .selectAll('path')
-        .data([d])
-        .join('path')
-        .attr('fill', `url(#${id}-gradient-${d.key})`)
-        .attr('d', datum => areaScale()(datum as any))
-        .attr('stroke', 'none');
+      if (fill) {
+        select(`#${id}-${d.key}-area`)
+          .selectAll('path')
+          .data([d])
+          .join('path')
+          .attr('fill', `url(#${id}-gradient-${d.key})`)
+          .attr('d', datum => areaScale()(datum as any))
+          .attr('stroke', 'none');
+      }
 
       select(`#${id}-${d.key}-line`)
         .selectAll('path')
@@ -238,7 +256,7 @@ const LineChart: ComponentType<ChartProps> = ({
         .attr('stroke-width', 2)
         .attr('fill', 'none');
     });
-  }, [colorScale, data, id, keyList, xScale, yScale]);
+  }, [colorScale, data, fill, id, keyList, xScale, yScale]);
 
   const grid = useCallback(() => {
     const gridY = axisLeft(yScale)
@@ -250,9 +268,10 @@ const LineChart: ComponentType<ChartProps> = ({
       'transform',
       `translate(${margin.left}, 0)`,
     );
+    gridArea.selectAll('*').remove();
+    gridArea.call(gridY as any);
     gridArea.selectAll('line').attr('stroke', '#eee');
     gridArea.selectAll('path').attr('stroke', 'none');
-    gridArea.call(gridY as any);
   }, [yScale, data.length, width, id]);
 
   const xAxis = useCallback(() => {
@@ -268,7 +287,7 @@ const LineChart: ComponentType<ChartProps> = ({
       `translate(0, ${height! - margin.bottom})`,
     );
     axisArea.selectAll('path').attr('stroke', 'black');
-    axisArea.call(axis);
+    axisArea.call(axis as any);
   }, [xScale, height, id, data.length]);
 
   const yAxis = useCallback(() => {
@@ -333,10 +352,12 @@ const LineChart: ComponentType<ChartProps> = ({
                 groupType === 'single'
                   ? yScale(data[index].y as any)
                   : margin.top;
-              const tooltip =
-                tooltipMaker !== undefined
-                  ? tooltipMaker!(data[index].x)
-                  : data[index].x;
+              let tooltip: any;
+              if (tooltipMaker) {
+                tooltip = tooltipMaker(data[index].x);
+              } else {
+                tooltip = data[index].tooltipData ?? '';
+              }
               setTooltipData({
                 x: tooltipX,
                 y: tooltipY,
@@ -384,9 +405,11 @@ const LineChart: ComponentType<ChartProps> = ({
         </g>
         {groupType === 'single' ? (
           <g>
-            <g id={`${id}-single-area`}>
-              <path />
-            </g>
+            {fill && (
+              <g id={`${id}-single-area`}>
+                <path />
+              </g>
+            )}
             <g id={`${id}-single-line`}>
               <path />
             </g>
@@ -395,9 +418,11 @@ const LineChart: ComponentType<ChartProps> = ({
           <g>
             {keyList.map(key => (
               <g key={`${id}-${key}`}>
-                <g id={`${id}-${key}-area`}>
-                  <path />
-                </g>
+                {fill && (
+                  <g id={`${id}-${key}-area`}>
+                    <path />
+                  </g>
+                )}
                 <g id={`${id}-${key}-line`}>
                   <path />
                 </g>

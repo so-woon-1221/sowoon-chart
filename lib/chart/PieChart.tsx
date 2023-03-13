@@ -112,7 +112,7 @@ const PieChart: ComponentType<Props> = ({
           .attr('filter', '');
         setTooltipData(undefined);
       });
-    select(`#${id}-pie-chart`).selectAll('path').attr('d', arcValue);
+    select(`#${id}-pie-chart`).selectAll('path').attr('d', arcValue as any);
     /// //
     return <g id={`${id}-pie-chart`} />;
   }, [color, data, height, id, width]);

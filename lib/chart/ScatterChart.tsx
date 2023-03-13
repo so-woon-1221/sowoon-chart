@@ -6,7 +6,7 @@ import React, {
   useEffect,
 } from 'react';
 import { max } from 'd3-array';
-import { scaleBand, scaleLinear } from 'd3-scale';
+import { scaleBand, ScaleLinear, scaleLinear } from 'd3-scale';
 import type { ScaleBand } from 'd3-scale';
 import { TooltipWithBounds } from '@visx/tooltip';
 import { select } from 'd3-selection';
@@ -23,8 +23,9 @@ const margin = {
 
 interface Props {
   data: {
-    x: string;
-    [key: string]: number | string;
+    x: string | number;
+    [key: string]: number | string | JSX.Element | undefined;
+    tooltipData?: JSX.Element;
   }[];
   id: string;
   width?: number;
@@ -34,6 +35,7 @@ interface Props {
   displayYIndex?: string;
   displayXIndex?: string;
   tooltipMaker?: (x: string) => JSX.Element;
+  xType?: 'string' | 'number';
 }
 
 const Scatter: ComponentType<Props> = ({
@@ -45,13 +47,14 @@ const Scatter: ComponentType<Props> = ({
   displayYIndex,
   displayXIndex,
   tooltipMaker,
+  xType = 'string',
 }) => {
   const [tooltipData, setTooltipData] = useState<
     undefined | { x: number; y: number; data: any }
   >(undefined);
 
   const keyList = useMemo(
-    () => Object.keys(data[0]).filter(k => k !== 'x'),
+    () => Object.keys(data[0]).filter(k => k !== 'x' && k !== 'tooltipData'),
     [data],
   );
 
@@ -65,13 +68,18 @@ const Scatter: ComponentType<Props> = ({
     return max(rest as any, (d: number[]) => max(d, (a: number) => a));
   }, [data]);
 
-  const xScale: ScaleBand<string> = useMemo(
-    () =>
-      scaleBand()
-        .domain(data.map(d => d.x))
-        .range([margin.left, width! - margin.right]),
-    [data, width],
-  );
+  const xScale = useMemo(() => {
+    switch (xType) {
+      case 'number':
+        return scaleLinear()
+          .domain([0, max(data.map(d => d.x as number)) ?? 0])
+          .range([margin.left, width! - margin.right]);
+      default:
+        return scaleBand()
+          .domain(data.map(d => d.x as string))
+          .range([margin.left, width! - margin.right]);
+    }
+  }, [data, width, xType]);
   const yScale = useMemo(
     () =>
       scaleLinear()
@@ -101,20 +109,31 @@ const Scatter: ComponentType<Props> = ({
   }, [yScale, data.length, width, id]);
 
   const xAxis = useCallback(() => {
-    const divider = data.length <= 5 ? 1 : Math.floor(data.length / 6);
-    const axis = axisBottom(xScale)
-      .tickSize(3)
-      .tickValues(xScale.domain().filter((_d, i) => i % divider === 0))
-      .tickPadding(5)
-      .tickFormat(d => d);
+    let axis: any;
+    if (xType === 'number') {
+      axis = axisBottom(xScale as ScaleLinear<number, number>)
+        .ticks(data.length < 5 ? 3 : 5)
+        .tickSize(3)
+        .tickPadding(5)
+        .tickFormat(d => d.toString());
+    } else {
+      const divider = data.length <= 5 ? 1 : Math.floor(data.length / 6);
+      axis = axisBottom(xScale as ScaleBand<string>)
+        .tickSize(3)
+        .tickValues(
+          (xScale.domain() as string[]).filter((_d, i) => i % divider === 0),
+        )
+        .tickPadding(5)
+        .tickFormat(d => d as unknown as string);
+    }
 
     const axisArea = select(`#${id}-x-axis`).attr(
       'transform',
       `translate(0, ${height! - margin.bottom})`,
     );
     axisArea.selectAll('path').attr('stroke', 'black');
-    axisArea.call(axis);
-  }, [xScale, height, id, data.length]);
+    axisArea.call(axis as any);
+  }, [xType, data.length, xScale, id, height]);
 
   const yAxis = useCallback(() => {
     const axis = axisLeft(yScale)
@@ -192,7 +211,9 @@ const Scatter: ComponentType<Props> = ({
                   key={`${id}-scatter-${a.x}-${j.toString()}`}
                   cx={
                     xScale(a.x as any)! +
-                    (xScale as ScaleBand<string>).bandwidth() / 2
+                    (xType === 'string'
+                      ? (xScale as ScaleBand<string>).bandwidth() / 2
+                      : 0)
                   }
                   cy={yScale(a[k] as number)}
                   r={6}
@@ -200,16 +221,22 @@ const Scatter: ComponentType<Props> = ({
                   fill={colorList[i]}
                   fillOpacity={0.5}
                   onPointerOver={() => {
+                    let nowTooltip: any;
+                    if (tooltipMaker !== undefined) {
+                      nowTooltip = tooltipMaker!(a.x.toString());
+                    } else {
+                      nowTooltip = a.tooltipData ?? '';
+                    }
                     setTooltipData({
                       x: xScale(a.x as any) ? xScale(a.x as any)! + 5 : 0,
                       y: yScale(a[k] as number) + 5,
-                      data:
-                        tooltipMaker !== undefined ? tooltipMaker!(a.x) : a.x,
+                      data: nowTooltip,
                     });
                   }}
                   onPointerOut={() => {
                     setTooltipData(undefined);
                   }}
+                  className={`${id}-scatter-${k}`}
                 />
               ))}
               )
