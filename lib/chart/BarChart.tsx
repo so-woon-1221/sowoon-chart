@@ -203,8 +203,6 @@ const BarChart: ComponentType<ChartProps> = ({
       'transform',
       `translate(${margin.left}, 0)`,
     );
-    gridArea.selectAll('line').attr('stroke', '#eee');
-    gridArea.selectAll('path').attr('stroke', 'none');
     gridArea.call(gridY as any);
   }, [yScale, width, id, data.length]);
 
@@ -250,9 +248,13 @@ const BarChart: ComponentType<ChartProps> = ({
     grid();
     xAxis();
     yAxis();
-  }, [grid, xAxis, yAxis]);
+    const gridArea = select(`#${id}-grid-y`);
+    gridArea.selectAll('g.tick').selectAll('line').attr('stroke', '#eee');
+    gridArea.selectAll('path').attr('stroke', 'none');
+  }, [grid, id, xAxis, yAxis]);
 
   useEffect(() => {
+    select(`#${id}-bar-area`).selectAll('rect').remove();
     switch (groupType) {
       case 'single':
         drawSingleBar();
@@ -266,7 +268,7 @@ const BarChart: ComponentType<ChartProps> = ({
       default:
         break;
     }
-  }, [drawGroupBar, drawSingleBar, drawStackBar, groupType]);
+  }, [drawGroupBar, drawSingleBar, drawStackBar, groupType, id]);
 
   return (
     <div className="relative" style={{ width, height }}>

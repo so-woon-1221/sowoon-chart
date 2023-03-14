@@ -67,10 +67,14 @@ const WordCloud: ComponentType<WordCloudProps> = ({
       worker.onmessage = e => {
         if (e.data.type === 'start') {
           select(`#${id}-svg`).selectAll('text').remove();
-          spinnerRef.current!.style.display = 'block';
+          if (spinnerRef.current) {
+            spinnerRef.current.style.display = 'block';
+          }
         }
         if (e.data.type === 'end') {
-          spinnerRef.current!.style.display = 'none';
+          if (spinnerRef.current) {
+            spinnerRef.current.style.display = 'none';
+          }
 
           const words = e.data.data;
           select(`#${id}-svg`)
@@ -123,7 +127,7 @@ const WordCloud: ComponentType<WordCloudProps> = ({
   }, [drawChart]);
 
   return (
-    <div className="h-full w-full select-text">
+    <div className="relative h-full w-full select-text">
       <svg width={width} height={height}>
         <g id={`${id}-svg`} />
         <text id={`${id}-loader`} />

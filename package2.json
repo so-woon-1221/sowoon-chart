@@ -67,14 +67,19 @@
     "yalc": "rm -rf ./dist && tsc && yalc publish",
     "yalc:push": "yarn yalc && yalc push",
     "build": "rm -rf ./dist ./src && rollup -c",
+    "dev": "rm -rf ./dist ./src && rollup -c -w",
     "lint": "eslint lib --ext .js,.jsx,.ts,.tsx"
   },
   "version": "0.0.5",
   "description": "",
-  "main": "lib/index.tsx",
-  "module": "lib/index.tsx",
-  "types": "lib/index.tsx",
-  "typing": "lib/index.tsx",
+  "main": "dist/index.js",
+  "module": "dist/index.ejs",
+  "types": "dist/index.d.ts",
+  "typing": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "src"
+  ],
   "sideEffects": false,
   "browserslist": {
     "production": [

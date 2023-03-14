@@ -21,7 +21,7 @@ const margin = {
   bottom: 5,
 };
 
-const SparkLineCanvas: ComponentType<Props> = ({
+const BrushLineChart: ComponentType<Props> = ({
   data,
   id,
   width,
@@ -180,6 +180,8 @@ const SparkLineCanvas: ComponentType<Props> = ({
               .map(d => d.x);
 
             setBrushDomain(domain);
+          } else {
+            setBrushDomain(data.map(d => d.x));
           }
         }),
     [width, height, data, setBrushDomain, xScale],
@@ -244,4 +246,4 @@ const SparkLineCanvas: ComponentType<Props> = ({
   );
 };
 
-export default withParentSize(SparkLineCanvas);
+export default withParentSize(BrushLineChart);

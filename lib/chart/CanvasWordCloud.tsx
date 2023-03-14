@@ -110,7 +110,7 @@ const WordCloud: ComponentType<WordCloudProps> = ({
   }, [drawChart]);
 
   return (
-    <div className="h-full w-full select-text">
+    <div className="relative h-full w-full select-text">
       <canvas width={width} height={height} ref={canvasRef} />
       <div
         ref={spinnerRef}

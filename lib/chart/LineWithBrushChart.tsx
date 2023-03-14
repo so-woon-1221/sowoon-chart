@@ -5,7 +5,11 @@ import { ChartProps } from '../util';
 import BrushLineChart from './BrushLineChart';
 import LineChart from './LineChart';
 
-const LineWithBrushChart: ComponentType<ChartProps> = ({
+interface Props extends ChartProps {
+  fill?: boolean;
+}
+
+const LineWithBrushChart: ComponentType<Props> = ({
   data,
   id,
   colorList,
@@ -14,6 +18,7 @@ const LineWithBrushChart: ComponentType<ChartProps> = ({
   legendLabelList,
   displayIndex,
   height,
+  fill,
 }) => {
   const [brushDomain, setBrushDomain] = useState<string[] | undefined>(
     undefined,
@@ -37,6 +42,7 @@ const LineWithBrushChart: ComponentType<ChartProps> = ({
         colorList={colorList}
         displayIndex={displayIndex}
         height={height! - 50}
+        fill={fill}
       />
       <div className="h-[50px]">
         <BrushLineChart
