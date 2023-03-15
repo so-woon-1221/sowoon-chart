@@ -15,7 +15,7 @@ import {
 } from 'd3-force';
 import { select } from 'd3-selection';
 import { drag } from 'd3-drag';
-import { scaleLinear } from 'd3-scale';
+import { scaleLinear, scaleOrdinal } from 'd3-scale';
 import { extent } from 'd3-array';
 import { zoom } from 'd3-zoom';
 import { RectClipPath } from '@visx/clip-path';
@@ -37,19 +37,27 @@ interface Props {
   id: string;
   width?: number;
   height?: number;
+  colorList?: string[];
 }
 
-const NetworkChart: ComponentType<Props> = ({ id, data, width, height }) => {
+const NetworkChart: ComponentType<Props> = ({
+  id,
+  data,
+  width,
+  height,
+  colorList = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd'],
+}) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const [isZoom] = useState(false);
 
-  // const colorScale = useMemo(
-  //   () =>
-  //     scaleOrdinal()
-  //       .domain(data.nodes.map((d) => d.group))
-  //       .range(schemeTableau10),
-  //   [data.nodes]
-  // );
+  const colorScale = useMemo(
+    () =>
+      scaleOrdinal()
+        .domain(data.nodes.map(d => d.group))
+        .range(colorList),
+    [colorList, data.nodes],
+  );
+
   const strokeScale = useMemo(
     () =>
       scaleLinear()
@@ -61,7 +69,7 @@ const NetworkChart: ComponentType<Props> = ({ id, data, width, height }) => {
     () =>
       scaleLinear()
         .domain(extent(data.nodes.map(d => +d.value)) as NumberValue[])
-        .range([5, 30]),
+        .range([15, 30]),
     [data.nodes],
   );
 
@@ -163,9 +171,7 @@ const NetworkChart: ComponentType<Props> = ({ id, data, width, height }) => {
       .data(data.nodes)
       .join('circle')
       .attr('r', d => circleScale(+d.value))
-      // .attr("r", 10)
-      //   .attr("fill", (d) => colorScale(d.group) as string)
-      .attr('fill', '#354965')
+      .attr('fill', d => colorScale(d.group) as string)
       .attr('cx', (d: any) => d.x)
       .attr('cy', (d: any) => d.y)
       .on('mouseover', (_e, d: any) => {
@@ -176,7 +182,6 @@ const NetworkChart: ComponentType<Props> = ({ id, data, width, height }) => {
               return 30;
             }
             return circleScale(o.value);
-            // return 10;
           })
           .style('opacity', o => {
             let thisOpacity: number;
@@ -205,13 +210,11 @@ const NetworkChart: ComponentType<Props> = ({ id, data, width, height }) => {
         node
           .transition()
           .attr('r', d => circleScale(d.value))
-          // .attr("r", 10)
           .style('opacity', 1);
         link.transition().style('opacity', 1);
         text
           .transition()
           .attr('font-size', d => `${circleScale(d.value) / 1.5}px`);
-        // .attr("font-size", "10px");
       })
       .call(nodeDrag(simulation) as any);
 
@@ -240,7 +243,16 @@ const NetworkChart: ComponentType<Props> = ({ id, data, width, height }) => {
           svg.selectAll('g').attr('transform', e.transform);
         }) as any,
     );
-  }, [circleScale, data.links, data.nodes, height, isZoom, strokeScale, width]);
+  }, [
+    circleScale,
+    colorScale,
+    data.links,
+    data.nodes,
+    height,
+    isZoom,
+    strokeScale,
+    width,
+  ]);
 
   useEffect(() => {
     if (data.nodes.length > 0) {
@@ -248,8 +260,50 @@ const NetworkChart: ComponentType<Props> = ({ id, data, width, height }) => {
     }
   }, [data.nodes.length, drawChart]);
 
+  const drawLegend = useCallback(() => {
+    const legendList = data.nodes.reduce((acc: string[], cur: any) => {
+      if (acc.indexOf(cur.group) === -1) {
+        acc.push(cur.group);
+      }
+      return acc;
+    }, []);
+
+    if (legendList !== null) {
+      return (
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 translate-y-1/2">
+          <ul
+            className="grid gap-x-2"
+            style={{
+              gridTemplateColumns: `repeat(${legendList.length}, minmax(0, 1fr))`,
+            }}
+          >
+            {legendList.map(d => (
+              <li
+                key={`${id}-legend-${d}`}
+                className="flex items-center space-x-1"
+              >
+                <svg width={15} height={15}>
+                  <rect
+                    x={0}
+                    y={0}
+                    width={15}
+                    height={15}
+                    fill={colorScale(d) as string}
+                  />
+                </svg>
+                <span>{d}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      );
+    }
+    return null;
+  }, [colorScale, data.nodes, id]);
+
   return (
     <div className="relative flex h-full w-full flex-col">
+      {drawLegend()}
       <svg
         width={width}
         height={height}

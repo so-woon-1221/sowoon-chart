@@ -143,6 +143,7 @@ export interface WordCloudProps {
    * @default undefined
    * */
   spinner?: JSX.Element | string;
+  padding?: number;
 }
 
 export const makeDisplayNum = (numbers: number[]) => {

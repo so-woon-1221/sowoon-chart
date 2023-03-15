@@ -28,6 +28,7 @@ const WordCloud: ComponentType<WordCloudProps> = ({
   ],
   type = 'rectangular',
   spinner = 'Loading...',
+  padding = 0,
 }) => {
   const spinnerRef = useRef<HTMLDivElement>(null);
   const fontScale = useMemo(
@@ -60,7 +61,7 @@ const WordCloud: ComponentType<WordCloudProps> = ({
         width,
         height,
         data: wordData,
-        padding: 0,
+        padding: padding,
         fontFamily: 'Impact',
         type,
       });
