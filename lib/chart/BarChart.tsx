@@ -91,17 +91,29 @@ const BarChart: ComponentType<ChartProps> = ({
     const legendList = legendLabelList ?? keyList;
     if (legendList !== null) {
       return (
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 translate-y-1/2">
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+          }}
+        >
           <ul
-            className="grid gap-x-2"
             style={{
+              display: 'grid',
               gridTemplateColumns: `repeat(${legendList.length}, minmax(0, 1fr))`,
+              gap: '0.5rem',
             }}
           >
             {legendList.map((d, i) => (
               <li
                 key={`${id}-legend-${d}`}
-                className="flex items-center space-x-1"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.25rem',
+                }}
               >
                 <svg width={15} height={15}>
                   <rect
@@ -271,7 +283,7 @@ const BarChart: ComponentType<ChartProps> = ({
   }, [drawGroupBar, drawSingleBar, drawStackBar, groupType, id]);
 
   return (
-    <div className="relative" style={{ width, height }}>
+    <div style={{ width, height, position: 'relative' }}>
       {drawLegend()}
       <svg
         width={width}
@@ -368,11 +380,7 @@ const BarChart: ComponentType<ChartProps> = ({
         ))}
       </svg>
       {tooltipData != null && (
-        <TooltipWithBounds
-          left={tooltipData.x}
-          top={tooltipData.y}
-          className="dark:bg-zinc-900"
-        >
+        <TooltipWithBounds left={tooltipData.x} top={tooltipData.y}>
           {tooltipData.data}
         </TooltipWithBounds>
       )}

@@ -163,7 +163,13 @@ const Scatter: ComponentType<Props> = ({
   }, [grid, xAxis, yAxis]);
 
   return (
-    <div className="relative h-full w-full">
+    <div
+      style={{
+        width: '100%',
+        height: '100%',
+        position: 'relative',
+      }}
+    >
       <svg width={width} height={height}>
         <g id={`${id}-grid-y`} />
         <g id={`${id}-x-axis`}>

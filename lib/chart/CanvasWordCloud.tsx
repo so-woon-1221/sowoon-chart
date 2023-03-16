@@ -110,11 +110,23 @@ const WordCloud: ComponentType<WordCloudProps> = ({
   }, [drawChart]);
 
   return (
-    <div className="relative h-full w-full select-text">
+    <div
+      style={{
+        position: 'relative',
+        width: '100%',
+        height: '100%',
+        userSelect: 'text',
+      }}
+    >
       <canvas width={width} height={height} ref={canvasRef} />
       <div
         ref={spinnerRef}
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+        style={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+        }}
       >
         {spinner}
       </div>

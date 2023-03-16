@@ -32,7 +32,14 @@ const LineWithBrushChart: ComponentType<Props> = ({
   }, [brushDomain, data]);
 
   return (
-    <div className="flex h-full w-full flex-col">
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
+        width: '100%',
+      }}
+    >
       <LineChart
         data={brushApplyData}
         groupType={groupType}
@@ -44,7 +51,11 @@ const LineWithBrushChart: ComponentType<Props> = ({
         height={height! - 50}
         fill={fill}
       />
-      <div className="h-[50px]">
+      <div
+        style={{
+          height: '50px',
+        }}
+      >
         <BrushLineChart
           data={data}
           id={`${id}-brush`}

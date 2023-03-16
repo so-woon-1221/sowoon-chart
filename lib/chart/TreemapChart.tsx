@@ -197,7 +197,13 @@ const Treemap: ComponentType<Props> = ({
   }, [drawChart]);
 
   return (
-    <div className="relative h-full w-full">
+    <div
+      style={{
+        width: '100%',
+        height: '100%',
+        position: 'relative',
+      }}
+    >
       <svg width={width} height={height}>
         <g>
           <g id={`${id}-tree`} />
@@ -212,10 +218,26 @@ const Treemap: ComponentType<Props> = ({
           top={tooltipData?.y ? tooltipData.y : 0}
           id={`${id}-chart-tooltip`}
         >
-          <div className="gap-y-1 text-sm dark:text-zinc-700">
-            <div className="flex flex-col gap-y-1 dark:text-zinc-700">
+          <div
+            style={{
+              gap: '0.25rem',
+              fontSize: '0.875rem',
+              lineHeight: '1.25rem',
+            }}
+          >
+            <div
+              style={{
+                gap: '0.25rem',
+                display: 'flex',
+                flexDirection: 'column',
+              }}
+            >
               <span>{tooltipData.key}</span>
-              <span className="font-bold">
+              <span
+                style={{
+                  fontWeight: 600,
+                }}
+              >
                 {tooltipData?.value.toLocaleString('ko-KR', {
                   maximumFractionDigits: 2,
                 })}

@@ -100,18 +100,28 @@ const LineChart: ComponentType<Props> = ({
     const legendList = legendLabelList ?? keyList;
     if (legendList && legendList.length > 0) {
       return (
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 translate-y-1/2">
+        <div
+          style={{
+            position: 'absolute',
+            top: '0',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+          }}
+        >
           <ul
-            className="flex gap-3"
-            // className="grid gap-x-2"
-            // style={{
-            //   gridTemplateColumns: `repeat(${legendList.length}, minmax(0, 1fr))`,
-            // }}
+            style={{
+              display: 'flex',
+              gap: '0.75rem',
+            }}
           >
             {legendList.map((d, i) => (
               <li
                 key={`${id}-legend-${d}`}
-                className="flex items-center space-x-1"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.25rem',
+                }}
               >
                 <svg width={15} height={15}>
                   <rect
@@ -334,7 +344,7 @@ const LineChart: ComponentType<Props> = ({
   }, [drawGroupLine, drawSingleLine, drawStackLine, groupType]);
 
   return (
-    <div className="relative">
+    <div style={{ position: 'relative' }}>
       {drawLegend()}
       <svg
         width={width}

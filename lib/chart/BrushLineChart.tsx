@@ -9,6 +9,7 @@ import type { ComponentType } from 'react';
 import type { ScaleBand } from 'd3-scale';
 import type { ChartProps } from '../util';
 import withParentSize from '../hooks/withParentSize';
+import '../styles/global.css';
 
 interface Props extends ChartProps {
   setBrushDomain: (domain: string[] | undefined) => void;
@@ -198,7 +199,13 @@ const BrushLineChart: ComponentType<Props> = ({
   }, [brush, id]);
 
   return (
-    <div className="flex flex-col gap-y-2">
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '0.5rem',
+      }}
+    >
       <svg width={width} height={height} id={`${id}-brush`}>
         <g transform={`translate(${margin.left},0)`}>
           <g id="border">

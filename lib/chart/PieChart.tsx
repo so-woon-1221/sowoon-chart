@@ -112,7 +112,9 @@ const PieChart: ComponentType<Props> = ({
           .attr('filter', '');
         setTooltipData(undefined);
       });
-    select(`#${id}-pie-chart`).selectAll('path').attr('d', arcValue as any);
+    select(`#${id}-pie-chart`)
+      .selectAll('path')
+      .attr('d', arcValue as any);
     /// //
     return <g id={`${id}-pie-chart`} />;
   }, [color, data, height, id, width]);
@@ -122,8 +124,12 @@ const PieChart: ComponentType<Props> = ({
       color.domain().map((d: string) => (
         <li
           key={`legend-${d}`}
-          className="flex items-center gap-1"
-          style={{ fontSize: '14px' }}
+          style={{
+            fontSize: '0.875rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.25rem',
+          }}
         >
           <svg width={15} height={15}>
             <rect
@@ -141,22 +147,70 @@ const PieChart: ComponentType<Props> = ({
   );
 
   return (
-    <div className="flex h-full w-full items-center relative justify-center">
-      <div className="flex justify-center overflow-y-auto absolute top-0 left-1/2 -translate-x-1/2 translate-y-1/2">
+    <div
+      style={{
+        width: '100%',
+        height: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        position: 'relative',
+      }}
+    >
+      <div
+        style={{
+          pointerEvents: 'none',
+          position: 'absolute',
+          top: 0,
+          left: '50%',
+          transform: 'translate(-50%, 50%)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          overflowY: 'auto',
+        }}
+      >
         <ul
           id="pie-legend"
-          className="my-auto flex w-full gap-3 overflow-x-auto"
+          style={{
+            listStyle: 'none',
+            display: 'flex',
+            width: '100%',
+            gap: '0.75rem',
+            overflowX: 'auto',
+            margin: 'auto 0',
+          }}
         >
           {drawLegend()}
         </ul>
       </div>
-      <div className="relative flex">
+      <div
+        style={{
+          position: 'relative',
+          display: 'flex',
+        }}
+      >
         <svg width={width} height={height}>
           {drawChart()}
         </svg>
         {tooltipData && (
-          <div className="absolute top-1/2 left-[calc((100%-20px)/2)] -translate-x-[50%] -translate-y-1/2 text-center">
-            <div className="flex flex-col space-y-2">
+          <div
+            style={{
+              pointerEvents: 'none',
+              position: 'absolute',
+              top: '50%',
+              left: 'calc((100% - 20px) / 2)',
+              transform: 'translate(-50%, -50%)',
+              textAlign: 'center',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.5rem',
+              }}
+            >
               <span>{tooltipData.key}</span>
               <span>{tooltipData.value}</span>
             </div>
