@@ -5,7 +5,6 @@ const { terser } = require('rollup-plugin-terser');
 const peerDepsExternal = require('rollup-plugin-peer-deps-external');
 const typescript = require('rollup-plugin-typescript2');
 const postcss = require('rollup-plugin-postcss');
-const tailwindcss = require('tailwindcss');
 // const multiInput = require('rollup-plugin-multi-input').default;
 const webWorkerLoader = require('rollup-plugin-web-worker-loader');
 
@@ -63,15 +62,11 @@ module.exports = {
       plugins: [['@babel/plugin-transform-runtime', { useESModules: true }]],
       runtimeHelpers: true,
     }),
-    postcss({
-      plugins: [tailwindcss('./tailwind.config.cjs')],
-      extract: true,
-      minimize: true,
-    }),
     webWorkerLoader({
       pattern: /worker-loader!(.+)/,
       targetPlatform: 'browser',
     }),
+    postcss(),
   ],
   external: [
     'react',
