@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "jsx": "react",
+    "esModuleInterop": true,
+    "moduleResolution": "node",
+    "inlineSourceMap": true,
+    "outDir": "dist",
+    "declaration": true,
+    "declarationDir": "dist",
+    "target": "es5",
+    "lib": ["dom", "es2015"],
+    "allowSyntheticDefaultImports": true,
+    "module": "ESNext",
+    "strictNullChecks": true
+  },
+  "include": ["lib/**/*", "stories/**/*"],
+  "exclude": ["node_modules"]
+}

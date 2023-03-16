@@ -14,7 +14,7 @@ import '../styles/global.css';
 
 const margin = {
   left: 50,
-  top: 50,
+  top: 60,
   right: 20,
   bottom: 30,
 };
@@ -96,7 +96,7 @@ const BarChart: ComponentType<ChartProps> = ({
             position: 'absolute',
             top: 0,
             left: '50%',
-            transform: 'translate(-50%, -50%)',
+            transform: 'translate(-50%, 0)',
           }}
         >
           <ul

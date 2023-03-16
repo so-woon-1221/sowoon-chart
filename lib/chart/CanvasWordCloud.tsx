@@ -40,8 +40,6 @@ const WordCloud: ComponentType<WordCloudProps> = ({
     }
   }, []);
 
-  const [clickPosition, setClickPosition] = useState<[number, number]>([0, 0]);
-
   const fontScale = useMemo(
     () =>
       scaleLinear()

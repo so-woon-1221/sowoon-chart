@@ -424,6 +424,7 @@ const LineCanvasChart: ComponentType<ChartProps> = ({
               groupType === 'single'
                 ? yScale(data[index].y as any)
                 : margin.top;
+            // eslint-disable-next-line no-nested-ternary
             const tooltip = data[index].tooltipData
               ? data[index].tooltipData
               : tooltipMaker !== undefined

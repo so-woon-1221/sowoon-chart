@@ -14,7 +14,7 @@ import '../styles/global.css';
 
 const margin = {
   left: 50,
-  top: 30,
+  top: 50,
   right: 20,
   bottom: 30,
 };
@@ -105,7 +105,7 @@ const LineChart: ComponentType<Props> = ({
             position: 'absolute',
             top: '0',
             left: '50%',
-            transform: 'translate(-50%, -50%)',
+            transform: 'translate(-50%, 0)',
           }}
         >
           <ul

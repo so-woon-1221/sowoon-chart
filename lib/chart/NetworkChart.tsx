@@ -1,10 +1,4 @@
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import {
   forceCenter,
   forceLink,
@@ -21,6 +15,8 @@ import { zoom } from 'd3-zoom';
 import { RectClipPath } from '@visx/clip-path';
 import type { ComponentType } from 'react';
 import type { SimulationLinkDatum, NumberValue } from 'd3';
+import { forceCollide } from 'd3';
+import chroma from 'chroma-js';
 import withParentSize from '../hooks/withParentSize';
 
 interface Props {
@@ -48,7 +44,6 @@ const NetworkChart: ComponentType<Props> = ({
   colorList = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd'],
 }) => {
   const svgRef = useRef<SVGSVGElement>(null);
-  const [isZoom] = useState(false);
 
   const colorScale = useMemo(
     () =>
@@ -103,6 +98,14 @@ const NetworkChart: ComponentType<Props> = ({
       .on('end', dragended);
   };
 
+  const getContrastColor = useCallback((hexcolor: string) => {
+    const r = parseInt(hexcolor.slice(1, 3), 16);
+    const g = parseInt(hexcolor.slice(3, 5), 16);
+    const b = parseInt(hexcolor.slice(5, 7), 16);
+    const yiq = (r * 299 + g * 587 + b * 114) / 1000;
+    return yiq >= 128 ? '#000' : '#fff';
+  }, []);
+
   const drawChart = useCallback(() => {
     const svg = select(svgRef.current);
 
@@ -113,10 +116,16 @@ const NetworkChart: ComponentType<Props> = ({
         'link',
         forceLink(data.links)
           .id((d: any) => d.id)
-          .distance(250),
+          .distance(100), // 노드 간의 거리를 줄임
       )
       .force('center', forceCenter(width! / 2, height! / 2))
-      .force('charge', forceManyBody().strength(-300))
+      .force('charge', forceManyBody().strength(-200)) // 노드 간의 힘을 높임
+      .force(
+        'collide',
+        forceCollide()
+          .radius((d: any) => circleScale(+d.value) + 10)
+          .strength(1),
+      ) // 반지름을 늘리고 힘을 높임
       .force('x', forceX(width!))
       .force('y', forceY(height!));
 
@@ -156,11 +165,10 @@ const NetworkChart: ComponentType<Props> = ({
       .data(data.nodes)
       .join('text')
       .text(d => d.id)
-      .attr('fill', 'white')
+      .attr('fill', d => getContrastColor(colorScale(d.group) as string))
       .attr('text-anchor', 'middle')
       .attr('alignment-baseline', 'middle')
       .attr('font-size', d => `${circleScale(d.value) / 1.5}px`)
-      // .attr("font-size", "10px")
       .attr('pointer-events', 'none')
       .attr('x', (d: any) => d.x)
       .attr('y', (d: any) => d.y);
@@ -203,7 +211,6 @@ const NetworkChart: ComponentType<Props> = ({
             return '20px';
           }
           return `${circleScale(o.value) / 1.5}px`;
-          // return "10px";
         });
       })
       .on('mouseleave', () => {
@@ -234,7 +241,8 @@ const NetworkChart: ComponentType<Props> = ({
 
     svg.call(
       zoom()
-        .scaleExtent(isZoom ? [0.7, 1.5] : [1, 1])
+        .scaleExtent([0.7, 1.5])
+        .scaleExtent([0.7, 1.5])
         .extent([
           [0, 0],
           [width!, height!],
@@ -249,7 +257,6 @@ const NetworkChart: ComponentType<Props> = ({
     data.links,
     data.nodes,
     height,
-    isZoom,
     strokeScale,
     width,
   ]);
@@ -268,14 +275,21 @@ const NetworkChart: ComponentType<Props> = ({
       return acc;
     }, []);
 
-    if (legendList !== null) {
+    if (legendList.length > 0) {
       return (
         <div
           style={{
             position: 'absolute',
             top: '0',
             left: '50%',
-            transform: 'translate(-50%, -50%)',
+            transform: 'translate(-50%, 0)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: '100%',
+            backgroundColor: 'white',
+            paddingBottom: '0.5rem',
+            zIndex: 1,
           }}
         >
           <ul

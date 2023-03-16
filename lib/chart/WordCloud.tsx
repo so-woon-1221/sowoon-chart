@@ -61,7 +61,7 @@ const WordCloud: ComponentType<WordCloudProps> = ({
         width,
         height,
         data: wordData,
-        padding: padding,
+        padding,
         fontFamily: 'Impact',
         type,
       });
