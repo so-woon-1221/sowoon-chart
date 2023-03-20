@@ -6,6 +6,7 @@ import {
   forceSimulation,
   forceX,
   forceY,
+  forceCollide,
 } from 'd3-force';
 import { select } from 'd3-selection';
 import { drag } from 'd3-drag';
@@ -15,8 +16,6 @@ import { zoom } from 'd3-zoom';
 import { RectClipPath } from '@visx/clip-path';
 import type { ComponentType } from 'react';
 import type { SimulationLinkDatum, NumberValue } from 'd3';
-import { forceCollide } from 'd3';
-import chroma from 'chroma-js';
 import withParentSize from '../hooks/withParentSize';
 
 interface Props {
