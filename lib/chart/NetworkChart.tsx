@@ -33,6 +33,7 @@ interface Props {
   width?: number;
   height?: number;
   colorList?: string[];
+  keyList?: string[];
 }
 
 const NetworkChart: ComponentType<Props> = ({
@@ -41,15 +42,16 @@ const NetworkChart: ComponentType<Props> = ({
   width,
   height,
   colorList = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd'],
+  keyList,
 }) => {
   const svgRef = useRef<SVGSVGElement>(null);
 
   const colorScale = useMemo(
     () =>
       scaleOrdinal()
-        .domain(data.nodes.map(d => d.group))
+        .domain(keyList ?? data.nodes.map(d => d.group))
         .range(colorList),
-    [colorList, data.nodes],
+    [colorList, data.nodes, keyList],
   );
 
   const strokeScale = useMemo(
@@ -255,6 +257,7 @@ const NetworkChart: ComponentType<Props> = ({
     colorScale,
     data.links,
     data.nodes,
+    getContrastColor,
     height,
     strokeScale,
     width,
@@ -267,12 +270,14 @@ const NetworkChart: ComponentType<Props> = ({
   }, [data.nodes.length, drawChart]);
 
   const drawLegend = useCallback(() => {
-    const legendList = data.nodes.reduce((acc: string[], cur: any) => {
-      if (acc.indexOf(cur.group) === -1) {
-        acc.push(cur.group);
-      }
-      return acc;
-    }, []);
+    const legendList =
+      keyList ??
+      data.nodes.reduce((acc: string[], cur: any) => {
+        if (acc.indexOf(cur.group) === -1) {
+          acc.push(cur.group);
+        }
+        return acc;
+      }, []);
 
     if (legendList.length > 0) {
       return (
@@ -325,7 +330,7 @@ const NetworkChart: ComponentType<Props> = ({
       );
     }
     return null;
-  }, [colorScale, data.nodes, id]);
+  }, [colorScale, data.nodes, id, keyList]);
 
   return (
     <div
