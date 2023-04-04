@@ -219,7 +219,14 @@ const BarChart: ComponentType<ChartProps> = ({
   }, [yScale, width, id, data.length]);
 
   const xAxis = useCallback(() => {
-    const divider = data.length <= 5 ? 1 : Math.floor(data.length / 6);
+    const divider =
+      // eslint-disable-next-line no-nested-ternary
+      width && width < 800
+        ? data.length <= 5
+          ? 1
+          : Math.floor(data.length / 6)
+        : 1;
+
     const axis = axisBottom(xScale)
       .tickSize(3)
       .tickValues(xScale.domain().filter((d, i) => i % divider === 0))
@@ -232,7 +239,7 @@ const BarChart: ComponentType<ChartProps> = ({
     );
     axisArea.selectAll('path').attr('stroke', 'black');
     axisArea.call(axis as any);
-  }, [xScale, height, id, data.length]);
+  }, [width, data.length, xScale, id, height]);
 
   const yAxis = useCallback(() => {
     const axis = axisLeft(yScale)
