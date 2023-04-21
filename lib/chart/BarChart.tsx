@@ -16,7 +16,7 @@ const margin = {
   left: 50,
   top: 60,
   right: 20,
-  bottom: 30,
+  bottom: 50,
 };
 
 const BarChart: ComponentType<ChartProps> = ({
@@ -152,7 +152,19 @@ const BarChart: ComponentType<ChartProps> = ({
         d => height! - margin.bottom - yScale(d[keyList[0]] as number),
       )
       .attr('width', (xScale as ScaleBand<any>).bandwidth());
-  }, [colorScale, data, height, id, keyList, xScale, yScale]);
+
+    chartArea
+      .selectAll('text')
+      .data(data)
+      .join('text')
+      .attr('x', d => (xScale as ScaleBand<any>)(d.x) as number)
+      .attr('y', d => yScale(d[keyList[0]] as number))
+      .text(d => (d[keyList[0]] as string) + displayIndex)
+      .attr('dx', (xScale as ScaleBand<any>).bandwidth() / 2)
+      .attr('dy', -5)
+      .attr('text-anchor', 'middle')
+      .style('font-size', '0.7rem');
+  }, [colorScale, data, displayIndex, height, id, keyList, xScale, yScale]);
 
   /**
    * groupType이 group일때 차트 그리기
@@ -238,6 +250,10 @@ const BarChart: ComponentType<ChartProps> = ({
       `translate(0, ${height! - margin.bottom})`,
     );
     axisArea.selectAll('path').attr('stroke', 'black');
+    axisArea
+      .selectAll('text')
+      .attr('transform', 'rotate(-30)')
+      .style('text-anchor', 'end');
     axisArea.call(axis as any);
   }, [width, data.length, xScale, id, height]);
 
