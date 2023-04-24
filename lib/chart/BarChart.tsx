@@ -254,6 +254,16 @@ const BarChart: ComponentType<ChartProps> = ({
       .selectAll('text')
       .attr('transform', 'rotate(-30)')
       .style('text-anchor', 'end');
+
+    const texts = axisArea.selectAll('g.tick');
+    texts.each(function (d) {
+      select(this)
+        .selectAll('title')
+        .data([d])
+        .join('title')
+        .text(d as string);
+    });
+
     axisArea.call(axis as any);
   }, [width, data.length, xScale, id, height]);
 
