@@ -1,7 +1,8 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import { scaleOrdinal } from 'd3-scale';
 import { select } from 'd3-selection';
 import { arc, pie } from 'd3-shape';
-import { scaleOrdinal } from 'd3-scale';
+import React, { useCallback, useMemo, useState } from 'react';
+
 import type { ComponentType } from 'react';
 import withParentSize from '../hooks/withParentSize';
 
@@ -61,7 +62,7 @@ const PieChart: ComponentType<Props> = ({
 
   const drawChart = useCallback(() => {
     const pieWidth = width! - margin.left - margin.right;
-    const pieHeight = height! - margin.top - margin.bottom;
+    const pieHeight = height! - margin.top - margin.bottom - 40;
     // 차트 그리기 ////////////////////////////////////////////////////////////////////
     const radius = Math.min(pieWidth, pieHeight) / 2;
     const arcValue = arc()
@@ -122,7 +123,7 @@ const PieChart: ComponentType<Props> = ({
   const drawLegend = useCallback(
     () =>
       color.domain().map((d: string) => (
-        <li
+        <div
           key={`legend-${d}`}
           style={{
             fontSize: '0.875rem',
@@ -141,7 +142,7 @@ const PieChart: ComponentType<Props> = ({
             />
           </svg>
           <span>{d}</span>
-        </li>
+        </div>
       )),
     [color],
   );
@@ -155,42 +156,35 @@ const PieChart: ComponentType<Props> = ({
         alignItems: 'center',
         justifyContent: 'center',
         position: 'relative',
+        flexDirection: 'column',
       }}
     >
       <div
         style={{
-          pointerEvents: 'none',
-          position: 'absolute',
-          top: 0,
           left: '50%',
-          transform: 'translate(-50%, 50%)',
+          // display: 'grid',
+          // gridTemplteColumns: `repeat(${data.length}, 1fr)`,
           display: 'flex',
-          justifyContent: 'center',
+          margin: '0 auto',
           alignItems: 'center',
-          overflowY: 'auto',
+          overflowX: 'auto',
+          maxWidth: '100%',
+          whiteSpace: 'nowrap', // 추가된 부분
+          height: '40px',
+          overflowY: 'hidden',
+          gap: '0.5rem',
         }}
       >
-        <ul
-          id="pie-legend"
-          style={{
-            listStyle: 'none',
-            display: 'flex',
-            width: '100%',
-            gap: '0.75rem',
-            overflowX: 'auto',
-            margin: 'auto 0',
-          }}
-        >
-          {drawLegend()}
-        </ul>
+        {drawLegend()}
       </div>
       <div
         style={{
           position: 'relative',
           display: 'flex',
+          height: 'calc(100% - 40px)',
         }}
       >
-        <svg width={width} height={height}>
+        <svg width={width} height="100%">
           {drawChart()}
         </svg>
         {tooltipData && (
