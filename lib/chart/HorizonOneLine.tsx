@@ -1,5 +1,8 @@
-import React from 'react';
+import { pointer } from 'd3-selection';
+import React, { MouseEventHandler, useState } from 'react';
 import type { ComponentType } from 'react';
+import { useTooltipInPortal } from '@visx/tooltip';
+
 import withParentSize from '../hooks/withParentSize';
 
 interface Props {
@@ -35,72 +38,111 @@ const HorizonOneLine: ComponentType<Props> = ({
   width,
   height,
   id,
-}) => (
-  <div
-    style={{
-      width: width!,
-      height: height!,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      position: 'relative',
-    }}
-  >
+}) => {
+  const [tooltip, setTooltip] = useState<
+    undefined | { x: number; y: number; data?: number }
+  >(undefined);
+  const { containerRef, TooltipInPortal } = useTooltipInPortal({
+    scroll: true,
+  });
+
+  const onHover: MouseEventHandler = e => {
+    const x = pointer(e)[0];
+    const y = pointer(e)[1];
+
+    setTooltip(prev => ({ x, y, data: prev?.data }));
+  };
+
+  const onMouseLeave = () => {
+    setTooltip(undefined);
+  };
+
+  return (
     <div
       style={{
-        width: '100%',
+        width: width!,
+        height: height!,
         display: 'flex',
-        height: '50px',
+        alignItems: 'center',
+        justifyContent: 'center',
         position: 'relative',
       }}
+      id={id}
     >
       <div
         style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          transform: 'translate(0, -100%)',
-          display: 'flex',
           width: '100%',
-          justifyContent: 'space-between',
+          display: 'flex',
+          height: '50px',
+          position: 'relative',
         }}
+        ref={containerRef}
+        onMouseMove={onHover}
+        onMouseLeave={onMouseLeave}
       >
-        <span>{data.length > 2 ? '전혀 그렇지 않다.' : '비동의'}</span>
-        <span>{data.length > 2 ? '매우 그렇다.' : '동의'}</span>
-      </div>
-      {data.map((d, i) => (
         <div
-          key={`${d.key}`}
           style={{
-            width: `${d.value}%`,
-            height: '100%',
-            backgroundColor: colorList[i],
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            transform: 'translate(0, -100%)',
             display: 'flex',
-            alignItems: 'center',
-            position: 'relative',
+            width: '100%',
+            justifyContent: 'space-between',
           }}
         >
-          {(i === 0 || i === data.length - 1) && (
-            <span
-              style={{
-                borderLeft: '1px solid black',
-                padding: '0 5px',
-                position: 'absolute',
-                top: '100%',
-                left: 0,
-                transform: 'translate(0%, 0)',
-              }}
-            >
-              {d.value.toLocaleString('ko-KR', {
-                maximumFractionDigits: 0,
-              })}
-              %
-            </span>
-          )}
+          <span>전혀 그렇지 않다.</span>
+          <span>매우 그렇다.</span>
         </div>
-      ))}
+        {data.map((d, i) => (
+          <div
+            key={`${d.key}`}
+            style={{
+              width: `${d.value}%`,
+              height: '100%',
+              backgroundColor: colorList[i],
+              display: 'flex',
+              alignItems: 'center',
+              position: 'relative',
+            }}
+            onMouseMove={() => {
+              setTooltip(prev => ({
+                x: prev?.x ?? 0,
+                y: prev?.y ?? 0,
+                data: d.value,
+              }));
+            }}
+          >
+            {(i === 0 || i === data.length - 1) && (
+              <span
+                style={{
+                  borderLeft: '1px solid black',
+                  padding: '0 5px',
+                  position: 'absolute',
+                  top: '100%',
+                  left: 0,
+                  transform: 'translate(0%, 0)',
+                }}
+              >
+                {d.value.toLocaleString('ko-KR', {
+                  maximumFractionDigits: 0,
+                })}
+                %
+              </span>
+            )}
+          </div>
+        ))}
+        {tooltip && (
+          <TooltipInPortal left={tooltip.x} top={tooltip.y} detectBounds>
+            {tooltip.data?.toLocaleString('ko-KR', {
+              maximumFractionDigits: 1,
+            })}
+            %
+          </TooltipInPortal>
+        )}
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 export default withParentSize(HorizonOneLine);

@@ -114,7 +114,14 @@ const PieChart: ComponentType<Props> = ({
   const drawLegend = useCallback(
     () =>
       color.domain().map((d: string, i) => (
-        <div key={`legend-${d}`}>
+        <div
+          key={`legend-${d}`}
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.5rem',
+          }}
+        >
           {i > 0 && (
             <div
               style={{
@@ -136,18 +143,20 @@ const PieChart: ComponentType<Props> = ({
                 fontSize: '0.875rem',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '0.25rem',
+                gap: '0.3rem',
               }}
             >
-              <svg width={15} height={15}>
-                <rect
-                  x={0}
-                  y={0}
-                  width={15}
-                  height={15}
-                  fill={color(d) as string}
-                />
-              </svg>
+              <div style={{ width: '15px' }}>
+                <svg width={15} height={15}>
+                  <rect
+                    x={0}
+                    y={0}
+                    width={15}
+                    height={15}
+                    fill={color(d) as string}
+                  />
+                </svg>
+              </div>
               <span>{data.find(row => row.key === d)?.description ?? d}</span>
             </div>
             <span>
@@ -221,6 +230,7 @@ const PieChart: ComponentType<Props> = ({
           width: legendWidth,
           maxHeight: `${height! - 50}px`,
           marginRight: '1rem',
+          userSelect: 'text',
         }}
       >
         {drawLegend()}
