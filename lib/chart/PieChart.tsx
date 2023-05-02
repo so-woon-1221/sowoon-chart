@@ -16,7 +16,7 @@ interface Props {
    *  - value of the data
    *  - type: number
    */
-  data: Array<{ key: string; value: number }>;
+  data: Array<{ key: string; value: number; description?: string }>;
   /**
    * List of colors for the graph
    * - Colors are applied in the order of the keyList
@@ -33,12 +33,7 @@ interface Props {
   id: string;
 }
 
-const margin = {
-  top: 10,
-  bottom: 10,
-  left: 10,
-  right: 10,
-};
+const legendWidth = 200;
 
 const PieChart: ComponentType<Props> = ({
   data,
@@ -50,6 +45,7 @@ const PieChart: ComponentType<Props> = ({
   const [tooltipData, setTooltipData] = useState<{
     key: string;
     value: number;
+    description?: string;
   }>();
 
   const color = useMemo(
@@ -61,8 +57,8 @@ const PieChart: ComponentType<Props> = ({
   );
 
   const drawChart = useCallback(() => {
-    const pieWidth = width! - margin.left - margin.right;
-    const pieHeight = height! - margin.top - margin.bottom - 40;
+    const pieWidth = width! - legendWidth;
+    const pieHeight = height!;
     // 차트 그리기 ////////////////////////////////////////////////////////////////////
     const radius = Math.min(pieWidth, pieHeight) / 2;
     const arcValue = arc()
@@ -81,12 +77,7 @@ const PieChart: ComponentType<Props> = ({
       .selectAll('path')
       .data(chartData)
       .join('path')
-      .attr(
-        'transform',
-        `translate(${pieWidth / 2}, ${
-          pieHeight! / 2 + margin.top + margin.bottom
-        })`,
-      )
+      .attr('transform', `translate(${pieWidth / 2}, ${pieHeight! / 2})`)
       .attr('fill', (d: any) => color(d.data.key) as string)
       .attr('stroke', 'rgba(0,0,0,0.3)')
       .on('mouseover touchmove', function handler(_, d: any) {
@@ -94,21 +85,21 @@ const PieChart: ComponentType<Props> = ({
           .transition()
           .attr(
             'transform',
-            `translate(${pieWidth / 2}, ${
-              pieHeight! / 2 + margin.top + margin.bottom
-            }) scale(1.05)`,
+            `translate(${pieWidth / 2}, ${pieHeight! / 2}) scale(1.05)`,
           )
           .attr('filter', 'drop-shadow(1px 1px 4px rgba(0,0,0,0.4))');
-        setTooltipData({ key: d.data.key, value: d.data.value });
+        setTooltipData({
+          key: d.data.key,
+          value: d.data.value,
+          description: d.data.description,
+        });
       })
       .on('mouseleave touchend', function handler() {
         select(this)
           .transition()
           .attr(
             'transform',
-            `translate(${pieWidth / 2}, ${
-              pieHeight! / 2 + margin.top + margin.bottom
-            }) scale(1)`,
+            `translate(${pieWidth / 2}, ${pieHeight! / 2}) scale(1)`,
           )
           .attr('filter', '');
         setTooltipData(undefined);
@@ -122,69 +113,76 @@ const PieChart: ComponentType<Props> = ({
 
   const drawLegend = useCallback(
     () =>
-      color.domain().map((d: string) => (
-        <div
-          key={`legend-${d}`}
-          style={{
-            fontSize: '0.875rem',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.25rem',
-          }}
-        >
-          <svg width={15} height={15}>
-            <rect
-              x={0}
-              y={0}
-              width={15}
-              height={15}
-              fill={color(d) as string}
+      color.domain().map((d: string, i) => (
+        <div key={`legend-${d}`}>
+          {i > 0 && (
+            <div
+              style={{
+                width: '100%',
+                height: 1,
+                backgroundColor: 'rgba(0,0,0,0.1)',
+              }}
             />
-          </svg>
-          <span>{d}</span>
+          )}
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              gap: '0.2rem',
+            }}
+          >
+            <div
+              style={{
+                fontSize: '0.875rem',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.25rem',
+              }}
+            >
+              <svg width={15} height={15}>
+                <rect
+                  x={0}
+                  y={0}
+                  width={15}
+                  height={15}
+                  fill={color(d) as string}
+                />
+              </svg>
+              <span>{data.find(row => row.key === d)?.description ?? d}</span>
+            </div>
+            <span>
+              {data
+                .find(row => row.key === d)
+                ?.value.toLocaleString('ko', {
+                  maximumFractionDigits: 1,
+                })}
+            </span>
+          </div>
         </div>
       )),
-    [color],
+    [color, data],
   );
 
   return (
     <div
       style={{
-        width: '100%',
-        height: '100%',
+        width: width!,
+        height: height!,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         position: 'relative',
-        flexDirection: 'column',
       }}
     >
       <div
         style={{
-          left: '50%',
-          // display: 'grid',
-          // gridTemplteColumns: `repeat(${data.length}, 1fr)`,
-          display: 'flex',
-          margin: '0 auto',
-          alignItems: 'center',
-          overflowX: 'auto',
-          maxWidth: '100%',
-          whiteSpace: 'nowrap', // 추가된 부분
-          height: '40px',
-          overflowY: 'hidden',
-          gap: '0.5rem',
-        }}
-      >
-        {drawLegend()}
-      </div>
-      <div
-        style={{
           position: 'relative',
           display: 'flex',
-          height: 'calc(100% - 40px)',
+          width: `calc(100% - ${legendWidth}px)`,
+          height: '100%',
         }}
       >
-        <svg width={width} height="100%">
+        <svg width={width! - legendWidth} height={height}>
           {drawChart()}
         </svg>
         {tooltipData && (
@@ -193,7 +191,7 @@ const PieChart: ComponentType<Props> = ({
               pointerEvents: 'none',
               position: 'absolute',
               top: '50%',
-              left: 'calc((100% - 20px) / 2)',
+              left: '50%',
               transform: 'translate(-50%, -50%)',
               textAlign: 'center',
             }}
@@ -205,11 +203,27 @@ const PieChart: ComponentType<Props> = ({
                 gap: '0.5rem',
               }}
             >
-              <span>{tooltipData.key}</span>
-              <span>{tooltipData.value}</span>
+              <span>{tooltipData.description ?? tooltipData.key}</span>
+              <span>
+                {tooltipData.value.toLocaleString('ko', {
+                  maximumFractionDigits: 1,
+                })}
+              </span>
             </div>
           </div>
         )}
+      </div>
+      <div
+        style={{
+          display: 'grid',
+          overflowY: 'auto',
+          gap: '0.5rem',
+          width: legendWidth,
+          maxHeight: `${height! - 50}px`,
+          marginRight: '1rem',
+        }}
+      >
+        {drawLegend()}
       </div>
     </div>
   );

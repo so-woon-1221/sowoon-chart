@@ -9,3 +9,5 @@ export { default as BrushLineChart } from './chart/BrushLineChart';
 export { default as CanvasLineChart } from './chart/CanvasLineChart';
 export { default as CanvasWordCloud } from './chart/CanvasWordCloud';
 export { default as TreemapChart } from './chart/TreemapChart';
+export { default as HorizonOneLineChart } from './chart/HorizonOneLine';
+export { default as LinearBarChart } from './chart/LinearBarChart';
