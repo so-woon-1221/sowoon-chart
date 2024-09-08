@@ -22,4 +22,11 @@ export const Area차트: Story = {
     ],
     height: 400,
   },
+  argTypes: {
+    color: {
+      control: {
+        type: "color",
+      },
+    },
+  },
 };
