@@ -1,6 +1,7 @@
 import { useParentSize } from "../../hooks/useParentSize.tsx";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { hierarchy, hsl, pack, select } from "d3";
+import { type ChartProps } from "../../util/types.ts";
 
 type Props = Pick<ChartProps, "width" | "height" | "data" | "margin"> & {
   children?: React.ReactNode;
