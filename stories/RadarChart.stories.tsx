@@ -44,6 +44,11 @@ export const 레이다차트: Story = {
       "#D1495B",
       "#9b5de5",
     ],
+    children: ({ tooltipData }) => (
+      <div>
+        {tooltipData.x}: {tooltipData.y}
+      </div>
+    ),
   },
   argTypes: {
     margin: {

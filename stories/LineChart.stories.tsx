@@ -21,5 +21,10 @@ export const 라인차트: Story = {
       { x: "E", y: 50 },
     ],
     height: 400,
+    children: ({ tooltipData }: { tooltipData: { x: string; y: number } }) => (
+      <div style={{ background: "black", color: "white", padding: "4px" }}>
+        {tooltipData.x}: {tooltipData.y}
+      </div>
+    ),
   },
 };

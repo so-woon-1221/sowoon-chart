@@ -4,14 +4,26 @@ import {
   curveLinearClosed,
   lineRadial,
   max,
+  pointer,
   scaleLinear,
   scaleOrdinal,
   select,
 } from "d3";
+import { defaultStyles, useTooltip, useTooltipInPortal } from "@visx/tooltip";
+import { mergeRefs } from "../../util/utils.ts";
 
 type Props = {
+  /**
+   * Width of the chart.
+   */
   width?: number;
+  /**
+   * Height of the chart.
+   */
   height?: number;
+  /**
+   * Data to display in the chart.
+   */
   data: {
     key: string;
     data: {
@@ -19,16 +31,62 @@ type Props = {
       y: number;
     }[];
   }[];
+  /**
+   * List of colors to use for the chart.
+   */
   colorList: string[];
+  /**
+   * Margin of the chart.
+   */
   margin?: number;
+  /**
+   * Children to render in the
+   * tooltip when it is open.
+   * It will receive the tooltipData
+   * as a prop.
+   * @param tooltipData - The data of the tooltip.
+   * @returns The children to render.
+   */
+  children?: ({
+    tooltipData,
+  }: {
+    tooltipData: { x: string; y: number };
+  }) => React.ReactNode;
+  /**
+   * Offset of the tooltip from the mouse pointer.
+   * @default { x: 10, y: -10 }
+   */
+  tooltipOffset?: { x: number; y: number };
 };
 
-const RadarChart = ({ width, height, margin = 60, data, colorList }: Props) => {
+const RadarChart = ({
+  width,
+  height,
+  margin = 60,
+  data,
+  colorList,
+  children,
+  tooltipOffset = { x: 10, y: -10 },
+}: Props) => {
+  const {
+    showTooltip,
+    tooltipOpen,
+    tooltipData,
+    tooltipLeft,
+    tooltipTop,
+    hideTooltip,
+  } = useTooltip();
+  const { containerRef, TooltipInPortal } = useTooltipInPortal({
+    detectBounds: true,
+  });
+
   const {
     ref: parentRef,
     height: parentHeight,
     width: parentWidth,
   } = useParentSize();
+
+  const parent = mergeRefs(containerRef, parentRef);
 
   const ref = useRef<SVGSVGElement>(null);
 
@@ -80,7 +138,7 @@ const RadarChart = ({ width, height, margin = 60, data, colorList }: Props) => {
     const chartContainer = svg.select(".chart");
     chartContainer.attr(
       "transform",
-      `translate(${parentWidth! / 2}, ${parentHeight! / 2})`,
+      `translate(${parentWidth / 2}, ${parentHeight / 2})`,
     );
 
     chartContainer
@@ -134,7 +192,8 @@ const RadarChart = ({ width, height, margin = 60, data, colorList }: Props) => {
       .data(data)
       .join("path")
       .attr("class", "data")
-      // .transition()
+      .attr("d", (d) => radarLine(d.data.map(() => 0)))
+      .transition()
       .attr("d", (d) => {
         return radarLine(d.data.map((a) => a.y));
       })
@@ -142,14 +201,15 @@ const RadarChart = ({ width, height, margin = 60, data, colorList }: Props) => {
       .attr("fill-opacity", 0.1)
       .attr("stroke", (d) => color(d.key))
       .attr("stroke-dasharray", (_, i) => (i % 2 === 1 ? "5,5" : "0,0"))
-      .attr("stroke-width", 2);
+      .attr("stroke-width", 2)
+      .attr("pointer-events", "none");
 
     chartContainer
       .selectAll("g")
       .data(data)
       .join("g")
       .attr("stroke", (d) => color(d.key))
-      .attr("fill", "none")
+      .attr("fill", (d) => color(d.key))
       .selectAll("circle")
       .data((d) => d.data)
       .join("circle")
@@ -161,35 +221,103 @@ const RadarChart = ({ width, height, margin = 60, data, colorList }: Props) => {
       .attr(
         "cy",
         (d, i) => rScale(d.y) * Math.sin(angleSlice * i - Math.PI / 2),
-      );
+      )
+      .on("mouseover", (e, d) => {
+        const [x, y] = pointer(e);
+        showTooltip({
+          tooltipData: { x: d.x, y: d.y },
+          tooltipLeft: x + parentWidth / 2 + tooltipOffset.x,
+          tooltipTop: y + parentHeight / 2 + tooltipOffset.y,
+        });
+      })
+      .on("mouseleave", hideTooltip);
   }, [
     angleSlice,
     axisList,
     backLineList,
     color,
     data,
+    hideTooltip,
     maxY,
     parentHeight,
     parentWidth,
     rScale,
     radarLine,
+    showTooltip,
+    tooltipOffset.x,
+    tooltipOffset.y,
   ]);
 
   useEffect(() => {
     drawChart();
   }, [drawChart]);
 
+  const keyList = useMemo(() => data.map((d) => d.key), [data]);
+
   return (
     <div
-      ref={parentRef}
+      ref={parent}
       style={{
         width: width ?? "100%",
         height: height ?? "100%",
+        position: "relative",
+        display: "flex",
+        justifyContent: "center",
       }}
     >
       <svg width={"100%"} height={"100%"} ref={ref}>
         <g className={"chart"} />
-      </svg>
+      </svg>{" "}
+      {children && tooltipOpen && (
+        <TooltipInPortal
+          left={tooltipLeft}
+          top={tooltipTop}
+          style={{
+            ...defaultStyles,
+            background: "transparent",
+            border: "none",
+            boxShadow: "none",
+            padding: 0,
+          }}
+        >
+          {children({
+            tooltipData: tooltipData as {
+              x: string;
+              y: number;
+            },
+          })}
+        </TooltipInPortal>
+      )}
+      <div
+        style={{
+          position: "absolute",
+          bottom: 0,
+          display: "flex",
+          gap: "8px",
+          fontSize: "14px",
+          padding: "4px",
+        }}
+      >
+        {keyList.map((key) => (
+          <div
+            key={`legend-${key}`}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "4px",
+            }}
+          >
+            <div
+              style={{
+                width: "14px",
+                height: "14px",
+                background: color(key) as string,
+              }}
+            />
+            <span>{key}</span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 };

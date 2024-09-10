@@ -21,5 +21,10 @@ export const 스택라인차트: Story = {
       { x: "E", y: 50, y2: 60 },
     ],
     height: 400,
+    children: ({ tooltipData }) => (
+      <div>
+        {tooltipData.x}: {tooltipData.y}
+      </div>
+    ),
   },
 };

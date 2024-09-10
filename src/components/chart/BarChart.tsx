@@ -35,7 +35,7 @@ type BarChartProps = ChartProps & {
 const defaultMargin = {
   top: 20,
   right: 20,
-  bottom: 30,
+  bottom: 50,
   left: 50,
 };
 
@@ -158,6 +158,8 @@ const BarChart = ({
           style={{
             ...defaultStyles,
             background: "transparent",
+            border: "none",
+            boxShadow: "none",
             padding: 0,
           }}
         >

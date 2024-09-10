@@ -15,7 +15,7 @@ interface ChartProps {
   height?: number;
   /**
    * Margin around the chart.
-   * @default { top: 20, right: 20, bottom: 30, left: 50 }
+   * @default { top: 20, right: 20, bottom: 50, left: 50 }
    */
   margin?: {
     top: number;

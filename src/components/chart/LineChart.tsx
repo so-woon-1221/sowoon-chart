@@ -1,8 +1,16 @@
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import {
+  PointerEventHandler,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+} from "react";
 import {
   type AxisDomain,
   type AxisScale,
+  bisectLeft,
   line,
+  pointer,
   scaleBand,
   scaleLinear,
   select,
@@ -10,13 +18,21 @@ import {
 import { useParentSize } from "../../hooks/useParentSize.tsx";
 import AxisBottom from "../common/AxisBottom.tsx";
 import AxisLeft from "../common/AxisLeft.tsx";
+import { defaultStyles, useTooltip, useTooltipInPortal } from "@visx/tooltip";
+import { mergeRefs } from "../../util/utils.ts";
 
-type LineChartProps = ChartProps & {};
+type LineChartProps = ChartProps & {
+  children?: ({
+    tooltipData,
+  }: {
+    tooltipData: { x: string; y: number };
+  }) => React.ReactNode;
+};
 
 const defaultMargin = {
   top: 20,
   right: 20,
-  bottom: 30,
+  bottom: 50,
   left: 50,
 };
 
@@ -31,12 +47,27 @@ const LineChart = ({
   maxY,
   width,
   height,
+  children,
 }: LineChartProps) => {
+  const {
+    showTooltip,
+    tooltipOpen,
+    tooltipData,
+    tooltipLeft,
+    tooltipTop,
+    hideTooltip,
+  } = useTooltip();
+  const { containerRef, TooltipInPortal } = useTooltipInPortal({
+    detectBounds: true,
+  });
+
   const {
     ref: parentRef,
     width: parentWidth,
     height: parentHeight,
   } = useParentSize();
+
+  const parent = mergeRefs(containerRef, parentRef);
   const ref = useRef<SVGSVGElement>(null);
 
   const x = useMemo(() => {
@@ -50,6 +81,26 @@ const LineChart = ({
       .domain([minY ?? 0, maxY ?? Math.max(...data.map((d) => d.y))])
       .range([(parentHeight ?? 0) - margin.bottom, margin.top]);
   }, [data, margin.bottom, margin.top, maxY, minY, parentHeight]);
+
+  const onMouseMove: PointerEventHandler = useCallback(
+    (e) => {
+      if (children) {
+        const [xPoint] = pointer(e);
+        const xDomain = data.map((d) => x(d.x) as number);
+        const index = bisectLeft(xDomain, xPoint) - 1;
+        if (data[index]) {
+          const tooltipX = x(data[index].x)! + x.bandwidth() / 2;
+          const tooltipY = y(data[index].y);
+          showTooltip({
+            tooltipLeft: tooltipX,
+            tooltipTop: tooltipY,
+            tooltipData: data[index],
+          });
+        }
+      }
+    },
+    [children, data, showTooltip, x, y],
+  );
 
   const drawChart = useCallback(() => {
     const svg = select(ref.current);
@@ -75,13 +126,20 @@ const LineChart = ({
 
   return (
     <div
-      ref={parentRef}
+      ref={parent}
       style={{
         width: width ?? "100%",
         height: height ?? "100%",
+        position: "relative",
       }}
     >
-      <svg width={"100%"} height={"100%"} ref={ref}>
+      <svg
+        width={"100%"}
+        height={"100%"}
+        ref={ref}
+        onPointerMove={onMouseMove}
+        onPointerLeave={hideTooltip}
+      >
         <AxisBottom
           scale={x as AxisScale<AxisDomain>}
           top={(parentHeight ?? 0) - margin.bottom}
@@ -89,6 +147,21 @@ const LineChart = ({
         <AxisLeft scale={y as AxisScale<AxisDomain>} left={margin.left} />
         <g className="line" />
       </svg>
+      {children && tooltipOpen && (
+        <TooltipInPortal
+          left={tooltipLeft}
+          top={tooltipTop}
+          style={{
+            ...defaultStyles,
+            background: "transparent",
+            border: "none",
+            boxShadow: "none",
+            padding: 0,
+          }}
+        >
+          {children({ tooltipData: tooltipData as { x: string; y: number } })}
+        </TooltipInPortal>
+      )}
     </div>
   );
 };

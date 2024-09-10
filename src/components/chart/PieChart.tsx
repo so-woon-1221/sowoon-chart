@@ -1,10 +1,37 @@
 import { useParentSize } from "../../hooks/useParentSize.tsx";
 import { useCallback, useEffect, useMemo, useRef } from "react";
-import { arc, pie, scaleOrdinal, select, type PieArcDatum } from "d3";
+import { arc, pie, scaleOrdinal, select, type PieArcDatum, pointer } from "d3";
+import { defaultStyles, useTooltip, useTooltipInPortal } from "@visx/tooltip";
+import { mergeRefs } from "../../util/utils.ts";
 
 type Props = Pick<ChartProps, "width" | "height" | "data"> & {
-  children?: React.ReactNode;
+  /**
+   * Center node to display in the middle of the pie chart.
+   */
+  centerNode?: React.ReactNode;
+  /**
+   * List of colors to use for the pie chart.
+   * It will be used in order for each data.
+   */
   colorList?: string[];
+  /**
+   * Children to render in the
+   * tooltip when it is open.
+   * It will receive the tooltipData
+   * as a prop.
+   * @param tooltipData - The data of the tooltip.
+   * @returns The children to render.
+   */
+  children?: ({
+    tooltipData,
+  }: {
+    tooltipData: { x: string; y: number };
+  }) => React.ReactNode;
+  /**
+   * Offset of the tooltip from the mouse pointer.
+   * @default { x: 10, y: -10 }
+   */
+  tooltipOffset?: { x: number; y: number };
 };
 
 const PieChart = ({
@@ -19,13 +46,29 @@ const PieChart = ({
     "#9b5de5",
   ],
   data,
+  centerNode,
   children,
+  tooltipOffset = { x: 10, y: -10 },
 }: Props) => {
+  const {
+    showTooltip,
+    tooltipOpen,
+    tooltipData,
+    tooltipLeft,
+    tooltipTop,
+    hideTooltip,
+  } = useTooltip();
+  const { containerRef, TooltipInPortal } = useTooltipInPortal({
+    detectBounds: true,
+  });
+
   const {
     ref: parentRef,
     width: parentWidth,
     height: parentHeight,
   } = useParentSize();
+
+  const parent = mergeRefs(containerRef, parentRef);
 
   const ref = useRef<SVGSVGElement>(null);
 
@@ -44,8 +87,6 @@ const PieChart = ({
     const arcValue = arc<PieArcDatum<{ x: string; y: number }>>()
       .innerRadius(radius * 0.5)
       .outerRadius(radius * 0.85);
-    // .cornerRadius(3)
-    // .padAngle(0.005);
 
     const pieGenerator = pie<{ x: string; y: number }>()
       .sort(null)
@@ -53,15 +94,33 @@ const PieChart = ({
 
     const chartData = pieGenerator(data);
 
-    chartContainer
-      .selectAll("path")
-      .data(chartData)
+    const pies = chartContainer.selectAll("path").data(chartData);
+    pies
       .join("path")
       .attr("transform", `translate(${pieWidth / 2}, ${pieHeight! / 2})`)
       .attr("fill", (d) => colorScale(d.data.x) as string)
       .attr("d", arcValue);
-    // .attr('stroke', 'rgba(0,0,0,0.3)');
-  }, [colorScale, data, parentHeight, parentWidth]);
+
+    pies
+      .on("mousemove", (e, d) => {
+        const [x, y] = pointer(e);
+        showTooltip({
+          tooltipData: d.data,
+          tooltipLeft: x + parentWidth / 2 + tooltipOffset.x,
+          tooltipTop: y + parentHeight / 2 + tooltipOffset.y,
+        });
+      })
+      .on("mouseout", hideTooltip);
+  }, [
+    colorScale,
+    data,
+    hideTooltip,
+    parentHeight,
+    parentWidth,
+    showTooltip,
+    tooltipOffset.x,
+    tooltipOffset.y,
+  ]);
 
   useEffect(() => {
     drawChart();
@@ -69,7 +128,7 @@ const PieChart = ({
 
   return (
     <div
-      ref={parentRef}
+      ref={parent}
       style={{
         width: width ?? "100%",
         height: height ?? "100%",
@@ -79,7 +138,7 @@ const PieChart = ({
       <svg width={"100%"} height={"100%"} ref={ref}>
         <g className={"chart"} />
       </svg>
-      {children && (
+      {centerNode && (
         <div
           style={{
             position: "absolute",
@@ -88,8 +147,23 @@ const PieChart = ({
             transform: "translate(-50%, -50%)",
           }}
         >
-          {children}
+          {centerNode}
         </div>
+      )}
+      {children && tooltipOpen && (
+        <TooltipInPortal
+          left={tooltipLeft}
+          top={tooltipTop}
+          style={{
+            ...defaultStyles,
+            background: "transparent",
+            border: "none",
+            boxShadow: "none",
+            padding: 0,
+          }}
+        >
+          {children({ tooltipData: tooltipData as { x: string; y: number } })}
+        </TooltipInPortal>
       )}
     </div>
   );

@@ -21,6 +21,11 @@ export const 파이차트: Story = {
       { x: "E", y: 50 },
     ],
     height: 400,
-    children: <div>툴팁</div>,
+    centerNode: <div>툴팁</div>,
+    children: ({ tooltipData }) => (
+      <div>
+        {tooltipData.x}: {tooltipData.y}
+      </div>
+    ),
   },
 };

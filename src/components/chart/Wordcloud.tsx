@@ -1,5 +1,5 @@
 import { useParentSize } from "../../hooks/useParentSize.tsx";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { extent, scaleLinear, select } from "d3";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-expect-error
@@ -32,6 +32,17 @@ const Wordcloud = ({
 
   const ref = useRef<SVGSVGElement>(null);
 
+  const [words, setWords] = useState<
+    | {
+        text: string;
+        size: number;
+        x: number;
+        y: number;
+        rotate: number;
+      }[]
+    | null
+  >(null);
+
   const fontScale = useMemo(
     () =>
       scaleLinear()
@@ -54,10 +65,7 @@ const Wordcloud = ({
     [data, fontScale],
   );
 
-  const drawChart = useCallback(() => {
-    const svg = select(ref.current);
-    const chartContainer = svg.select(".word-container");
-
+  useEffect(() => {
     const worker: Worker = new WordCloudWorker();
 
     worker.postMessage({
@@ -68,38 +76,46 @@ const Wordcloud = ({
     });
 
     worker.onmessage = (e) => {
-      const words = e.data.data as {
-        text: string;
-        size: number;
-        x: number;
-        y: number;
-        rotate: number;
-      }[];
-      if (words) {
-        chartContainer
-          .attr(
-            "transform",
-            `translate(${parentWidth! / 2}, ${parentHeight! / 2})`,
-          )
-          .selectAll("text")
-          .data(words)
-          .join("text")
-          .style("font-size", (d) => `${d.size}px`)
-          .style("font-family", "Impact")
-          .attr("text-anchor", "middle")
-          .attr(
-            "transform",
-            (d) => `translate(${d.x}, ${d.y}) rotate(${d.rotate})`,
-          )
-          .text((d) => d.text as string)
-          .attr("fill", (d) => colorMap.get(d.text));
-      }
+      setWords(e.data.data);
     };
 
     return () => {
       worker.terminate();
     };
-  }, [colorMap, padding, parentHeight, parentWidth, wordData]);
+  }, [padding, parentHeight, parentWidth, wordData]);
+
+  const drawChart = useCallback(() => {
+    const svg = select(ref.current);
+    const chartContainer = svg.select(".word-container");
+
+    if (words) {
+      chartContainer.attr(
+        "transform",
+        `translate(${parentWidth! / 2}, ${parentHeight! / 2})`,
+      );
+      const wordEl = chartContainer.selectAll("text").data(words);
+
+      wordEl
+        .join("text")
+        .style("font-size", (d) => `${d.size}px`)
+        .style("font-family", "Impact")
+        .attr("text-anchor", "middle")
+        .attr("cursor", "pointer")
+        .attr(
+          "transform",
+          (d) => `translate(${d.x}, ${d.y}) rotate(${d.rotate})`,
+        )
+        .text((d) => d.text as string)
+        .attr("fill", (d) => colorMap.get(d.text))
+        .on("mouseover", (e) => {
+          chartContainer.selectAll("text").attr("opacity", 0.5);
+          select(e.target).attr("opacity", 1);
+        })
+        .on("mouseout", () => {
+          chartContainer.selectAll("text").attr("opacity", 1);
+        });
+    }
+  }, [colorMap, parentHeight, parentWidth, words]);
 
   useEffect(() => {
     drawChart();
