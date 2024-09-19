@@ -1,4 +1,4 @@
-import AxisBottom from "../common/AxisBottom.tsx";
+import AxisBottom from '../common/AxisBottom.tsx'
 import {
   type AxisDomain,
   type AxisScale,
@@ -8,34 +8,36 @@ import {
   scaleLinear,
   scaleOrdinal,
   select,
-  stack,
-} from "d3";
-import AxisLeft from "../common/AxisLeft.tsx";
-import { useParentSize } from "../../hooks/useParentSize.tsx";
-import { useCallback, useEffect, useMemo, useRef } from "react";
-import { defaultStyles, useTooltip, useTooltipInPortal } from "@visx/tooltip";
-import { mergeRefs } from "../../util/utils.ts";
-import type { ChartProps } from "../../util/types.ts";
+  stack
+} from 'd3'
+import AxisLeft from '../common/AxisLeft.tsx'
+import { useParentSize } from '../../hooks/useParentSize.tsx'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { defaultStyles, useTooltip, useTooltipInPortal } from '@visx/tooltip'
+import { mergeRefs } from '../../util/utils.ts'
+import type { ChartProps } from '../../util/types.ts'
+import GridVertical from '../common/GridVertical.tsx'
+import GridHorizontal from '../common/GridHorizontal.tsx'
 
 type DataType = {
-  x: string;
-  [key: string]: number | string;
-};
+  x: string
+  [key: string]: number | string
+}
 
-type Props = Omit<ChartProps, "data" | "color"> & {
+type Props = Omit<ChartProps, 'data' | 'color'> & {
   /**
    * Data to display in the chart.
    */
-  data: DataType[];
+  data: DataType[]
   /**
    * List of colors to use for the chart.
    * It will be used in order for each data.
    */
-  colorList: string[];
+  colorList: string[]
   /**
    * Gap between the bars.
    */
-  padding?: number;
+  padding?: number
   /**
    * Children to render in the
    * tooltip when it is open.
@@ -45,23 +47,23 @@ type Props = Omit<ChartProps, "data" | "color"> & {
    * @returns The children to render.
    */
   children?: ({
-    tooltipData,
+    tooltipData
   }: {
-    tooltipData: { x: string; y: number };
-  }) => React.ReactNode;
+    tooltipData: { x: string; y: number }
+  }) => React.ReactNode
   /**
    * Offset of the tooltip from the mouse pointer.
    * @default { x: 10, y: -10 }
    */
-  tooltipOffset?: { x: number; y: number };
-};
+  tooltipOffset?: { x: number; y: number }
+}
 
 const defaultMargin = {
   top: 20,
   right: 20,
   bottom: 50,
-  left: 50,
-};
+  left: 50
+}
 
 const StackBarChart = ({
   width,
@@ -69,18 +71,20 @@ const StackBarChart = ({
   margin = defaultMargin,
   data,
   colorList = [
-    "#98abc5",
-    "#8a89a6",
-    "#7b6888",
-    "#6b486b",
-    "#a05d56",
-    "#d0743c",
-    "#ff8c00",
+    '#98abc5',
+    '#8a89a6',
+    '#7b6888',
+    '#6b486b',
+    '#a05d56',
+    '#d0743c',
+    '#ff8c00'
   ],
   maxY,
   padding = 0.1,
   children,
   tooltipOffset = { x: 10, y: -10 },
+  showGridHorizontal = true,
+  showGridVertical = true
 }: Props) => {
   const {
     showTooltip,
@@ -88,103 +92,103 @@ const StackBarChart = ({
     tooltipData,
     tooltipLeft,
     tooltipTop,
-    hideTooltip,
-  } = useTooltip();
+    hideTooltip
+  } = useTooltip()
   const { containerRef, TooltipInPortal } = useTooltipInPortal({
-    detectBounds: true,
-  });
+    detectBounds: true
+  })
 
   const {
     ref: parentRef,
     height: parentHeight,
-    width: parentWidth,
-  } = useParentSize();
+    width: parentWidth
+  } = useParentSize()
 
-  const parent = mergeRefs(containerRef, parentRef);
+  const parent = mergeRefs(containerRef, parentRef)
 
-  const ref = useRef<SVGSVGElement>(null);
+  const ref = useRef<SVGSVGElement>(null)
 
   const keyList = useMemo(
-    () => Object.keys(data[0]).filter((key) => key !== "x"),
-    [data],
-  );
+    () => Object.keys(data[0]).filter(key => key !== 'x'),
+    [data]
+  )
 
   const max = useMemo(() => {
     if (maxY) {
-      return maxY;
+      return maxY
     }
     return Math.max(
-      ...data.map((d) =>
-        keyList.reduce((acc, key) => acc + (d[key] as number), 0),
-      ),
-    );
-  }, [data, keyList, maxY]);
+      ...data.map(d =>
+        keyList.reduce((acc, key) => acc + (d[key] as number), 0)
+      )
+    )
+  }, [data, keyList, maxY])
 
   const colorScale = useMemo(() => {
     return scaleOrdinal()
-      .domain(data.map((d) => d.x))
-      .range(colorList);
-  }, [data, colorList]);
+      .domain(data.map(d => d.x))
+      .range(colorList)
+  }, [data, colorList])
 
   const series = useMemo(() => {
     return stack<DataType>()
       .keys(keyList)
-      .value((d, key) => (d[key] as number) ?? 0)(data);
-  }, [data, keyList]);
+      .value((d, key) => (d[key] as number) ?? 0)(data)
+  }, [data, keyList])
 
   const x = useMemo(
     () =>
       scaleBand()
-        .domain(data.map((d) => d.x))
+        .domain(data.map(d => d.x))
         .range([margin.left, (parentWidth ?? 0) - margin.right])
         .padding(padding),
-    [data, margin.left, margin.right, padding, parentWidth],
-  );
+    [data, margin.left, margin.right, padding, parentWidth]
+  )
 
   const y = useMemo(
     () =>
       scaleLinear()
         .domain([0, max])
         .range([(parentHeight ?? 0) - margin.bottom, margin.top]),
-    [margin.bottom, margin.top, max, parentHeight],
-  );
+    [margin.bottom, margin.top, max, parentHeight]
+  )
 
   const drawChart = useCallback(() => {
-    const svg = select(ref.current);
-    const chartContainer = svg.select(".chart");
+    const svg = select(ref.current)
+    const chartContainer = svg.select('.chart')
 
     const barGroup = chartContainer
-      .selectAll("g")
+      .selectAll('g')
       .data(series)
-      .join("g")
-      .attr("fill", (d) => colorScale(d.key) as string);
+      .join('g')
+      .attr('fill', d => colorScale(d.key) as string)
     barGroup
-      .selectAll("rect")
-      .data((d) => d)
-      .join("rect")
-      .attr("x", (d) => x(d.data.x)!)
-      .attr("y", (d) => y(d[1]))
-      .attr("height", (d) => y(d[0]) - y(d[1]))
-      .attr("width", x.bandwidth())
-      .on("mousemove", (e, d) => {
-        let [xPoint] = pointer(e);
-        xPoint = xPoint - x.bandwidth() / 2;
-        const xDomain = data.map((d) => x(d.x) as number);
+      .selectAll('rect')
+      .data(d => d)
+      .join('rect')
+      .attr('x', d => x(d.data.x)!)
+      .attr('y', d => y(d[1]))
+      .attr('height', d => y(d[0]) - y(d[1]))
+      .attr('width', x.bandwidth())
+      .on('mousemove', (e, d) => {
+        let [xPoint] = pointer(e)
+        xPoint = xPoint - x.bandwidth() / 2
+        const xDomain = data.map(d => x(d.x) as number)
         const index = Math.max(
           0,
-          Math.min(xDomain.length - 1, bisectCenter(xDomain, xPoint)),
-        );
+          Math.min(xDomain.length - 1, bisectCenter(xDomain, xPoint))
+        )
 
-        const point = data[index];
+        const point = data[index]
         if (point) {
           showTooltip({
             tooltipData: { x: d.data.x, y: d[1] - d[0] },
             tooltipLeft: x(point.x)! + x.bandwidth() / 2 + tooltipOffset.x,
-            tooltipTop: y(d[1]) + tooltipOffset.y,
-          });
+            tooltipTop: y(d[1]) + tooltipOffset.y
+          })
         }
       })
-      .on("mouseout", hideTooltip);
+      .on('mouseout', hideTooltip)
   }, [
     colorScale,
     data,
@@ -194,25 +198,39 @@ const StackBarChart = ({
     tooltipOffset.x,
     tooltipOffset.y,
     x,
-    y,
-  ]);
+    y
+  ])
 
   useEffect(() => {
-    drawChart();
-  }, [drawChart]);
+    drawChart()
+  }, [drawChart])
 
   return (
     <div
       ref={parent}
       style={{
-        width: width ?? "100%",
-        height: height ?? "100%",
-        position: "relative",
-        display: "flex",
-        justifyContent: "center",
+        width: width ?? '100%',
+        height: height ?? '100%',
+        position: 'relative',
+        display: 'flex',
+        justifyContent: 'center'
       }}
     >
-      <svg width={"100%"} height={"100%"} ref={ref}>
+      <svg width={'100%'} height={'100%'} ref={ref}>
+        {showGridVertical && (
+          <GridVertical
+            scale={x as AxisScale<AxisDomain>}
+            size={parentHeight - margin.bottom - margin.top}
+            top={parentHeight - margin.bottom}
+          />
+        )}
+        {showGridHorizontal && (
+          <GridHorizontal
+            scale={y as AxisScale<AxisDomain>}
+            size={parentWidth - margin.left - margin.right}
+            left={margin.left}
+          />
+        )}
         <AxisBottom
           scale={x as AxisScale<AxisDomain>}
           top={(parentHeight ?? 0) - margin.bottom}
@@ -226,44 +244,44 @@ const StackBarChart = ({
           top={tooltipTop}
           style={{
             ...defaultStyles,
-            background: "transparent",
-            border: "none",
-            boxShadow: "none",
-            padding: 0,
+            background: 'transparent',
+            border: 'none',
+            boxShadow: 'none',
+            padding: 0
           }}
         >
           {children({
             tooltipData: tooltipData as {
-              x: string;
-              y: number;
-            },
+              x: string
+              y: number
+            }
           })}
         </TooltipInPortal>
       )}
       <div
         style={{
-          position: "absolute",
+          position: 'absolute',
           bottom: 0,
-          display: "flex",
-          gap: "8px",
-          fontSize: "14px",
-          padding: "4px",
+          display: 'flex',
+          gap: '8px',
+          fontSize: '14px',
+          padding: '4px'
         }}
       >
-        {keyList.map((key) => (
+        {keyList.map(key => (
           <div
             key={`legend-${key}`}
             style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "4px",
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px'
             }}
           >
             <div
               style={{
-                width: "14px",
-                height: "14px",
-                background: colorScale(key) as string,
+                width: '14px',
+                height: '14px',
+                background: colorScale(key) as string
               }}
             />
             <span>{key}</span>
@@ -271,7 +289,7 @@ const StackBarChart = ({
         ))}
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default StackBarChart;
+export default StackBarChart

@@ -20,6 +20,9 @@ import AxisLeft from '../common/AxisLeft.tsx'
 import { useTooltip, useTooltipInPortal, defaultStyles } from '@visx/tooltip'
 import { mergeRefs } from '../../util/utils.ts'
 import type { ChartProps } from '../../util/types.ts'
+import GridVertical from '../common/GridVertical.tsx'
+import GridHorizontal from '../common/GridHorizontal.tsx'
+import ExportImage from '../common/ExportImage.tsx'
 
 type BarChartProps = ChartProps & {
   /**
@@ -49,7 +52,9 @@ const BarChart = ({
   minY,
   maxY,
   padding = 0.1,
-  children
+  children,
+  showGridVertical = true,
+  showGridHorizontal = true
 }: BarChartProps) => {
   const {
     showTooltip,
@@ -145,6 +150,20 @@ const BarChart = ({
         onPointerMove={onMouseMove}
         onPointerLeave={onMouseLeave}
       >
+        {showGridVertical && (
+          <GridVertical
+            scale={x as AxisScale<AxisDomain>}
+            size={parentHeight - margin.bottom - margin.top}
+            top={parentHeight - margin.bottom}
+          />
+        )}
+        {showGridHorizontal && (
+          <GridHorizontal
+            scale={y as AxisScale<AxisDomain>}
+            size={parentWidth - margin.left - margin.right}
+            left={margin.left}
+          />
+        )}
         <AxisBottom
           scale={x as AxisScale<AxisDomain>}
           top={(parentHeight ?? 0) - margin.bottom}
@@ -167,6 +186,7 @@ const BarChart = ({
           {children({ tooltipData: tooltipData as { x: string; y: number } })}
         </TooltipInPortal>
       )}
+      <ExportImage ref={ref} />
     </div>
   )
 }

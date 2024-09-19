@@ -21,6 +21,8 @@ import {
   useRef
 } from 'react'
 import { mergeRefs } from '../../util/utils.ts'
+import GridVertical from '../common/GridVertical.tsx'
+import GridHorizontal from '../common/GridHorizontal.tsx'
 
 type DataType = {
   x: string
@@ -83,7 +85,9 @@ const GroupBarChart = ({
   tooltipOffset = { x: 10, y: -10 },
   padding = 0.1,
   maxY,
-  minY
+  minY,
+  showGridHorizontal = true,
+  showGridVertical = true
 }: Props) => {
   const {
     ref: parentRef,
@@ -225,6 +229,20 @@ const GroupBarChart = ({
         onPointerLeave={onMouseLeave}
         onPointerMove={onMouseMove}
       >
+        {showGridVertical && (
+          <GridVertical
+            scale={x as AxisScale<AxisDomain>}
+            size={parentHeight - margin.bottom - margin.top}
+            top={parentHeight - margin.bottom}
+          />
+        )}
+        {showGridHorizontal && (
+          <GridHorizontal
+            scale={y as AxisScale<AxisDomain>}
+            size={parentWidth - margin.left - margin.right}
+            left={margin.left}
+          />
+        )}
         <AxisBottom
           scale={x as AxisScale<AxisDomain>}
           top={(parentHeight ?? 0) - margin.bottom}

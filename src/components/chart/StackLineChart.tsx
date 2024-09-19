@@ -1,4 +1,4 @@
-import AxisBottom from "../common/AxisBottom.tsx";
+import AxisBottom from '../common/AxisBottom.tsx'
 import {
   type AxisDomain,
   type AxisScale,
@@ -11,37 +11,39 @@ import {
   scaleLinear,
   scaleOrdinal,
   select,
-  stack,
-} from "d3";
-import AxisLeft from "../common/AxisLeft.tsx";
-import { useParentSize } from "../../hooks/useParentSize.tsx";
+  stack
+} from 'd3'
+import AxisLeft from '../common/AxisLeft.tsx'
+import { useParentSize } from '../../hooks/useParentSize.tsx'
 import {
   type PointerEventHandler,
   useCallback,
   useEffect,
   useMemo,
-  useRef,
-} from "react";
-import { defaultStyles, useTooltip, useTooltipInPortal } from "@visx/tooltip";
-import { mergeRefs } from "../../util/utils.ts";
-import type { ChartProps } from "../../util/types.ts";
+  useRef
+} from 'react'
+import { defaultStyles, useTooltip, useTooltipInPortal } from '@visx/tooltip'
+import { mergeRefs } from '../../util/utils.ts'
+import type { ChartProps } from '../../util/types.ts'
+import GridVertical from '../common/GridVertical.tsx'
+import GridHorizontal from '../common/GridHorizontal.tsx'
 
 type DataType = {
-  x: string;
-  [key: string]: number | string;
-};
+  x: string
+  [key: string]: number | string
+}
 
-type Props = Omit<ChartProps, "data" | "color"> & {
+type Props = Omit<ChartProps, 'data' | 'color'> & {
   /**
    * Data to display in the chart.
    */
-  data: DataType[];
+  data: DataType[]
   /**
    * List of colors to use for the chart.
    * It will be used in order for
    * each data.
    */
-  colorList: string[];
+  colorList: string[]
   /**
    * Children to render in the
    * tooltip when it is open.
@@ -51,23 +53,23 @@ type Props = Omit<ChartProps, "data" | "color"> & {
    * @returns The children to render.
    */
   children?: ({
-    tooltipData,
+    tooltipData
   }: {
-    tooltipData: { x: string; y: number };
-  }) => React.ReactNode;
+    tooltipData: { x: string; y: number }
+  }) => React.ReactNode
   /**
    * Offset of the tooltip from the mouse pointer.
    * @default { x: 10, y: -10 }
    */
-  tooltipOffset?: { x: number; y: number };
-};
+  tooltipOffset?: { x: number; y: number }
+}
 
 const defaultMargin = {
   top: 20,
   right: 20,
   bottom: 50,
-  left: 50,
-};
+  left: 50
+}
 
 const StackLineChart = ({
   width,
@@ -75,18 +77,20 @@ const StackLineChart = ({
   margin = defaultMargin,
   data,
   colorList = [
-    "#98abc5",
-    "#8a89a6",
-    "#7b6888",
-    "#6b486b",
-    "#a05d56",
-    "#d0743c",
-    "#ff8c00",
+    '#98abc5',
+    '#8a89a6',
+    '#7b6888',
+    '#6b486b',
+    '#a05d56',
+    '#d0743c',
+    '#ff8c00'
   ],
   maxY,
   minY,
   children,
   tooltipOffset = { x: 20, y: -20 },
+  showGridVertical = true,
+  showGridHorizontal = true
 }: Props) => {
   const {
     showTooltip,
@@ -94,124 +98,124 @@ const StackLineChart = ({
     tooltipData,
     tooltipLeft,
     tooltipTop,
-    hideTooltip,
-  } = useTooltip();
+    hideTooltip
+  } = useTooltip()
   const { containerRef, TooltipInPortal } = useTooltipInPortal({
-    detectBounds: true,
-  });
+    detectBounds: true
+  })
 
   const {
     ref: parentRef,
     height: parentHeight,
-    width: parentWidth,
-  } = useParentSize();
+    width: parentWidth
+  } = useParentSize()
 
-  const parent = mergeRefs(containerRef, parentRef);
+  const parent = mergeRefs(containerRef, parentRef)
 
-  const ref = useRef<SVGSVGElement>(null);
+  const ref = useRef<SVGSVGElement>(null)
 
   const keyList = useMemo(
-    () => Object.keys(data[0]).filter((key) => key !== "x"),
-    [data],
-  );
+    () => Object.keys(data[0]).filter(key => key !== 'x'),
+    [data]
+  )
 
   const max = useMemo(() => {
     if (maxY) {
-      return maxY;
+      return maxY
     }
     return Math.max(
-      ...data.map((d) =>
-        keyList.reduce((acc, key) => acc + (d[key] as number), 0),
-      ),
-    );
-  }, [data, keyList, maxY]);
+      ...data.map(d =>
+        keyList.reduce((acc, key) => acc + (d[key] as number), 0)
+      )
+    )
+  }, [data, keyList, maxY])
 
   const min = useMemo(() => {
     if (minY) {
-      return minY;
+      return minY
     }
-    const list = keyList.map((key) => {
-      return Math.min(...data.map((d) => d[key] as number));
-    });
-    return Math.min(...list);
-  }, [data, keyList, minY]);
+    const list = keyList.map(key => {
+      return Math.min(...data.map(d => d[key] as number))
+    })
+    return Math.min(...list)
+  }, [data, keyList, minY])
 
   const colorScale = useMemo(() => {
     return scaleOrdinal()
-      .domain(data.map((d) => d.x))
-      .range(colorList);
-  }, [data, colorList]);
+      .domain(data.map(d => d.x))
+      .range(colorList)
+  }, [data, colorList])
 
   const series = useMemo(() => {
     return stack<DataType>()
       .keys(keyList)
-      .value((d, key) => (d[key] as number) ?? 0)(data);
-  }, [data, keyList]);
+      .value((d, key) => (d[key] as number) ?? 0)(data)
+  }, [data, keyList])
 
   const x = useMemo(
     () =>
       scaleBand()
-        .domain(data.map((d) => d.x))
+        .domain(data.map(d => d.x))
         .range([margin.left, (parentWidth ?? 0) - margin.right]),
-    [data, margin.left, margin.right, parentWidth],
-  );
+    [data, margin.left, margin.right, parentWidth]
+  )
 
   const y = useMemo(
     () =>
       scaleLinear()
         .domain([min, max])
         .range([(parentHeight ?? 0) - margin.bottom, margin.top]),
-    [margin.bottom, margin.top, max, min, parentHeight],
-  );
+    [margin.bottom, margin.top, max, min, parentHeight]
+  )
 
   const lineGenerator: Line<[number, number]> = useMemo(() => {
     return line<[number, number]>()
       .x((_, i) => x(data[i].x)! + x.bandwidth() / 2)
-      .y((d) => y(d[1] as number));
-  }, [data, x, y]);
+      .y(d => y(d[1] as number))
+  }, [data, x, y])
 
   const drawChart = useCallback(() => {
-    const svg = select(ref.current);
-    const chartContainer = svg.select("g.chart");
+    const svg = select(ref.current)
+    const chartContainer = svg.select('g.chart')
 
-    const lineArea = chartContainer.selectAll(".line").data(series);
+    const lineArea = chartContainer.selectAll('.line').data(series)
     lineArea
-      .join("g")
-      .attr("class", "line")
-      .attr("fill", "none")
-      .attr("stroke", (d) => colorScale(d.key) as string)
-      .attr("stroke-width", 1.5)
-      .selectAll("path")
-      .data((d) => [d])
-      .join("path")
-      .attr("d", (d) => lineGenerator(d as [number, number][]));
-  }, [colorScale, lineGenerator, series]);
+      .join('g')
+      .attr('class', 'line')
+      .attr('fill', 'none')
+      .attr('stroke', d => colorScale(d.key) as string)
+      .attr('stroke-width', 1.5)
+      .selectAll('path')
+      .data(d => [d])
+      .join('path')
+      .attr('d', d => lineGenerator(d as [number, number][]))
+  }, [colorScale, lineGenerator, series])
 
   const onMouseMove: PointerEventHandler = useCallback(
-    (e) => {
+    e => {
       if (children) {
-        const [xPoint, yPoint] = pointer(e);
-        const xDomain = data.map((d) => x(d.x) as number);
-        const index = bisectLeft(xDomain, xPoint) - 1;
+        const [xPoint, yPoint] = pointer(e)
+        const xDomain = data.map(d => x(d.x) as number)
+        const index = bisectLeft(xDomain, xPoint) - 1
 
-        const yData = y.invert(yPoint);
-        const yDomain = series.map((d) => d[index][1] as number);
+        const yData = y.invert(yPoint)
+        const yDomain = series.map(d => d[index][1] as number)
         const yIndex = Math.max(
           0,
-          Math.min(yDomain.length - 1, bisectCenter(yDomain, yData)),
-        );
+          Math.min(yDomain.length - 1, bisectCenter(yDomain, yData))
+        )
 
         if (data[index]) {
-          const tooltipX = x(data[index].x)! + x.bandwidth() / 2;
-          const tooltipY = y(series[yIndex][index][1] as number);
+          const tooltipX = x(data[index].x)! + x.bandwidth() / 2
+          const tooltipY = y(series[yIndex][index][1] as number)
           showTooltip({
             tooltipLeft: tooltipX + tooltipOffset.x,
             tooltipTop: tooltipY + tooltipOffset.y,
             tooltipData: {
               x: data[index].x,
-              y: series[yIndex][index][1] - series[yIndex][index][0],
-            },
-          });
+              y: series[yIndex][index][1] - series[yIndex][index][0]
+            }
+          })
         }
       }
     },
@@ -223,32 +227,46 @@ const StackLineChart = ({
       tooltipOffset.x,
       tooltipOffset.y,
       x,
-      y,
-    ],
-  );
+      y
+    ]
+  )
 
   useEffect(() => {
-    drawChart();
-  }, [drawChart]);
+    drawChart()
+  }, [drawChart])
 
   return (
     <div
       ref={parent}
       style={{
-        width: width ?? "100%",
-        height: height ?? "100%",
-        position: "relative",
-        display: "flex",
-        justifyContent: "center",
+        width: width ?? '100%',
+        height: height ?? '100%',
+        position: 'relative',
+        display: 'flex',
+        justifyContent: 'center'
       }}
     >
       <svg
-        width={"100%"}
-        height={"100%"}
+        width={'100%'}
+        height={'100%'}
         ref={ref}
         onPointerMove={onMouseMove}
         onPointerLeave={hideTooltip}
       >
+        {showGridVertical && (
+          <GridVertical
+            scale={x as AxisScale<AxisDomain>}
+            size={parentHeight - margin.bottom - margin.top}
+            top={parentHeight - margin.bottom}
+          />
+        )}
+        {showGridHorizontal && (
+          <GridHorizontal
+            scale={y as AxisScale<AxisDomain>}
+            size={parentWidth - margin.left - margin.right}
+            left={margin.left}
+          />
+        )}
         <AxisBottom
           scale={x as AxisScale<AxisDomain>}
           top={(parentHeight ?? 0) - margin.bottom}
@@ -262,10 +280,10 @@ const StackLineChart = ({
           top={tooltipTop}
           style={{
             ...defaultStyles,
-            background: "transparent",
-            border: "none",
-            boxShadow: "none",
-            padding: 0,
+            background: 'transparent',
+            border: 'none',
+            boxShadow: 'none',
+            padding: 0
           }}
         >
           {children({ tooltipData: tooltipData as { x: string; y: number } })}
@@ -273,28 +291,28 @@ const StackLineChart = ({
       )}
       <div
         style={{
-          position: "absolute",
+          position: 'absolute',
           bottom: 0,
-          display: "flex",
-          gap: "8px",
-          fontSize: "14px",
-          padding: "4px",
+          display: 'flex',
+          gap: '8px',
+          fontSize: '14px',
+          padding: '4px'
         }}
       >
-        {keyList.map((key) => (
+        {keyList.map(key => (
           <div
             key={`legend-${key}`}
             style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "4px",
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px'
             }}
           >
             <div
               style={{
-                width: "14px",
-                height: "14px",
-                background: colorScale(key) as string,
+                width: '14px',
+                height: '14px',
+                background: colorScale(key) as string
               }}
             />
             <span>{key}</span>
@@ -302,7 +320,7 @@ const StackLineChart = ({
         ))}
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default StackLineChart;
+export default StackLineChart

@@ -39,6 +39,14 @@ export interface ChartProps {
    * if not provided, the maximum value in the data will be used.
    */
   maxY?: number
+  /**
+   * Display grid lines along the x-axis.
+   */
+  showGridVertical?: boolean
+  /**
+   * Display grid lines along the y-axis.
+   */
+  showGridHorizontal?: boolean
 }
 
 export interface TooltipData {
