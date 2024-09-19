@@ -8,6 +8,8 @@ import RadarChart from "./components/chart/RadarChart.tsx";
 import StackLineChart from "./components/chart/StackLineChart.tsx";
 import AreaChart from "./components/chart/AreaChart.tsx";
 import StackBarChart from "./components/chart/StackBarChart.tsx";
+import ScatterChart from "./components/chart/ScatterChart.tsx";
+import GroupLineChart from "./components/chart/GroupLineChart.tsx";
 
 export {
   LineChart,
@@ -20,4 +22,6 @@ export {
   StackLineChart,
   StackBarChart,
   AreaChart,
+  ScatterChart,
+  GroupLineChart,
 };
