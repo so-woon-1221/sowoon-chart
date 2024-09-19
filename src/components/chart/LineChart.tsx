@@ -20,6 +20,7 @@ import AxisBottom from "../common/AxisBottom.tsx";
 import AxisLeft from "../common/AxisLeft.tsx";
 import { defaultStyles, useTooltip, useTooltipInPortal } from "@visx/tooltip";
 import { mergeRefs } from "../../util/utils.ts";
+import type { ChartProps } from "../../util/types.ts";
 
 type LineChartProps = ChartProps & {
   children?: ({

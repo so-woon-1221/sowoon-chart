@@ -1,4 +1,4 @@
-interface ChartProps {
+export interface ChartProps {
   /**
    * Data to be displayed in the chart.
    * Each element in the array should have an `x` and `y` property.
@@ -41,7 +41,7 @@ interface ChartProps {
   maxY?: number;
 }
 
-interface TooltipData {
+export interface TooltipData {
   x: number;
   y: number;
   data: { x: string; y: number };

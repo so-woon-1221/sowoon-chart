@@ -1,17 +1,18 @@
 import { Meta, StoryObj } from "@storybook/react";
-import GroupLineChart from "../src/components/chart/GroupLineChart";
+import GroupBarChart
+  from "../src/components/chart/GroupBarChart";
 
 const meta = {
-  title: "chart/GroupLineChart",
-  component: GroupLineChart,
+  title: "chart/GroupBarChart",
+  component: GroupBarChart,
   tags: ["autodocs"],
-} satisfies Meta<typeof GroupLineChart>;
+} satisfies Meta<typeof GroupBarChart>;
 
 export default meta;
 
-type Story = StoryObj<typeof GroupLineChart>;
+type Story = StoryObj<typeof GroupBarChart>;
 
-export const 그룹라인차트: Story = {
+export const 그룹바차트: Story = {
   args: {
     data: [
       { x: "A", y: 10, y2: 20, y3: 30 },

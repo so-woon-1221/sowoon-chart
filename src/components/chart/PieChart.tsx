@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
 import { arc, pie, scaleOrdinal, select, type PieArcDatum, pointer } from "d3";
 import { defaultStyles, useTooltip, useTooltipInPortal } from "@visx/tooltip";
 import { mergeRefs } from "../../util/utils.ts";
+import type { ChartProps } from "../../util/types.ts";
 
 type Props = Pick<ChartProps, "width" | "height" | "data"> & {
   /**

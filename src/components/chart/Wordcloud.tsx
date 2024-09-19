@@ -1,6 +1,7 @@
 import { useParentSize } from "../../hooks/useParentSize.tsx";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { extent, scaleLinear, select } from "d3";
+import type { ChartProps } from "../../util/types.ts";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-expect-error
 import WordCloudWorker from "web-worker:./lib/wordcloud.worker.js";

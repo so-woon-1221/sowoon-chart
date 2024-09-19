@@ -22,7 +22,7 @@ import {
   useRef,
 } from "react";
 import { mergeRefs } from "../../util/utils.ts";
-import type { ChartProps } from "../../../dist/types/util/types";
+import type { ChartProps } from "../../util/types.ts";
 
 type DataType = {
   x: string;

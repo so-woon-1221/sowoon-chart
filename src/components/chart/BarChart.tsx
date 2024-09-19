@@ -19,6 +19,7 @@ import AxisBottom from "../common/AxisBottom.tsx";
 import AxisLeft from "../common/AxisLeft.tsx";
 import { useTooltip, useTooltipInPortal, defaultStyles } from "@visx/tooltip";
 import { mergeRefs } from "../../util/utils.ts";
+import type { ChartProps } from "../../util/types.ts";
 
 type BarChartProps = ChartProps & {
   /**
