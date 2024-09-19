@@ -24,7 +24,7 @@ import {
 } from "react";
 import { defaultStyles, useTooltip, useTooltipInPortal } from "@visx/tooltip";
 import { mergeRefs } from "../../util/utils.ts";
-import { type ChartProps } from "../../util/types.ts";
+import type { ChartProps } from "../../util/types.ts";
 
 type DataType = {
   x: string;
