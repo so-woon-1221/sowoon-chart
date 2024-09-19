@@ -1,6 +1,6 @@
 {
   "name": "sowoon-chart",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "type": "module",
   "main": "dist/index.cjs.js",
   "module": "dist/index.esm.js",
@@ -16,9 +16,9 @@
     "preview": "vite preview",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
-    "build-rollup": "rm -rf dist && rollup -c",
+    "build-rollup": "rimraf dist && rollup -c",
     "prepare": "husky install",
-    "publish": "rm -rf dist && rollup -c && npm publish"
+    "publish": "rimraf dist && rollup -c && npm publish"
   },
   "dependencies": {
     "@visx/tooltip": "^3.3.0",
