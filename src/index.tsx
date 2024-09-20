@@ -11,6 +11,7 @@ import StackBarChart from './components/chart/StackBarChart.tsx'
 import ScatterChart from './components/chart/ScatterChart.tsx'
 import GroupLineChart from './components/chart/GroupLineChart.tsx'
 import GroupBarChart from './components/chart/GroupBarChart.tsx'
+import ExportImage from './components/common/ExportImage.tsx'
 
 export {
   LineChart,
@@ -25,5 +26,6 @@ export {
   AreaChart,
   ScatterChart,
   GroupLineChart,
-  GroupBarChart
+  GroupBarChart,
+  ExportImage
 }

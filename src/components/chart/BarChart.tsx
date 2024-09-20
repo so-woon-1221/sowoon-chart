@@ -22,7 +22,6 @@ import { mergeRefs } from '../../util/utils.ts'
 import type { ChartProps } from '../../util/types.ts'
 import GridVertical from '../common/GridVertical.tsx'
 import GridHorizontal from '../common/GridHorizontal.tsx'
-import ExportImage from '../common/ExportImage.tsx'
 
 type BarChartProps = ChartProps & {
   /**
@@ -186,7 +185,6 @@ const BarChart = ({
           {children({ tooltipData: tooltipData as { x: string; y: number } })}
         </TooltipInPortal>
       )}
-      <ExportImage ref={ref} />
     </div>
   )
 }

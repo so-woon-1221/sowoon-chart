@@ -1,19 +1,34 @@
-import { type ReactNode, type RefObject, useCallback, useMemo } from 'react'
+import {
+  ForwardedRef,
+  forwardRef,
+  MutableRefObject,
+  type ReactNode,
+  useCallback,
+  useMemo
+} from 'react'
 import { toPng, toSvg } from 'html-to-image'
 
 interface Props {
   icon?: ReactNode
   fileName?: string
   fileFormat?: 'svg' | 'png'
-  ref: RefObject<SVGSVGElement>
+  // ref: RefObject<SVGSVGElement>
 }
 
-const ExportImage = ({
-  icon,
-  fileName = 'download',
-  fileFormat = 'svg',
-  ref
-}: Props) => {
+const ExportImage = (props: Props, ref: ForwardedRef<HTMLElement>) => {
+  let { icon, fileName, fileFormat } = props as Props
+  if (fileFormat === undefined) {
+    fileFormat = 'svg'
+  }
+  if (fileName === undefined) {
+    fileName = 'download'
+  }
+  if (icon === undefined) {
+    icon = 'svg'
+  }
+
+  const svg = ref as MutableRefObject<HTMLElement>
+
   const toImage = useMemo(() => {
     switch (fileFormat) {
       case 'svg':
@@ -26,15 +41,14 @@ const ExportImage = ({
   }, [fileFormat])
 
   const onClick = useCallback(async () => {
-    if (ref.current) {
-      console.log(ref)
-      const image = await toImage(ref.current as unknown as HTMLElement)
+    if (svg.current) {
+      const image = await toImage(svg.current as unknown as HTMLElement)
       const link = document.createElement('a')
       link.download = `${fileName}.${fileFormat}`
       link.href = image
       link.click()
     }
-  }, [fileFormat, fileName, ref, toImage])
+  }, [fileFormat, fileName, svg, toImage])
 
   return (
     <button
@@ -51,4 +65,4 @@ const ExportImage = ({
   )
 }
 
-export default ExportImage
+export default forwardRef<HTMLElement, Props>(ExportImage)
