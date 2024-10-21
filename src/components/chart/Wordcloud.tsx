@@ -89,8 +89,10 @@ const Wordcloud = ({
       )
       const wordEl = chartContainer.selectAll('text').data(words)
 
-      wordEl
-        .join('text')
+      const wordGroup = wordEl.join('text')
+      wordGroup
+        .style('font-size', () => `0px`)
+        .transition()
         .style('font-size', d => `${d.size}px`)
         .style('font-family', 'Impact')
         .attr('text-anchor', 'middle')
@@ -98,6 +100,7 @@ const Wordcloud = ({
         .attr('transform', d => `translate(${d.x}, ${d.y}) rotate(${d.rotate})`)
         .text(d => d.text as string)
         .attr('fill', d => colorMap.get(d.text))
+        wordGroup
         .on('mouseover', e => {
           chartContainer.selectAll('text').attr('opacity', 0.5)
           select(e.target).attr('opacity', 1)

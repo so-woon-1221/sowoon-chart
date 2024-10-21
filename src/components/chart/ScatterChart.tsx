@@ -156,12 +156,15 @@ const ScatterChart = ({
 
     const updateSelection = chartContainer.selectAll('circle').data(data)
 
-    updateSelection
-      .join('circle')
+    const circles = updateSelection.join('circle')
+    circles
       .attr('cx', d => x(d.x)! + x.bandwidth() / 2)
       .attr('cy', d => y(d.y))
+      .attr('r', 0)
+      .transition()
       .attr('r', d => sizeScale(d.value))
       .attr('fill', color)
+    circles
       .on('pointermove', (e, d) => {
         const [x, y] = pointer(e)
         showTooltip({
@@ -172,6 +175,7 @@ const ScatterChart = ({
       })
       .on('pointerleave', hideTooltip)
   }, [
+    color,
     data,
     hideTooltip,
     showTooltip,

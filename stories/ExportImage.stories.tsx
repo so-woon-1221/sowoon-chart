@@ -1,4 +1,6 @@
-import { BarChart, ExportImage } from '../src'
+import React from 'react'
+import BarChart from '../src/components/chart/BarChart'
+import ExportImage from '../src/components/common/ExportImage'
 import { type Meta, type StoryFn } from '@storybook/react'
 import { useRef } from 'react'
 

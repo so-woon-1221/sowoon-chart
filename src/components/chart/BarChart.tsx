@@ -117,7 +117,7 @@ const BarChart = ({
         const index = bisectLeft(xDomain, xPoint) - 1
         if (data[index]) {
           const tooltipX = x(data[index].x)! + x.bandwidth() / 2
-          const tooltipY = y(data[index].y)
+          const tooltipY = y(data[index].y) - 12
           showTooltip({
             tooltipLeft: tooltipX,
             tooltipTop: tooltipY,
