@@ -4,18 +4,30 @@ import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useParentSize } from '../../hooks/useParentSize';
 import type { ChartProps } from '../../util/types';
 
-type Props = Pick<ChartProps, 'width' | 'height' | 'data' | 'margin'> & {
+/**
+ * Props for {@link BubbleChart}.
+ */
+export type BubbleChartProps = Pick<ChartProps, 'width' | 'height' | 'data' | 'margin'> & {
+  /**
+   * Reserved slot for future custom overlays.
+   */
   children?: React.ReactNode;
+  /**
+   * Color palette applied to bubble nodes in order.
+   */
   colorList?: string[];
 };
 
+/**
+ * Renders packed circles sized by each datum's `y` value.
+ */
 const BubbleChart = ({
   width,
   height,
   data,
   margin = { top: 10, left: 30, right: 30, bottom: 10 },
   colorList = ['#0A0908', '#0891b2', '#C6AC8F', '#60D394', '#D1495B', '#9b5de5'],
-}: Props) => {
+}: BubbleChartProps) => {
   const { ref: parentRef, height: parentHeight, width: parentWidth } = useParentSize();
   const ref = useRef<SVGSVGElement>(null);
 

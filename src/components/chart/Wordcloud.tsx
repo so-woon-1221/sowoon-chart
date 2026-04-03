@@ -7,18 +7,31 @@ import WordCloudWorker from 'web-worker:./lib/wordcloud.worker.js';
 import { useParentSize } from '../../hooks/useParentSize';
 import { type ChartProps } from '../../util/types';
 
-type Props = Omit<ChartProps, 'maxY' | 'minY' | 'color'> & {
+/**
+ * Props for {@link Wordcloud}.
+ */
+export type WordcloudProps = Omit<ChartProps, 'maxY' | 'minY' | 'color'> & {
+  /**
+   * Colors cycled across generated words.
+   */
   colorList?: string[];
+  /**
+   * Extra space between placed words.
+   * @default 1
+   */
   padding?: number;
 };
 
+/**
+ * Renders a worker-driven word cloud where `x` becomes text and `y` controls font size.
+ */
 const Wordcloud = ({
   width,
   height,
   data,
   padding = 1,
   colorList = ['#0A0908', '#0891b2', '#C6AC8F', '#60D394', '#D1495B', '#9b5de5'],
-}: Props) => {
+}: WordcloudProps) => {
   const { ref: parentRef, width: parentWidth, height: parentHeight } = useParentSize();
 
   const ref = useRef<SVGSVGElement>(null);

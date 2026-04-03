@@ -9,11 +9,18 @@ import { getClosestIndex } from '../../util/utils';
 import CartesianFrame from '../common/CartesianFrame';
 import ChartTooltip from '../common/ChartTooltip';
 
-type BarChartProps = ChartProps & {
+/**
+ * Props for {@link BarChart}.
+ */
+export type BarChartProps = ChartProps & {
   /**
-   * padding between bars.
+   * Padding between bars.
+   * @default 0.1
    */
   padding?: number;
+  /**
+   * Custom tooltip renderer shown while hovering.
+   */
   children?: TooltipRenderer<XYDatum>;
   /**
    * Tooltip anchor position.
@@ -30,6 +37,9 @@ const defaultMargin = {
   left: 50,
 };
 
+/**
+ * Renders a single-series bar chart with optional tooltip support.
+ */
 const BarChart = ({
   data,
   width,

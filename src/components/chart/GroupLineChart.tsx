@@ -33,9 +33,19 @@ type ActivePoint = {
   color: string;
 };
 
-type Props = CartesianChartProps<GroupedDatum> &
+/**
+ * Props for {@link GroupLineChart}.
+ */
+export type GroupLineChartProps = CartesianChartProps<GroupedDatum> &
   ColorListProps & {
+    /**
+     * Custom tooltip renderer shown while hovering.
+     */
     children?: TooltipRenderer<ScatterDatum>;
+    /**
+     * Pixel offset applied to the tooltip.
+     * @default { x: 10, y: -10 }
+     */
     tooltipOffset?: TooltipOffset;
   } &
   TooltipInteractionProps;
@@ -47,6 +57,9 @@ const defaultMargin = {
   left: 50,
 };
 
+/**
+ * Renders multiple line series from grouped row data.
+ */
 const GroupLineChart = ({
   width,
   height,
@@ -62,7 +75,7 @@ const GroupLineChart = ({
   showCrosshair = false,
   showGridHorizontal = true,
   showGridVertical = true,
-}: Props) => {
+}: GroupLineChartProps) => {
   const { tooltip, showTooltip, hideTooltip } = useChartTooltip<ScatterDatum>();
   const [activePoint, setActivePoint] = useState<ActivePoint | null>(null);
 

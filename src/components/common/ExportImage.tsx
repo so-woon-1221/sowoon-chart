@@ -3,9 +3,23 @@ import { type ForwardedRef, forwardRef, type ReactNode, useCallback } from 'reac
 
 type ExportTarget = HTMLElement | SVGSVGElement;
 
+/**
+ * Props for the image export trigger button.
+ */
 export interface ExportImageProps {
+  /**
+   * Custom icon or content rendered inside the button.
+   */
   icon?: ReactNode;
+  /**
+   * File name used for the downloaded asset.
+   * @default "download"
+   */
   fileName?: string;
+  /**
+   * Export format for the generated file.
+   * @default "svg"
+   */
   fileFormat?: 'svg' | 'png';
 }
 
@@ -15,6 +29,9 @@ const hasCurrentTarget = (
   return Boolean(ref) && typeof ref !== 'function';
 };
 
+/**
+ * Renders a lightweight button that exports the attached chart element as an image.
+ */
 const ExportImage = (
   { icon = 'svg', fileName = 'download', fileFormat = 'svg' }: ExportImageProps,
   ref: ForwardedRef<ExportTarget>,

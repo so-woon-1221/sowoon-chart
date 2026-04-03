@@ -20,8 +20,14 @@ type ActivePoint = {
   color: string;
 };
 
-type LineChartProps = ChartProps &
+/**
+ * Props for {@link LineChart}.
+ */
+export type LineChartProps = ChartProps &
   TooltipInteractionProps & {
+  /**
+   * Custom tooltip renderer shown while hovering.
+   */
   children?: TooltipRenderer<XYDatum>;
 };
 
@@ -33,7 +39,7 @@ const defaultMargin = {
 };
 
 /**
- * Line chart component.
+ * Renders a single-series line chart with optional tooltip, crosshair, and active marker states.
  */
 const LineChart = ({
   data,

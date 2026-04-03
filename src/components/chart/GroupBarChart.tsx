@@ -25,7 +25,10 @@ import { getClosestIndex } from '../../util/utils';
 import CartesianFrame from '../common/CartesianFrame';
 import ChartTooltip from '../common/ChartTooltip';
 
-type Props = CartesianChartProps<GroupedDatum> &
+/**
+ * Props for {@link GroupBarChart}.
+ */
+export type GroupBarChartProps = CartesianChartProps<GroupedDatum> &
   ColorListProps & {
   /**
    * Data to display in the chart.
@@ -59,6 +62,9 @@ const defaultMargin = {
   left: 50,
 };
 
+/**
+ * Renders grouped bars for each x-axis category.
+ */
 const GroupBarChart = ({
   width,
   height,
@@ -84,7 +90,7 @@ const GroupBarChart = ({
   minY,
   showGridHorizontal = true,
   showGridVertical = true,
-}: Props) => {
+}: GroupBarChartProps) => {
   const { tooltip, showTooltip, hideTooltip } = useChartTooltip<XYDatum>();
 
   const { ref: parentRef, width: parentWidth, height: parentHeight } = useParentSize();

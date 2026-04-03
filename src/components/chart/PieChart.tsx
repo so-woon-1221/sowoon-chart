@@ -13,7 +13,10 @@ import type {
 } from '../../util/types';
 import ChartTooltip from '../common/ChartTooltip';
 
-type Props = Pick<BaseChartProps, 'width' | 'height'> & {
+/**
+ * Props for {@link PieChart}.
+ */
+export type PieChartProps = Pick<BaseChartProps, 'width' | 'height'> & {
   data: XYDatum[];
   /**
    * Center node to display in the middle of the pie chart.
@@ -52,6 +55,9 @@ type Props = Pick<BaseChartProps, 'width' | 'height'> & {
   showLegend?: boolean;
 };
 
+/**
+ * Renders a donut-style pie chart with optional center content, legend highlighting, and tooltip support.
+ */
 const PieChart = ({
   width,
   height,
@@ -62,7 +68,7 @@ const PieChart = ({
   tooltipOffset = { x: 10, y: -10 },
   tooltipPosition = 'cursor',
   showLegend = false,
-}: Props) => {
+}: PieChartProps) => {
   const { tooltip, showTooltip, hideTooltip } = useChartTooltip<XYDatum>();
   const [activeKey, setActiveKey] = useState<string | null>(null);
 

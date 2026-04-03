@@ -35,7 +35,10 @@ type ActivePoint = {
   color: string;
 };
 
-type Props = CartesianChartProps<GroupedDatum> &
+/**
+ * Props for {@link StackLineChart}.
+ */
+export type StackLineChartProps = CartesianChartProps<GroupedDatum> &
   ColorListProps & {
     /**
      * Data to display in the chart.
@@ -65,6 +68,9 @@ const defaultMargin = {
   left: 50,
 };
 
+/**
+ * Renders stacked cumulative line series with optional hover guides.
+ */
 const StackLineChart = ({
   width,
   height,
@@ -80,7 +86,7 @@ const StackLineChart = ({
   showCrosshair = false,
   showGridVertical = true,
   showGridHorizontal = true,
-}: Props) => {
+}: StackLineChartProps) => {
   const { tooltip, showTooltip, hideTooltip } = useChartTooltip<XYDatum>();
   const [activePoint, setActivePoint] = useState<ActivePoint | null>(null);
 

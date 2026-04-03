@@ -29,10 +29,24 @@ type ActivePoint = {
   color: string;
 };
 
-type Props = ChartProps &
+/**
+ * Props for {@link AreaChart}.
+ */
+export type AreaChartProps = ChartProps &
   TooltipInteractionProps & {
+  /**
+   * Custom tooltip renderer shown while hovering.
+   */
   children?: TooltipRenderer<XYDatum>;
+  /**
+   * Fill the area using a vertical gradient based on `color`.
+   * @default false
+   */
   fillGradient?: boolean;
+  /**
+   * Draw a line stroke over the filled area.
+   * @default true
+   */
   drawStroke?: boolean;
 };
 
@@ -43,6 +57,9 @@ const defaultMargin = {
   left: 50,
 };
 
+/**
+ * Renders a filled area chart with optional stroke, tooltip, and hover guides.
+ */
 const AreaChart = ({
   width,
   height,
@@ -59,7 +76,7 @@ const AreaChart = ({
   showCrosshair = false,
   showGridVertical = true,
   showGridHorizontal = true,
-}: Props) => {
+}: AreaChartProps) => {
   const { tooltip, showTooltip, hideTooltip } = useChartTooltip<XYDatum>();
   const [activePoint, setActivePoint] = useState<ActivePoint | null>(null);
 

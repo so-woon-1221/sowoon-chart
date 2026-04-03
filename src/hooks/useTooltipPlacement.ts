@@ -15,6 +15,9 @@ const clamp = (value: number, min: number, max: number) => {
   return Math.min(Math.max(value, min), max);
 };
 
+/**
+ * Positions an absolutely placed tooltip inside its parent container while preventing overflow.
+ */
 export const useTooltipPlacement = ({
   left,
   top,

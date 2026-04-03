@@ -5,6 +5,10 @@ interface Size {
   height?: number;
 }
 
+/**
+ * Measures the rendered size of the wrapping element and returns a ref to attach.
+ * Explicit `width` and `height` override observed values when provided.
+ */
 export const useParentSize = (props?: Size) => {
   const ref = useRef<HTMLDivElement>(null);
   const [parentWidth, setParentWidth] = useState<number>(0);

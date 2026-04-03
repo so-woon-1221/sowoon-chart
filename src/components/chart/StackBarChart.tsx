@@ -26,7 +26,10 @@ import type {
 import CartesianFrame from '../common/CartesianFrame';
 import ChartTooltip from '../common/ChartTooltip';
 
-type Props = CartesianChartProps<GroupedDatum> &
+/**
+ * Props for {@link StackBarChart}.
+ */
+export type StackBarChartProps = CartesianChartProps<GroupedDatum> &
   ColorListProps & {
   /**
    * Data to display in the chart.
@@ -65,6 +68,9 @@ const defaultMargin = {
   left: 50,
 };
 
+/**
+ * Renders stacked bars where each row contributes multiple stacked segments.
+ */
 const StackBarChart = ({
   width,
   height,
@@ -78,7 +84,7 @@ const StackBarChart = ({
   tooltipPosition = 'point',
   showGridHorizontal = true,
   showGridVertical = true,
-}: Props) => {
+}: StackBarChartProps) => {
   const { tooltip, showTooltip, hideTooltip } = useChartTooltip<XYDatum>();
 
   const { ref: parentRef, height: parentHeight, width: parentWidth } = useParentSize();

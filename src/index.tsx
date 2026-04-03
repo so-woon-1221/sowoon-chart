@@ -1,5 +1,3 @@
-import type { ComponentProps } from 'react';
-
 import AreaChart from './components/chart/AreaChart';
 import BarChart from './components/chart/BarChart';
 import BubbleChart from './components/chart/BubbleChart';
@@ -32,6 +30,24 @@ export {
   Wordcloud,
 };
 
+export type { AreaChartProps } from './components/chart/AreaChart';
+export type { BarChartProps } from './components/chart/BarChart';
+export type { BubbleChartProps } from './components/chart/BubbleChart';
+export type { GroupBarChartProps } from './components/chart/GroupBarChart';
+export type { GroupLineChartProps } from './components/chart/GroupLineChart';
+export type { LineChartProps } from './components/chart/LineChart';
+export type {
+  NetworkChartData,
+  NetworkChartProps,
+  NetworkLinkDatum,
+  NetworkNodeDatum,
+} from './components/chart/NetworkChart';
+export type { PieChartProps } from './components/chart/PieChart';
+export type { RadarChartProps } from './components/chart/RadarChart';
+export type { ScatterChartProps } from './components/chart/ScatterChart';
+export type { StackBarChartProps } from './components/chart/StackBarChart';
+export type { StackLineChartProps } from './components/chart/StackLineChart';
+export type { WordcloudProps } from './components/chart/Wordcloud';
 export type { ExportImageProps } from './components/common/ExportImage';
 export type {
   BaseChartProps,
@@ -51,17 +67,3 @@ export type {
   TooltipRenderProps,
   XYDatum,
 } from './util/types';
-
-export type AreaChartProps = ComponentProps<typeof AreaChart>;
-export type BarChartProps = ComponentProps<typeof BarChart>;
-export type BubbleChartProps = ComponentProps<typeof BubbleChart>;
-export type GroupBarChartProps = ComponentProps<typeof GroupBarChart>;
-export type GroupLineChartProps = ComponentProps<typeof GroupLineChart>;
-export type LineChartProps = ComponentProps<typeof LineChart>;
-export type NetworkChartProps = ComponentProps<typeof NetworkChart>;
-export type PieChartProps = ComponentProps<typeof PieChart>;
-export type RadarChartProps = ComponentProps<typeof RadarChart>;
-export type ScatterChartProps = ComponentProps<typeof ScatterChart>;
-export type StackBarChartProps = ComponentProps<typeof StackBarChart>;
-export type StackLineChartProps = ComponentProps<typeof StackLineChart>;
-export type WordcloudProps = ComponentProps<typeof Wordcloud>;

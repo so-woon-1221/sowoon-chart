@@ -14,7 +14,10 @@ import type {
 } from '../../util/types';
 import ChartTooltip from '../common/ChartTooltip';
 
-type Props = Pick<BaseChartProps, 'width' | 'height'> & {
+/**
+ * Props for {@link RadarChart}.
+ */
+export type RadarChartProps = Pick<BaseChartProps, 'width' | 'height'> & {
   /**
    * Data to display in the chart.
    */
@@ -49,6 +52,9 @@ type Props = Pick<BaseChartProps, 'width' | 'height'> & {
   tooltipPosition?: TooltipPositionMode;
 };
 
+/**
+ * Renders radial polygon series for comparing multiple categories at once.
+ */
 const RadarChart = ({
   width,
   height,
@@ -58,7 +64,7 @@ const RadarChart = ({
   children,
   tooltipOffset = { x: 10, y: -10 },
   tooltipPosition = 'cursor',
-}: Props) => {
+}: RadarChartProps) => {
   const { tooltip, showTooltip, hideTooltip } = useChartTooltip<XYDatum>();
   const [activeKey, setActiveKey] = useState<string | null>(null);
 

@@ -1,5 +1,8 @@
 import type { ReactNode } from 'react';
 
+/**
+ * Margin values around a chart drawing area.
+ */
 export type Margin = {
   top: number;
   right: number;
@@ -7,38 +10,65 @@ export type Margin = {
   left: number;
 };
 
+/**
+ * Pixel offset applied to tooltip placement.
+ */
 export type TooltipOffset = {
   x: number;
   y: number;
 };
 
+/**
+ * Concrete tooltip anchor modes used at render time.
+ */
 export type TooltipAnchorMode = 'cursor' | 'point';
 
+/**
+ * Public tooltip placement options.
+ */
 export type TooltipPositionMode = TooltipAnchorMode | 'auto';
 
+/**
+ * Shared x/y data shape used by single-series charts.
+ */
 export type XYDatum = {
   x: string;
   y: number;
 };
 
+/**
+ * Data shape used by scatter charts.
+ */
 export type ScatterDatum = XYDatum & {
   value: number;
 };
 
+/**
+ * One radar series with a label and value list.
+ */
 export type RadarSeriesDatum = {
   key: string;
   data: XYDatum[];
 };
 
+/**
+ * Flexible grouped or stacked row shape keyed by `x`.
+ */
 export type GroupedDatum = {
   x: string;
   [key: string]: number | string;
 };
 
+/**
+ * Props passed into a tooltip render function.
+ */
 export type TooltipRenderProps<TData> = {
   tooltipData: TData;
 };
 
+/**
+ * Render function used by tooltip-enabled charts.
+ */
 export type TooltipRenderer<TData> = (props: TooltipRenderProps<TData>) => ReactNode;
 
 export interface TooltipInteractionProps {
@@ -105,6 +135,9 @@ export interface ColorListProps {
   colorList?: string[];
 }
 
+/**
+ * Shared Cartesian props for a single-series chart.
+ */
 export interface ChartProps extends CartesianChartProps<XYDatum> {
   /**
    * Color of the main chart mark.
@@ -114,6 +147,9 @@ export interface ChartProps extends CartesianChartProps<XYDatum> {
   color?: string;
 }
 
+/**
+ * Internal tooltip state shared across chart implementations.
+ */
 export interface TooltipData<TData = XYDatum> {
   x: number;
   y: number;

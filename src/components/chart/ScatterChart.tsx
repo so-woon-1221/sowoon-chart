@@ -23,7 +23,10 @@ import type {
 import CartesianFrame from '../common/CartesianFrame';
 import ChartTooltip from '../common/ChartTooltip';
 
-type Props = CartesianChartProps<ScatterDatum> & {
+/**
+ * Props for {@link ScatterChart}.
+ */
+export type ScatterChartProps = CartesianChartProps<ScatterDatum> & {
   /**
    * Tooltip children.
    * @param tooltipData
@@ -77,6 +80,9 @@ const defaultMargin: Margin = {
   left: 50,
 };
 
+/**
+ * Renders a scatter plot where `value` controls the point radius.
+ */
 const ScatterChart = ({
   width,
   height,
@@ -92,7 +98,7 @@ const ScatterChart = ({
   showGridHorizontal = true,
   showGridVertical = true,
   tooltipPosition = 'cursor',
-}: Props) => {
+}: ScatterChartProps) => {
   const { tooltip, showTooltip, hideTooltip } = useChartTooltip<ScatterDatum>();
 
   const { ref: parentRef, height: parentHeight, width: parentWidth } = useParentSize();

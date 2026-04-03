@@ -23,17 +23,72 @@ import { useEffect, useMemo, useRef } from 'react';
 
 import { useParentSize } from '../../hooks/useParentSize';
 
-type Props = {
-  data: {
-    nodes: { id: string; group?: string; value: number }[];
-    links: { source: string; target: string; value: number }[];
-  };
+/**
+ * One node used by {@link NetworkChart}.
+ */
+export interface NetworkNodeDatum {
+  id: string;
+  group?: string;
+  value: number;
+}
+
+/**
+ * One directional or undirected-looking edge used by {@link NetworkChart}.
+ */
+export interface NetworkLinkDatum {
+  source: string;
+  target: string;
+  value: number;
+}
+
+/**
+ * Data object consumed by {@link NetworkChart}.
+ */
+export interface NetworkChartData {
+  nodes: NetworkNodeDatum[];
+  links: NetworkLinkDatum[];
+}
+
+/**
+ * Props for {@link NetworkChart}.
+ */
+export type NetworkChartProps = {
+  /**
+   * Node and link data rendered by the force simulation.
+   */
+  data: NetworkChartData;
+  /**
+   * Fixed outer width. Defaults to the parent width.
+   */
   width?: number;
+  /**
+   * Fixed outer height. Defaults to the parent height.
+   */
   height?: number;
+  /**
+   * Maximum node radius.
+   * @default 45
+   */
   maxRadius?: number;
+  /**
+   * Minimum node radius.
+   * @default 15
+   */
   minRadius?: number;
+  /**
+   * Maximum link stroke width.
+   * @default 10
+   */
   maxLinkWidth?: number;
+  /**
+   * Minimum link stroke width.
+   * @default 1
+   */
   minLinkWidth?: number;
+  /**
+   * Base node color.
+   * @default "#9b5de5"
+   */
   color?: string;
 };
 
@@ -67,6 +122,9 @@ const getScaleDomain = (values: number[], fallback: [number, number]) => {
   return [min, max] as [number, number];
 };
 
+/**
+ * Renders an interactive force-directed network graph with drag and zoom support.
+ */
 const NetworkChart = ({
   data,
   width,
@@ -76,7 +134,7 @@ const NetworkChart = ({
   maxLinkWidth = 10,
   minLinkWidth = 1,
   color = '#9b5de5',
-}: Props) => {
+}: NetworkChartProps) => {
   const { ref: parentRef, width: parentWidth, height: parentHeight } = useParentSize();
   const ref = useRef<SVGSVGElement>(null);
 
