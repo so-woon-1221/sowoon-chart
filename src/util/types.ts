@@ -1,3 +1,5 @@
+export type TooltipPositionMode = 'cursor' | 'point'
+
 export interface ChartProps {
   /**
    * Data to be displayed in the chart.
@@ -31,12 +33,12 @@ export interface ChartProps {
   color?: string
   /**
    * Minimum value for the y-axis.
-   * if not provided, the minimum value in the data will be used.
+   * If omitted, each chart chooses its own default baseline.
    */
   minY?: number
   /**
    * Maximum value for the y-axis
-   * if not provided, the maximum value in the data will be used.
+   * If omitted, each chart derives a sensible maximum from the data.
    */
   maxY?: number
   /**

@@ -1,9 +1,9 @@
-import { useParentSize } from "../../hooks/useParentSize.tsx";
+import { useParentSize } from "../../hooks/useParentSize";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { arc, pie, scaleOrdinal, select, type PieArcDatum, pointer } from "d3";
-import { defaultStyles, useTooltip, useTooltipInPortal } from "@visx/tooltip";
-import { mergeRefs } from "../../util/utils.ts";
-import type { ChartProps } from "../../util/types.ts";
+import type { ChartProps, TooltipPositionMode } from "../../util/types";
+import { useChartTooltip } from "../../hooks/useChartTooltip";
+import ChartTooltip from "../common/ChartTooltip";
 
 type Props = Pick<ChartProps, "width" | "height" | "data"> & {
   /**
@@ -33,6 +33,12 @@ type Props = Pick<ChartProps, "width" | "height" | "data"> & {
    * @default { x: 10, y: -10 }
    */
   tooltipOffset?: { x: number; y: number };
+  /**
+   * Tooltip anchor position.
+   * `cursor` follows the mouse and `point` sticks to the matched pie slice.
+   * @default "cursor"
+   */
+  tooltipPosition?: TooltipPositionMode;
 };
 
 const PieChart = ({
@@ -50,26 +56,16 @@ const PieChart = ({
   centerNode,
   children,
   tooltipOffset = { x: 10, y: -10 },
+  tooltipPosition = "cursor",
 }: Props) => {
-  const {
-    showTooltip,
-    tooltipOpen,
-    tooltipData,
-    tooltipLeft,
-    tooltipTop,
-    hideTooltip,
-  } = useTooltip();
-  const { containerRef, TooltipInPortal } = useTooltipInPortal({
-    detectBounds: true,
-  });
+  const { tooltip, showTooltip, hideTooltip } =
+    useChartTooltip<{ x: string; y: number }>();
 
   const {
     ref: parentRef,
     width: parentWidth,
     height: parentHeight,
   } = useParentSize();
-
-  const parent = mergeRefs(containerRef, parentRef);
 
   const ref = useRef<SVGSVGElement>(null);
 
@@ -104,11 +100,13 @@ const PieChart = ({
 
     pies
       .on("mousemove", (e, d) => {
-        const [x, y] = pointer(e);
+        const [xPoint, yPoint] = pointer(e, ref.current);
+        const [arcX, arcY] = arcValue.centroid(d);
+        const isPointTooltip = tooltipPosition === "point";
         showTooltip({
-          tooltipData: d.data,
-          tooltipLeft: x + parentWidth / 2 + tooltipOffset.x,
-          tooltipTop: y + parentHeight / 2 + tooltipOffset.y,
+          left: isPointTooltip ? pieWidth / 2 + arcX : xPoint,
+          top: isPointTooltip ? pieHeight / 2 + arcY : yPoint,
+          data: d.data,
         });
       })
       .on("mouseout", hideTooltip);
@@ -119,8 +117,7 @@ const PieChart = ({
     parentHeight,
     parentWidth,
     showTooltip,
-    tooltipOffset.x,
-    tooltipOffset.y,
+    tooltipPosition,
   ]);
 
   useEffect(() => {
@@ -129,7 +126,7 @@ const PieChart = ({
 
   return (
     <div
-      ref={parent}
+      ref={parentRef}
       style={{
         width: width ?? "100%",
         height: height ?? "100%",
@@ -151,20 +148,16 @@ const PieChart = ({
           {centerNode}
         </div>
       )}
-      {children && tooltipOpen && (
-        <TooltipInPortal
-          left={tooltipLeft}
-          top={tooltipTop}
-          style={{
-            ...defaultStyles,
-            background: "transparent",
-            border: "none",
-            boxShadow: "none",
-            padding: 0,
-          }}
+      {children && tooltip.isOpen && tooltip.data && (
+        <ChartTooltip
+          left={tooltip.left}
+          top={tooltip.top}
+          align={tooltipPosition === "point" ? "center" : "cursor"}
+          offsetX={tooltipOffset.x}
+          offsetY={tooltipOffset.y}
         >
-          {children({ tooltipData: tooltipData as { x: string; y: number } })}
-        </TooltipInPortal>
+          {children({ tooltipData: tooltip.data })}
+        </ChartTooltip>
       )}
     </div>
   );

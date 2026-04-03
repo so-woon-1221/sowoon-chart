@@ -1,4 +1,4 @@
-import AxisBottom from '../common/AxisBottom.tsx'
+import AxisBottom from '../common/AxisBottom'
 import {
   type AxisDomain,
   type AxisScale,
@@ -10,14 +10,14 @@ import {
   select,
   stack
 } from 'd3'
-import AxisLeft from '../common/AxisLeft.tsx'
-import { useParentSize } from '../../hooks/useParentSize.tsx'
+import AxisLeft from '../common/AxisLeft'
+import { useParentSize } from '../../hooks/useParentSize'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
-import { defaultStyles, useTooltip, useTooltipInPortal } from '@visx/tooltip'
-import { mergeRefs } from '../../util/utils.ts'
-import type { ChartProps } from '../../util/types.ts'
-import GridVertical from '../common/GridVertical.tsx'
-import GridHorizontal from '../common/GridHorizontal.tsx'
+import { useChartTooltip } from '../../hooks/useChartTooltip'
+import type { ChartProps, TooltipPositionMode } from '../../util/types'
+import GridVertical from '../common/GridVertical'
+import GridHorizontal from '../common/GridHorizontal'
+import ChartTooltip from '../common/ChartTooltip'
 
 type DataType = {
   x: string
@@ -56,6 +56,12 @@ type Props = Omit<ChartProps, 'data' | 'color'> & {
    * @default { x: 10, y: -10 }
    */
   tooltipOffset?: { x: number; y: number }
+  /**
+   * Tooltip anchor position.
+   * `cursor` follows the mouse and `point` sticks to the matched data point.
+   * @default "point"
+   */
+  tooltipPosition?: TooltipPositionMode
 }
 
 const defaultMargin = {
@@ -83,28 +89,18 @@ const StackBarChart = ({
   padding = 0.1,
   children,
   tooltipOffset = { x: 10, y: -10 },
+  tooltipPosition = 'point',
   showGridHorizontal = true,
   showGridVertical = true
 }: Props) => {
-  const {
-    showTooltip,
-    tooltipOpen,
-    tooltipData,
-    tooltipLeft,
-    tooltipTop,
-    hideTooltip
-  } = useTooltip()
-  const { containerRef, TooltipInPortal } = useTooltipInPortal({
-    detectBounds: true
-  })
+  const { tooltip, showTooltip, hideTooltip } =
+    useChartTooltip<{ x: string; y: number }>()
 
   const {
     ref: parentRef,
     height: parentHeight,
     width: parentWidth
   } = useParentSize()
-
-  const parent = mergeRefs(containerRef, parentRef)
 
   const ref = useRef<SVGSVGElement>(null)
 
@@ -126,9 +122,9 @@ const StackBarChart = ({
 
   const colorScale = useMemo(() => {
     return scaleOrdinal()
-      .domain(data.map(d => d.x))
+      .domain(keyList)
       .range(colorList)
-  }, [data, colorList])
+  }, [colorList, keyList])
 
   const series = useMemo(() => {
     return stack<DataType>()
@@ -171,8 +167,8 @@ const StackBarChart = ({
       .attr('height', d => y(d[0]) - y(d[1]))
       .attr('width', x.bandwidth())
       .on('mousemove', (e, d) => {
-        let [xPoint] = pointer(e)
-        xPoint = xPoint - x.bandwidth() / 2
+        const [pointerX, pointerY] = pointer(e, ref.current)
+        const xPoint = pointerX - x.bandwidth() / 2
         const xDomain = data.map(d => x(d.x) as number)
         const index = Math.max(
           0,
@@ -181,10 +177,11 @@ const StackBarChart = ({
 
         const point = data[index]
         if (point) {
+          const isPointTooltip = tooltipPosition === 'point'
           showTooltip({
-            tooltipData: { x: d.data.x, y: d[1] - d[0] },
-            tooltipLeft: x(point.x)! + x.bandwidth() / 2 + tooltipOffset.x,
-            tooltipTop: y(d[1]) + tooltipOffset.y
+            left: isPointTooltip ? x(point.x)! + x.bandwidth() / 2 : pointerX,
+            top: isPointTooltip ? y(d[1]) : pointerY,
+            data: { x: d.data.x, y: d[1] - d[0] }
           })
         }
       })
@@ -195,8 +192,7 @@ const StackBarChart = ({
     hideTooltip,
     series,
     showTooltip,
-    tooltipOffset.x,
-    tooltipOffset.y,
+    tooltipPosition,
     x,
     y
   ])
@@ -207,7 +203,7 @@ const StackBarChart = ({
 
   return (
     <div
-      ref={parent}
+      ref={parentRef}
       style={{
         width: width ?? '100%',
         height: height ?? '100%',
@@ -238,25 +234,18 @@ const StackBarChart = ({
         <AxisLeft scale={y as AxisScale<AxisDomain>} left={margin.left} />
         <g className="chart" />
       </svg>
-      {children && tooltipOpen && (
-        <TooltipInPortal
-          left={tooltipLeft}
-          top={tooltipTop}
-          style={{
-            ...defaultStyles,
-            background: 'transparent',
-            border: 'none',
-            boxShadow: 'none',
-            padding: 0
-          }}
+      {children && tooltip.isOpen && tooltip.data && (
+        <ChartTooltip
+          left={tooltip.left}
+          top={tooltip.top}
+          align={tooltipPosition === 'point' ? 'center' : 'cursor'}
+          offsetX={tooltipOffset.x}
+          offsetY={tooltipOffset.y}
         >
           {children({
-            tooltipData: tooltipData as {
-              x: string
-              y: number
-            }
+            tooltipData: tooltip.data
           })}
-        </TooltipInPortal>
+        </ChartTooltip>
       )}
       <div
         style={{

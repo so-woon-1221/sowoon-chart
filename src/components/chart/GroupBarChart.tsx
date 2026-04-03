@@ -1,18 +1,16 @@
-import AxisBottom from '../common/AxisBottom.tsx'
+import AxisBottom from '../common/AxisBottom'
 import {
   type AxisDomain,
   type AxisScale,
-  bisectLeft,
   pointer,
   scaleBand,
   scaleLinear,
   scaleOrdinal,
   select
 } from 'd3'
-import AxisLeft from '../common/AxisLeft.tsx'
-import { defaultStyles, useTooltip, useTooltipInPortal } from '@visx/tooltip'
-import type { ChartProps } from '../../util/types.ts'
-import { useParentSize } from '../../hooks/useParentSize.tsx'
+import AxisLeft from '../common/AxisLeft'
+import type { ChartProps } from '../../util/types'
+import { useParentSize } from '../../hooks/useParentSize'
 import {
   type PointerEventHandler,
   useCallback,
@@ -20,9 +18,12 @@ import {
   useMemo,
   useRef
 } from 'react'
-import { mergeRefs } from '../../util/utils.ts'
-import GridVertical from '../common/GridVertical.tsx'
-import GridHorizontal from '../common/GridHorizontal.tsx'
+import { getClosestIndex } from '../../util/utils'
+import GridVertical from '../common/GridVertical'
+import GridHorizontal from '../common/GridHorizontal'
+import { useChartTooltip } from '../../hooks/useChartTooltip'
+import ChartTooltip from '../common/ChartTooltip'
+import type { TooltipPositionMode } from '../../util/types'
 
 type DataType = {
   x: string
@@ -55,6 +56,12 @@ type Props = Omit<ChartProps, 'data' | 'color'> & {
    * Gap between bars.
    */
   padding?: number
+  /**
+   * Tooltip anchor position.
+   * `cursor` follows the mouse and `point` sticks to the matched data point.
+   * @default "point"
+   */
+  tooltipPosition?: TooltipPositionMode
 }
 
 const defaultMargin = {
@@ -84,11 +91,15 @@ const GroupBarChart = ({
   ],
   tooltipOffset = { x: 10, y: -10 },
   padding = 0.1,
+  tooltipPosition = 'point',
   maxY,
   minY,
   showGridHorizontal = true,
   showGridVertical = true
 }: Props) => {
+  const { tooltip, showTooltip, hideTooltip } =
+    useChartTooltip<{ x: string; y: number }>()
+
   const {
     ref: parentRef,
     width: parentWidth,
@@ -96,20 +107,6 @@ const GroupBarChart = ({
   } = useParentSize()
 
   const ref = useRef<SVGSVGElement>(null)
-
-  const {
-    showTooltip,
-    tooltipOpen,
-    tooltipData,
-    tooltipLeft,
-    tooltipTop,
-    hideTooltip
-  } = useTooltip()
-  const { containerRef, TooltipInPortal } = useTooltipInPortal({
-    detectBounds: true
-  })
-
-  const parent = mergeRefs(parentRef, containerRef)
 
   const keyList = useMemo(() => {
     return Object.keys(data[0]).filter(key => key !== 'x')
@@ -144,6 +141,14 @@ const GroupBarChart = ({
       .padding(padding)
   }, [keyList, padding, x])
 
+  const groupPositions = useMemo(() => {
+    return data.map(d => (x(d.x) ?? 0) + x.bandwidth() / 2)
+  }, [data, x])
+
+  const barPositions = useMemo(() => {
+    return keyList.map(key => (barScale(key) ?? 0) + barScale.bandwidth() / 2)
+  }, [barScale, keyList])
+
   const drawChart = useCallback(() => {
     const svg = select(ref.current)
     const chartContainer = svg.select('.chart')
@@ -173,37 +178,48 @@ const GroupBarChart = ({
   const onMouseMove: PointerEventHandler = useCallback(
     e => {
       if (children) {
-        const [xPoint] = pointer(e)
-        const xDomain = data.map(d => x(d.x) as number)
-        const index = bisectLeft(xDomain, xPoint) - 1
+        const [xPoint, yPoint] = pointer(e)
+        const groupIndex = getClosestIndex(groupPositions, xPoint)
+        const point = data[groupIndex]
 
-        const yDomain = keyList.map(key => data[index][key] as number)
-        const barDomain = keyList.map(key => barScale(key)! + x(data[index].x)!)
-        const barIndex = bisectLeft(barDomain, xPoint) - 1
-        const [nowX, nowY] = [data[index].x, yDomain[barIndex]]
-        if (nowX && nowY) {
-          const tooltipX =
-            x(data[index].x)! +
-            barScale(keyList[barIndex])! +
-            barScale.bandwidth() / 2 +
-            tooltipOffset.x
-          const tooltipY = y(nowY as number) + tooltipOffset.y
-          showTooltip({
-            tooltipLeft: tooltipX,
-            tooltipTop: tooltipY,
-            tooltipData: { x: nowX, y: nowY }
-          })
+        if (!point) {
+          return
         }
+
+        const groupStart = x(point.x)
+        if (groupStart == null) {
+          return
+        }
+
+        const barIndex = getClosestIndex(barPositions, xPoint - groupStart)
+        const key = keyList[barIndex]
+
+        if (!key) {
+          return
+        }
+
+        const value = point[key]
+        if (typeof value !== 'number') {
+          return
+        }
+
+        const isPointTooltip = tooltipPosition === 'point'
+
+        showTooltip({
+          left: isPointTooltip ? groupStart + barPositions[barIndex] : xPoint,
+          top: isPointTooltip ? y(value) : yPoint,
+          data: { x: point.x, y: value }
+        })
       }
     },
     [
-      barScale,
+      barPositions,
       children,
       data,
+      groupPositions,
       keyList,
       showTooltip,
-      tooltipOffset.x,
-      tooltipOffset.y,
+      tooltipPosition,
       x,
       y
     ]
@@ -220,7 +236,7 @@ const GroupBarChart = ({
         height: height ?? '100%',
         position: 'relative'
       }}
-      ref={parent}
+      ref={parentRef}
     >
       <svg
         width={'100%'}
@@ -250,25 +266,18 @@ const GroupBarChart = ({
         <AxisLeft scale={y as AxisScale<AxisDomain>} left={margin.left} />
         <g className="chart" />
       </svg>
-      {children && tooltipOpen && (
-        <TooltipInPortal
-          left={tooltipLeft}
-          top={tooltipTop}
-          style={{
-            ...defaultStyles,
-            background: 'transparent',
-            border: 'none',
-            boxShadow: 'none',
-            padding: 0
-          }}
+      {children && tooltip.isOpen && tooltip.data && (
+        <ChartTooltip
+          left={tooltip.left}
+          top={tooltip.top}
+          align={tooltipPosition === 'point' ? 'center' : 'cursor'}
+          offsetX={tooltipOffset.x}
+          offsetY={tooltipOffset.y}
         >
           {children({
-            tooltipData: tooltipData as {
-              x: string
-              y: number
-            }
+            tooltipData: tooltip.data
           })}
-        </TooltipInPortal>
+        </ChartTooltip>
       )}
     </div>
   )

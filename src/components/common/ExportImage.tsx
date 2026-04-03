@@ -1,54 +1,46 @@
 import {
-  ForwardedRef,
+  type ForwardedRef,
   forwardRef,
-  MutableRefObject,
   type ReactNode,
-  useCallback,
-  useMemo
+  useCallback
 } from 'react'
 import { toPng, toSvg } from 'html-to-image'
 
-interface Props {
+type ExportTarget = HTMLElement | SVGSVGElement
+
+export interface ExportImageProps {
   icon?: ReactNode
   fileName?: string
   fileFormat?: 'svg' | 'png'
-  // ref: RefObject<SVGSVGElement>
 }
 
-const ExportImage = (props: Props, ref: ForwardedRef<HTMLElement>) => {
-  let { icon, fileName, fileFormat } = props as Props
-  if (fileFormat === undefined) {
+const hasCurrentTarget = (
+  ref: ForwardedRef<ExportTarget>
+): ref is { current: ExportTarget | null } => {
+  return Boolean(ref) && typeof ref !== 'function'
+}
+
+const ExportImage = (
+  {
+    icon = 'svg',
+    fileName = 'download',
     fileFormat = 'svg'
-  }
-  if (fileName === undefined) {
-    fileName = 'download'
-  }
-  if (icon === undefined) {
-    icon = 'svg'
-  }
-
-  const svg = ref as MutableRefObject<HTMLElement>
-
-  const toImage = useMemo(() => {
-    switch (fileFormat) {
-      case 'svg':
-        return toSvg
-      case 'png':
-        return toPng
-      default:
-        return toSvg
-    }
-  }, [fileFormat])
+  }: ExportImageProps,
+  ref: ForwardedRef<ExportTarget>
+) => {
+  const toImage = fileFormat === 'png' ? toPng : toSvg
 
   const onClick = useCallback(async () => {
-    if (svg.current) {
-      const image = await toImage(svg.current as unknown as HTMLElement)
-      const link = document.createElement('a')
-      link.download = `${fileName}.${fileFormat}`
-      link.href = image
-      link.click()
+    if (!hasCurrentTarget(ref) || !ref.current) {
+      return
     }
-  }, [fileFormat, fileName, svg, toImage])
+
+    const image = await toImage(ref.current as unknown as HTMLElement)
+    const link = document.createElement('a')
+    link.download = `${fileName}.${fileFormat}`
+    link.href = image
+    link.click()
+  }, [fileFormat, fileName, ref, toImage])
 
   return (
     <button
@@ -60,9 +52,9 @@ const ExportImage = (props: Props, ref: ForwardedRef<HTMLElement>) => {
         cursor: 'pointer'
       }}
     >
-      {icon ?? fileFormat}
+      {icon}
     </button>
   )
 }
 
-export default forwardRef<HTMLElement, Props>(ExportImage)
+export default forwardRef<ExportTarget, ExportImageProps>(ExportImage)

@@ -21,7 +21,6 @@
     "publish": "rimraf dist && rollup -c && npm publish"
   },
   "dependencies": {
-    "@visx/tooltip": "^3.3.0",
     "d3": "^7.9.0",
     "d3-cloud": "^1.2.7",
     "html-to-image": "^1.11.11",
@@ -70,8 +69,7 @@
   "peerDependencies": {
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "d3": "^7.9.0",
-    "@visx/tooltip": "^3.3.0"
+    "d3": "^7.9.0"
   },
   "eslintConfig": {
     "extends": [

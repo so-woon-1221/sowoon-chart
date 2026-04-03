@@ -1,4 +1,4 @@
-import { useParentSize } from "../../hooks/useParentSize.tsx";
+import { useParentSize } from "../../hooks/useParentSize";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import {
   curveLinearClosed,
@@ -9,8 +9,9 @@ import {
   scaleOrdinal,
   select,
 } from "d3";
-import { defaultStyles, useTooltip, useTooltipInPortal } from "@visx/tooltip";
-import { mergeRefs } from "../../util/utils.ts";
+import { useChartTooltip } from "../../hooks/useChartTooltip";
+import ChartTooltip from "../common/ChartTooltip";
+import type { TooltipPositionMode } from "../../util/types";
 
 type Props = {
   /**
@@ -57,6 +58,12 @@ type Props = {
    * @default { x: 10, y: -10 }
    */
   tooltipOffset?: { x: number; y: number };
+  /**
+   * Tooltip anchor position.
+   * `cursor` follows the mouse and `point` sticks to the matched radar point.
+   * @default "cursor"
+   */
+  tooltipPosition?: TooltipPositionMode;
 };
 
 const RadarChart = ({
@@ -67,26 +74,16 @@ const RadarChart = ({
   colorList,
   children,
   tooltipOffset = { x: 10, y: -10 },
+  tooltipPosition = "cursor",
 }: Props) => {
-  const {
-    showTooltip,
-    tooltipOpen,
-    tooltipData,
-    tooltipLeft,
-    tooltipTop,
-    hideTooltip,
-  } = useTooltip();
-  const { containerRef, TooltipInPortal } = useTooltipInPortal({
-    detectBounds: true,
-  });
+  const { tooltip, showTooltip, hideTooltip } =
+    useChartTooltip<{ x: string; y: number }>();
 
   const {
     ref: parentRef,
     height: parentHeight,
     width: parentWidth,
   } = useParentSize();
-
-  const parent = mergeRefs(containerRef, parentRef);
 
   const ref = useRef<SVGSVGElement>(null);
 
@@ -211,23 +208,30 @@ const RadarChart = ({
       .attr("stroke", (d) => color(d.key))
       .attr("fill", (d) => color(d.key))
       .selectAll("circle")
-      .data((d) => d.data)
+      .data((d) => d.data.map((point, index) => ({ ...point, index })))
       .join("circle")
       .attr("r", 4)
       .attr(
         "cx",
-        (d, i) => rScale(d.y) * Math.cos(angleSlice * i - Math.PI / 2),
+        (d) => rScale(d.y) * Math.cos(angleSlice * d.index - Math.PI / 2),
       )
       .attr(
         "cy",
-        (d, i) => rScale(d.y) * Math.sin(angleSlice * i - Math.PI / 2),
+        (d) => rScale(d.y) * Math.sin(angleSlice * d.index - Math.PI / 2),
       )
       .on("mouseover", (e, d) => {
-        const [x, y] = pointer(e);
+        const [xPoint, yPoint] = pointer(e, ref.current);
+        const pointX =
+          parentWidth / 2 +
+          rScale(d.y) * Math.cos(angleSlice * d.index - Math.PI / 2);
+        const pointY =
+          parentHeight / 2 +
+          rScale(d.y) * Math.sin(angleSlice * d.index - Math.PI / 2);
+        const isPointTooltip = tooltipPosition === "point";
         showTooltip({
-          tooltipData: { x: d.x, y: d.y },
-          tooltipLeft: x + parentWidth / 2 + tooltipOffset.x,
-          tooltipTop: y + parentHeight / 2 + tooltipOffset.y,
+          left: isPointTooltip ? pointX : xPoint,
+          top: isPointTooltip ? pointY : yPoint,
+          data: { x: d.x, y: d.y },
         });
       })
       .on("mouseleave", hideTooltip);
@@ -244,8 +248,7 @@ const RadarChart = ({
     rScale,
     radarLine,
     showTooltip,
-    tooltipOffset.x,
-    tooltipOffset.y,
+    tooltipPosition,
   ]);
 
   useEffect(() => {
@@ -256,7 +259,7 @@ const RadarChart = ({
 
   return (
     <div
-      ref={parent}
+      ref={parentRef}
       style={{
         width: width ?? "100%",
         height: height ?? "100%",
@@ -267,26 +270,19 @@ const RadarChart = ({
     >
       <svg width={"100%"} height={"100%"} ref={ref}>
         <g className={"chart"} />
-      </svg>{" "}
-      {children && tooltipOpen && (
-        <TooltipInPortal
-          left={tooltipLeft}
-          top={tooltipTop}
-          style={{
-            ...defaultStyles,
-            background: "transparent",
-            border: "none",
-            boxShadow: "none",
-            padding: 0,
-          }}
+      </svg>
+      {children && tooltip.isOpen && tooltip.data && (
+        <ChartTooltip
+          left={tooltip.left}
+          top={tooltip.top}
+          align={tooltipPosition === "point" ? "center" : "cursor"}
+          offsetX={tooltipOffset.x}
+          offsetY={tooltipOffset.y}
         >
           {children({
-            tooltipData: tooltipData as {
-              x: string;
-              y: number;
-            },
+            tooltipData: tooltip.data,
           })}
-        </TooltipInPortal>
+        </ChartTooltip>
       )}
       <div
         style={{

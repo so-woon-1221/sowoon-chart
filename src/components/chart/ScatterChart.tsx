@@ -1,4 +1,4 @@
-import AxisBottom from '../common/AxisBottom.tsx'
+import AxisBottom from '../common/AxisBottom'
 import {
   type AxisDomain,
   type AxisScale,
@@ -8,13 +8,14 @@ import {
   scaleLinear,
   select
 } from 'd3'
-import AxisLeft from '../common/AxisLeft.tsx'
-import { defaultStyles, useTooltip, useTooltipInPortal } from '@visx/tooltip'
-import { useParentSize } from '../../hooks/useParentSize.tsx'
+import AxisLeft from '../common/AxisLeft'
+import { useParentSize } from '../../hooks/useParentSize'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
-import { mergeRefs } from '../../util/utils.ts'
-import GridVertical from '../common/GridVertical.tsx'
-import GridHorizontal from '../common/GridHorizontal.tsx'
+import GridVertical from '../common/GridVertical'
+import GridHorizontal from '../common/GridHorizontal'
+import { useChartTooltip } from '../../hooks/useChartTooltip'
+import ChartTooltip from '../common/ChartTooltip'
+import type { TooltipPositionMode } from '../../util/types'
 
 type Props = {
   /**
@@ -85,6 +86,12 @@ type Props = {
    * Display grid lines along the y-axis.
    */
   showGridHorizontal?: boolean
+  /**
+   * Tooltip anchor position.
+   * `cursor` follows the mouse and `point` sticks to the matched data point.
+   * @default "cursor"
+   */
+  tooltipPosition?: TooltipPositionMode
 }
 
 const defaultMargin = {
@@ -107,8 +114,15 @@ const ScatterChart = ({
   tooltipOffset = { x: 20, y: -20 },
   color = 'black',
   showGridHorizontal = true,
-  showGridVertical = true
+  showGridVertical = true,
+  tooltipPosition = 'cursor'
 }: Props) => {
+  const { tooltip, showTooltip, hideTooltip } = useChartTooltip<{
+    x: string
+    y: number
+    value: number
+  }>()
+
   const {
     ref: parentRef,
     height: parentHeight,
@@ -116,20 +130,6 @@ const ScatterChart = ({
   } = useParentSize()
 
   const ref = useRef<SVGSVGElement>(null)
-
-  const {
-    showTooltip,
-    tooltipOpen,
-    tooltipData,
-    tooltipLeft,
-    tooltipTop,
-    hideTooltip
-  } = useTooltip()
-  const { containerRef, TooltipInPortal } = useTooltipInPortal({
-    detectBounds: true
-  })
-
-  const parent = mergeRefs(parentRef, containerRef)
 
   const x = useMemo(() => {
     return scaleBand()
@@ -166,11 +166,12 @@ const ScatterChart = ({
       .attr('fill', color)
     circles
       .on('pointermove', (e, d) => {
-        const [x, y] = pointer(e)
+        const [xPoint, yPoint] = pointer(e, ref.current)
+        const isPointTooltip = tooltipPosition === 'point'
         showTooltip({
-          tooltipData: { x: d.x, y: d.y, value: d.value },
-          tooltipLeft: x + tooltipOffset.x,
-          tooltipTop: y + tooltipOffset.y
+          left: isPointTooltip ? x(d.x)! + x.bandwidth() / 2 : xPoint,
+          top: isPointTooltip ? y(d.y) : yPoint,
+          data: { x: d.x, y: d.y, value: d.value }
         })
       })
       .on('pointerleave', hideTooltip)
@@ -180,8 +181,7 @@ const ScatterChart = ({
     hideTooltip,
     showTooltip,
     sizeScale,
-    tooltipOffset.x,
-    tooltipOffset.y,
+    tooltipPosition,
     x,
     y
   ])
@@ -197,7 +197,7 @@ const ScatterChart = ({
         height: height ?? '100%',
         position: 'relative'
       }}
-      ref={parent}
+      ref={parentRef}
     >
       <svg width={'100%'} height={'100%'} ref={ref}>
         {showGridVertical && (
@@ -221,26 +221,18 @@ const ScatterChart = ({
         <AxisLeft scale={y as AxisScale<AxisDomain>} left={margin.left} />
         <g className="bar" />
       </svg>
-      {children && tooltipOpen && (
-        <TooltipInPortal
-          left={tooltipLeft}
-          top={tooltipTop}
-          style={{
-            ...defaultStyles,
-            background: 'transparent',
-            border: 'none',
-            boxShadow: 'none',
-            padding: 0
-          }}
+      {children && tooltip.isOpen && tooltip.data && (
+        <ChartTooltip
+          left={tooltip.left}
+          top={tooltip.top}
+          align={tooltipPosition === 'point' ? 'center' : 'cursor'}
+          offsetX={tooltipOffset.x}
+          offsetY={tooltipOffset.y}
         >
           {children({
-            tooltipData: tooltipData as {
-              x: string
-              y: number
-              value: number
-            }
+            tooltipData: tooltip.data
           })}
-        </TooltipInPortal>
+        </ChartTooltip>
       )}
     </div>
   )

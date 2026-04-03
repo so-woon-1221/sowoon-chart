@@ -1,10 +1,10 @@
-import { useParentSize } from '../../hooks/useParentSize.tsx'
+import { useParentSize } from '../../hooks/useParentSize'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { extent, scaleLinear, select } from 'd3'
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-expect-error
 import WordCloudWorker from 'web-worker:./lib/wordcloud.worker.js'
-import { type ChartProps } from '../../util/types.ts'
+import { type ChartProps } from '../../util/types'
 
 type Props = Omit<ChartProps, 'maxY' | 'minY' | 'color'> & {
   colorList?: string[]

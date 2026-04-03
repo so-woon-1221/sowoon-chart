@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface Size {
   width?: number;
@@ -10,20 +10,45 @@ export const useParentSize = (props?: Size) => {
   const [parentWidth, setParentWidth] = useState<number>(0);
   const [parentHeight, setParentHeight] = useState<number>(0);
 
-  const getSize = useCallback(() => {
-    const parent = ref.current;
-    if (parent) {
-      const { width, height } = parent.getBoundingClientRect();
-      setParentWidth(width);
-      setParentHeight(height);
-    }
-  }, [ref]);
-
   useEffect(() => {
-    getSize();
-    window.addEventListener("resize", getSize);
-    return () => window.removeEventListener("resize", getSize);
-  }, [getSize]);
+    const element = ref.current;
+    if (!element) {
+      return;
+    }
+
+    const updateSize = (width: number, height: number) => {
+      setParentWidth((prevWidth) => (prevWidth === width ? prevWidth : width));
+      setParentHeight((prevHeight) =>
+        prevHeight === height ? prevHeight : height,
+      );
+    };
+
+    const syncRectSize = () => {
+      const { width, height } = element.getBoundingClientRect();
+      updateSize(width, height);
+    };
+
+    syncRectSize();
+
+    if (typeof ResizeObserver === "undefined") {
+      window.addEventListener("resize", syncRectSize);
+      return () => window.removeEventListener("resize", syncRectSize);
+    }
+
+    const resizeObserver = new ResizeObserver(([entry]) => {
+      if (!entry) {
+        return;
+      }
+
+      updateSize(entry.contentRect.width, entry.contentRect.height);
+    });
+
+    resizeObserver.observe(element);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, []);
 
   return {
     ref,

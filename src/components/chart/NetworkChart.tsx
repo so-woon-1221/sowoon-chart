@@ -1,15 +1,14 @@
-import { useCallback, useEffect, useMemo, useRef } from "react";
-import { useParentSize } from "../../hooks/useParentSize.tsx";
+import { useEffect, useMemo, useRef } from "react";
+import { useParentSize } from "../../hooks/useParentSize";
 import {
-  DragBehavior,
-  Simulation,
-  SimulationLinkDatum,
-  SimulationNodeDatum,
-  D3DragEvent,
-  SubjectPosition,
-  hsl,
-} from "d3";
-import {
+  type D3DragEvent,
+  type DragBehavior,
+  type Simulation,
+  type SimulationLinkDatum,
+  type SimulationNodeDatum,
+  type SubjectPosition,
+  drag,
+  extent,
   forceCenter,
   forceCollide,
   forceLink,
@@ -17,10 +16,9 @@ import {
   forceSimulation,
   forceX,
   forceY,
-  select,
-  drag,
+  hsl,
   scaleLinear,
-  extent,
+  select,
   zoom,
 } from "d3";
 
@@ -43,11 +41,30 @@ interface Node extends SimulationNodeDatum {
   value: number;
   group?: string;
 }
+
 interface Link extends SimulationLinkDatum<Node> {
   source: Node | string;
   target: Node | string;
   value: number;
 }
+
+const getScaleDomain = (values: number[], fallback: [number, number]) => {
+  const [min, max] = extent(values);
+
+  if (min == null || max == null) {
+    return fallback;
+  }
+
+  if (min === max) {
+    if (min === 0) {
+      return [0, 1] as [number, number];
+    }
+
+    return [0, max] as [number, number];
+  }
+
+  return [min, max] as [number, number];
+};
 
 const NetworkChart = ({
   data,
@@ -69,14 +86,25 @@ const NetworkChart = ({
   const strokeScale = useMemo(
     () =>
       scaleLinear()
-        .domain(extent(data.links.map((d) => +d.value)) as [number, number])
+        .domain(
+          getScaleDomain(
+            data.links.map((link) => +link.value),
+            [minLinkWidth, maxLinkWidth],
+          ),
+        )
         .range([minLinkWidth, maxLinkWidth]),
     [data.links, maxLinkWidth, minLinkWidth],
   );
+
   const circleScale = useMemo(
     () =>
       scaleLinear()
-        .domain(extent(data.nodes.map((d) => +d.value)) as [number, number])
+        .domain(
+          getScaleDomain(
+            data.nodes.map((node) => +node.value),
+            [minRadius, maxRadius],
+          ),
+        )
         .range([minRadius, maxRadius]),
     [data.nodes, maxRadius, minRadius],
   );
@@ -85,24 +113,25 @@ const NetworkChart = ({
     simulation: Simulation<Node, Link>,
   ): DragBehavior<Element, Node, SubjectPosition | Node> => {
     const dragStarted = (event: D3DragEvent<Element, Node, Node>) => {
-      if (!event.active) simulation.alphaTarget(0.3).restart();
+      if (!event.active) {
+        simulation.alphaTarget(0.3).restart();
+      }
 
       event.subject.fx = event.subject.x;
-
       event.subject.fy = event.subject.y;
     };
 
     const dragged = (event: D3DragEvent<Element, Node, Node>) => {
       event.subject.fx = event.x;
-
       event.subject.fy = event.y;
     };
 
     const dragEnded = (event: D3DragEvent<Element, Node, Node>) => {
-      if (!event.active) simulation.alphaTarget(0);
+      if (!event.active) {
+        simulation.alphaTarget(0);
+      }
 
       event.subject.fx = null;
-
       event.subject.fy = null;
     };
 
@@ -112,160 +141,205 @@ const NetworkChart = ({
       .on("end", dragEnded);
   };
 
-  const drawChart = useCallback(() => {
-    const svg = select(ref.current);
+  useEffect(() => {
+    const svgElement = ref.current;
+    if (!svgElement || parentWidth <= 0 || parentHeight <= 0) {
+      return;
+    }
 
-    const chartArea = svg.select("g.chart");
+    const nodes: Node[] = data.nodes.map((node) => ({ ...node }));
+    const links: Link[] = data.links.map((link) => ({
+      ...link,
+      source: link.source,
+      target: link.target,
+    }));
 
-    const simulation = forceSimulation<Node>(data.nodes)
+    const svg = select(svgElement);
+    const chartArea = svg.select<SVGGElement>("g.chart");
+
+    chartArea.attr("transform", null);
+    svg.on(".zoom", null);
+
+    if (nodes.length === 0) {
+      chartArea.select("g.link").selectAll("*").remove();
+      chartArea.select("g.node").selectAll("*").remove();
+      chartArea.select("g.text").selectAll("*").remove();
+      return;
+    }
+
+    const simulation = forceSimulation<Node>(nodes)
       .force(
         "link",
-        forceLink<Node, Link>(data.links)
-          .id((d) => d.id)
-          .distance(100), // 노드 간의 거리를 줄임
+        forceLink<Node, Link>(links)
+          .id((node) => node.id)
+          .distance(100),
       )
-      .force("center", forceCenter(parentWidth / 2, parentHeight / 2)) // 노드 중앙
-      .force("charge", forceManyBody().strength(-200)) // 노드 간의 힘을 높임
+      .force("center", forceCenter(parentWidth / 2, parentHeight / 2))
+      .force("charge", forceManyBody().strength(-200))
       .force(
         "collide",
         forceCollide<Node>()
-          .radius((d) => circleScale(+d.value) + 10)
+          .radius((node) => circleScale(+node.value) + 10)
           .strength(1),
-      ) // 충돌반경
+      )
       .force("x", forceX(parentWidth))
       .force("y", forceY(parentHeight));
 
-    const nodeLinkStatus: { [key: string]: number } = {};
-    data.links.forEach((d: Link) => {
-      if (typeof d.source !== "string" && typeof d.target !== "string") {
-        if (d.source.index !== undefined && d.target.index !== undefined) {
-          nodeLinkStatus[`${d.source.index},${d.target.index}`] = 1;
-          nodeLinkStatus[`${d.target.index},${d.source.index}`] = 1;
+    const nodeLinkStatus: Record<string, boolean> = {};
+    links.forEach((link) => {
+      if (typeof link.source !== "string" && typeof link.target !== "string") {
+        if (link.source.index != null && link.target.index != null) {
+          nodeLinkStatus[`${link.source.index},${link.target.index}`] = true;
+          nodeLinkStatus[`${link.target.index},${link.source.index}`] = true;
         }
       }
     });
 
-    function isConnected(a: Node, b: Node) {
+    const isConnected = (sourceNode: Node, targetNode: Node) => {
       return (
-        nodeLinkStatus[`${a.index},${b.index}`] ||
-        a.index === b.index ||
-        nodeLinkStatus[`${b.index},${a.index}`]
+        Boolean(nodeLinkStatus[`${sourceNode.index},${targetNode.index}`]) ||
+        sourceNode.index === targetNode.index ||
+        Boolean(nodeLinkStatus[`${targetNode.index},${sourceNode.index}`])
       );
-    }
+    };
 
     const link = chartArea
       .select("g.link")
       .selectAll("line")
-      .data(data.links as Link[])
+      .data(links)
       .join("line")
-      .style("stroke-width", (d) => strokeScale(+d.value))
-      .attr("stroke", "#aaa")
-      .attr("x1", (d: Link) => (typeof d.source === "string" ? 0 : d.source.x!))
-      .attr("y1", (d: Link) => (typeof d.source === "string" ? 0 : d.source.y!))
-      .attr("x2", (d: Link) => (typeof d.target === "string" ? 0 : d.target.x!))
-      .attr("y2", (d: Link) =>
-        typeof d.target === "string" ? 0 : d.target.y!,
-      );
+      .style("stroke-width", (currentLink) => strokeScale(+currentLink.value))
+      .attr("stroke", "#aaa");
 
     const text = chartArea
       .select("g.text")
       .selectAll("text")
-      .data(data.nodes as Node[])
+      .data(nodes)
       .join("text")
-      .text((d) => d.id)
+      .text((node) => node.id)
       .attr("fill", () => {
         const hslColor = hsl(color);
         return hslColor.l > 0.5 ? "#000" : "#fff";
       })
       .attr("text-anchor", "middle")
       .attr("alignment-baseline", "middle")
-      .attr("font-size", (d) => `${circleScale(d.value) / 1.5}px`)
-      .attr("pointer-events", "none")
-      .attr("x", (d) => d.x ?? 0)
-      .attr("y", (d) => d.y ?? 0);
+      .attr("font-size", (node) => `${circleScale(node.value) / 1.5}px`)
+      .attr("pointer-events", "none");
 
     const node = chartArea
       .select("g.node")
       .selectAll("circle")
-      .data(data.nodes as Node[])
+      .data(nodes)
       .join("circle")
-      .attr("r", (d) => circleScale(+d.value))
-      // .attr('fill', (d) => colorScale(d.group) as string)
+      .attr("r", (currentNode) => circleScale(+currentNode.value))
       .attr("fill", color)
-      .attr("cx", (d) => d.x ?? 0)
-      .attr("cy", (d) => d.y ?? 0)
-      .on("mouseover", (_, d) => {
+      .on("mouseover", (_, hoveredNode) => {
         node
+          .interrupt()
           .transition()
-          .attr("r", (o) => {
-            if (isConnected(d, o)) {
+          .attr("r", (candidate) => {
+            if (isConnected(hoveredNode, candidate)) {
               return 30;
             }
-            return circleScale(o.value);
-            // return 10;
+
+            return circleScale(candidate.value);
           })
-          .style("opacity", (o) => {
-            let thisOpacity = 0;
-            if (isConnected(d, o)) {
-              thisOpacity = 1;
-            } else {
-              thisOpacity = 0.1;
-            }
-            return thisOpacity;
+          .style("opacity", (candidate) => {
+            return isConnected(hoveredNode, candidate) ? 1 : 0.1;
           });
-        link.transition().style("opacity", (l) => {
-          if (d === l.source || d === l.target) {
-            return 1;
-          }
-          return 0.1;
-        });
-        text.transition().attr("font-size", (o) => {
-          if (isConnected(d, o)) {
-            return "20px";
-          }
-          return `${circleScale(o.value) / 1.5}px`;
-          // return "10px";
-        });
+
+        link
+          .interrupt()
+          .transition()
+          .style("opacity", (currentLink) => {
+            if (
+              hoveredNode === currentLink.source ||
+              hoveredNode === currentLink.target
+            ) {
+              return 1;
+            }
+
+            return 0.1;
+          });
+
+        text
+          .interrupt()
+          .transition()
+          .attr("font-size", (candidate) => {
+            if (isConnected(hoveredNode, candidate)) {
+              return "20px";
+            }
+
+            return `${circleScale(candidate.value) / 1.5}px`;
+          });
       })
       .on("mouseleave", () => {
         node
+          .interrupt()
           .transition()
-          .attr("r", (d) => circleScale(d.value))
+          .attr("r", (currentNode) => circleScale(currentNode.value))
           .style("opacity", 1);
-        link.transition().style("opacity", 1);
+
+        link.interrupt().transition().style("opacity", 1);
+
         text
+          .interrupt()
           .transition()
-          .attr("font-size", (d) => `${circleScale(d.value) / 1.5}px`);
+          .attr(
+            "font-size",
+            (currentNode) => `${circleScale(currentNode.value) / 1.5}px`,
+          );
       })
       .call(nodeDrag(simulation) as never);
 
-    function ticked() {
+    const ticked = () => {
       link
-        .attr("x1", (d: Link) => (d.source as Node).x!)
-        .attr("y1", (d: Link) => (d.source as Node).y!)
-        .attr("x2", (d: Link) => (d.target as Node).x!)
-        .attr("y2", (d: Link) => (d.target as Node).y!);
+        .attr("x1", (currentLink) =>
+          typeof currentLink.source === "string" ? 0 : currentLink.source.x ?? 0,
+        )
+        .attr("y1", (currentLink) =>
+          typeof currentLink.source === "string" ? 0 : currentLink.source.y ?? 0,
+        )
+        .attr("x2", (currentLink) =>
+          typeof currentLink.target === "string" ? 0 : currentLink.target.x ?? 0,
+        )
+        .attr("y2", (currentLink) =>
+          typeof currentLink.target === "string" ? 0 : currentLink.target.y ?? 0,
+        );
 
-      node.attr("cx", (d: Node) => d.x!).attr("cy", (d: Node) => d.y!);
+      node.attr("cx", (currentNode) => currentNode.x ?? 0).attr(
+        "cy",
+        (currentNode) => currentNode.y ?? 0,
+      );
 
-      text.attr("x", (d: Node) => d.x!).attr("y", (d: Node) => d.y!);
-    }
+      text.attr("x", (currentNode) => currentNode.x ?? 0).attr(
+        "y",
+        (currentNode) => currentNode.y ?? 0,
+      );
+    };
 
-    simulation.alpha(0).restart();
+    ticked();
     simulation.on("tick", ticked);
+    simulation.alpha(1).restart();
 
-    svg.call(
-      zoom()
-        .scaleExtent([0.7, 1.5])
-        .scaleExtent([0.7, 1.5])
-        .extent([
-          [0, 0],
-          [parentWidth, parentHeight],
-        ])
-        .on("zoom", (e) => {
-          svg.selectAll("g").attr("transform", e.transform);
-        }) as never,
-    );
+    const zoomBehavior = zoom<SVGSVGElement, unknown>()
+      .scaleExtent([0.7, 1.5])
+      .extent([
+        [0, 0],
+        [parentWidth, parentHeight],
+      ])
+      .on("zoom", (event) => {
+        chartArea.attr("transform", event.transform.toString());
+      });
+
+    svg.call(zoomBehavior as never);
+
+    return () => {
+      simulation.stop();
+      simulation.on("tick", null);
+      svg.on(".zoom", null);
+      chartArea.selectAll("*").interrupt();
+    };
   }, [
     circleScale,
     color,
@@ -275,10 +349,6 @@ const NetworkChart = ({
     parentWidth,
     strokeScale,
   ]);
-
-  useEffect(() => {
-    drawChart();
-  }, [drawChart]);
 
   return (
     <div

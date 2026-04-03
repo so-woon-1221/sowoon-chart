@@ -1,9 +1,7 @@
-import AxisBottom from '../common/AxisBottom.tsx'
+import AxisBottom from '../common/AxisBottom'
 import {
   type AxisDomain,
   type AxisScale,
-  bisectCenter,
-  bisectLeft,
   line,
   pointer,
   scaleBand,
@@ -11,9 +9,8 @@ import {
   scaleOrdinal,
   select
 } from 'd3'
-import AxisLeft from '../common/AxisLeft.tsx'
-import { defaultStyles, useTooltip, useTooltipInPortal } from '@visx/tooltip'
-import { useParentSize } from '../../hooks/useParentSize.tsx'
+import AxisLeft from '../common/AxisLeft'
+import { useParentSize } from '../../hooks/useParentSize'
 import {
   type PointerEventHandler,
   useCallback,
@@ -21,10 +18,12 @@ import {
   useMemo,
   useRef
 } from 'react'
-import { mergeRefs } from '../../util/utils.ts'
-import type { ChartProps } from '../../util/types.ts'
-import GridVertical from '../common/GridVertical.tsx'
-import GridHorizontal from '../common/GridHorizontal.tsx'
+import { getClosestIndex } from '../../util/utils'
+import type { ChartProps, TooltipPositionMode } from '../../util/types'
+import GridVertical from '../common/GridVertical'
+import GridHorizontal from '../common/GridHorizontal'
+import { useChartTooltip } from '../../hooks/useChartTooltip'
+import ChartTooltip from '../common/ChartTooltip'
 
 type DataType = {
   x: string
@@ -53,6 +52,12 @@ type Props = Omit<ChartProps, 'data' | 'color'> & {
    * Offset of the tooltip from the mouse pointer.
    */
   tooltipOffset?: { x: number; y: number }
+  /**
+   * Tooltip anchor position.
+   * `cursor` follows the mouse and `point` sticks to the matched data point.
+   * @default "point"
+   */
+  tooltipPosition?: TooltipPositionMode
 }
 
 const defaultMargin = {
@@ -80,9 +85,16 @@ const GroupLineChart = ({
     '#ff8c00'
   ],
   tooltipOffset = { x: 10, y: -10 },
+  tooltipPosition = 'point',
   showGridHorizontal = true,
   showGridVertical = true
 }: Props) => {
+  const { tooltip, showTooltip, hideTooltip } = useChartTooltip<{
+    x: string
+    y: number
+    value: number
+  }>()
+
   const {
     ref: parentRef,
     width: parentWidth,
@@ -90,20 +102,6 @@ const GroupLineChart = ({
   } = useParentSize()
 
   const ref = useRef<SVGSVGElement>(null)
-
-  const {
-    showTooltip,
-    tooltipOpen,
-    tooltipData,
-    tooltipLeft,
-    tooltipTop,
-    hideTooltip
-  } = useTooltip()
-  const { containerRef, TooltipInPortal } = useTooltipInPortal({
-    detectBounds: true
-  })
-
-  const parent = mergeRefs(parentRef, containerRef)
 
   const keyList = useMemo(() => {
     return Object.keys(data[0]).filter(key => key !== 'x')
@@ -114,6 +112,10 @@ const GroupLineChart = ({
       .domain(data.map(d => d.x))
       .range([margin.left, (parentWidth ?? 0) - margin.right])
   }, [data, margin.left, margin.right, parentWidth])
+
+  const xPositions = useMemo(() => {
+    return data.map(d => (x(d.x) ?? 0) + x.bandwidth() / 2)
+  }, [data, x])
 
   const y = useMemo(() => {
     const maxYList = keyList.map(key => {
@@ -163,30 +165,46 @@ const GroupLineChart = ({
     e => {
       if (children) {
         const [xPoint, yPoint] = pointer(e)
-        const xDomain = data.map(d => x(d.x) as number)
-        const index = bisectLeft(xDomain, xPoint) - 1
+        const index = getClosestIndex(xPositions, xPoint)
+        const point = data[index]
+
+        if (!point || keyList.length === 0) {
+          return
+        }
 
         const yData = y.invert(yPoint)
-        const yDomain = keyList.map(key => {
-          return data[index][key] as number
-        })
-        const yIndex = Math.max(
-          0,
-          Math.min(yDomain.length - 1, bisectCenter(yDomain, yData))
-        )
+        const yIndex = keyList.reduce((closestIndex, key, currentIndex) => {
+          const currentValue = point[key]
+          const closestValue = point[keyList[closestIndex]]
 
-        if (data[index]) {
-          const tooltipX = x(data[index].x)! + x.bandwidth() / 2
-          const tooltipY = y(data[index][keyList[yIndex]] as number)
-          showTooltip({
-            tooltipLeft: tooltipX + tooltipOffset.x,
-            tooltipTop: tooltipY + tooltipOffset.y,
-            tooltipData: {
-              x: data[index].x,
-              y: data[index][keyList[yIndex]] as number
-            }
-          })
+          if (
+            typeof currentValue !== 'number' ||
+            typeof closestValue !== 'number'
+          ) {
+            return closestIndex
+          }
+
+          return Math.abs(currentValue - yData) < Math.abs(closestValue - yData)
+            ? currentIndex
+            : closestIndex
+        }, 0)
+        const value = point[keyList[yIndex]]
+
+        if (typeof value !== 'number') {
+          return
         }
+
+        const isPointTooltip = tooltipPosition === 'point'
+
+        showTooltip({
+          left: isPointTooltip ? xPositions[index] : xPoint,
+          top: isPointTooltip ? y(value) : yPoint,
+          data: {
+            x: point.x,
+            y: value,
+            value
+          }
+        })
       }
     },
     [
@@ -194,9 +212,8 @@ const GroupLineChart = ({
       data,
       keyList,
       showTooltip,
-      tooltipOffset.x,
-      tooltipOffset.y,
-      x,
+      tooltipPosition,
+      xPositions,
       y
     ]
   )
@@ -208,7 +225,7 @@ const GroupLineChart = ({
         height: height ?? '100%',
         position: 'relative'
       }}
-      ref={parent}
+      ref={parentRef}
     >
       <svg
         width={'100%'}
@@ -238,26 +255,18 @@ const GroupLineChart = ({
         <AxisLeft scale={y as AxisScale<AxisDomain>} left={margin.left} />
         <g className="chart" />
       </svg>
-      {children && tooltipOpen && (
-        <TooltipInPortal
-          left={tooltipLeft}
-          top={tooltipTop}
-          style={{
-            ...defaultStyles,
-            background: 'transparent',
-            border: 'none',
-            boxShadow: 'none',
-            padding: 0
-          }}
+      {children && tooltip.isOpen && tooltip.data && (
+        <ChartTooltip
+          left={tooltip.left}
+          top={tooltip.top}
+          align={tooltipPosition === 'point' ? 'center' : 'cursor'}
+          offsetX={tooltipOffset.x}
+          offsetY={tooltipOffset.y}
         >
           {children({
-            tooltipData: tooltipData as {
-              x: string
-              y: number
-              value: number
-            }
+            tooltipData: tooltip.data
           })}
-        </TooltipInPortal>
+        </ChartTooltip>
       )}
     </div>
   )
