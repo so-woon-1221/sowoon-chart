@@ -1,3 +1,5 @@
+import type { ComponentProps } from 'react';
+
 import AreaChart from './components/chart/AreaChart';
 import BarChart from './components/chart/BarChart';
 import BubbleChart from './components/chart/BubbleChart';
@@ -29,3 +31,35 @@ export {
   StackLineChart,
   Wordcloud,
 };
+
+export type { ExportImageProps } from './components/common/ExportImage';
+export type {
+  BaseChartProps,
+  CartesianChartProps,
+  ChartProps,
+  ColorListProps,
+  GroupedDatum,
+  Margin,
+  RadarSeriesDatum,
+  ScatterDatum,
+  TooltipData,
+  TooltipOffset,
+  TooltipPositionMode,
+  TooltipRenderer,
+  TooltipRenderProps,
+  XYDatum,
+} from './util/types';
+
+export type AreaChartProps = ComponentProps<typeof AreaChart>;
+export type BarChartProps = ComponentProps<typeof BarChart>;
+export type BubbleChartProps = ComponentProps<typeof BubbleChart>;
+export type GroupBarChartProps = ComponentProps<typeof GroupBarChart>;
+export type GroupLineChartProps = ComponentProps<typeof GroupLineChart>;
+export type LineChartProps = ComponentProps<typeof LineChart>;
+export type NetworkChartProps = ComponentProps<typeof NetworkChart>;
+export type PieChartProps = ComponentProps<typeof PieChart>;
+export type RadarChartProps = ComponentProps<typeof RadarChart>;
+export type ScatterChartProps = ComponentProps<typeof ScatterChart>;
+export type StackBarChartProps = ComponentProps<typeof StackBarChart>;
+export type StackLineChartProps = ComponentProps<typeof StackLineChart>;
+export type WordcloudProps = ComponentProps<typeof Wordcloud>;

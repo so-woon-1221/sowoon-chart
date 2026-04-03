@@ -1,17 +1,11 @@
 import type { AxisDomain, AxisScale } from 'd3';
 import type { CSSProperties, PointerEventHandler, ReactNode, RefObject } from 'react';
 
+import type { Margin } from '../../util/types';
 import AxisBottom from './AxisBottom';
 import AxisLeft from './AxisLeft';
 import GridHorizontal from './GridHorizontal';
 import GridVertical from './GridVertical';
-
-type Margin = {
-  top: number;
-  right: number;
-  bottom: number;
-  left: number;
-};
 
 type Props = {
   containerRef: RefObject<HTMLDivElement | null>;

@@ -12,13 +12,13 @@ import { type PointerEventHandler, useCallback, useEffect, useMemo, useRef } fro
 
 import { useChartTooltip } from '../../hooks/useChartTooltip';
 import { useParentSize } from '../../hooks/useParentSize';
-import type { ChartProps, TooltipPositionMode } from '../../util/types';
+import type { ChartProps, TooltipPositionMode, TooltipRenderer, XYDatum } from '../../util/types';
 import { getClosestIndex } from '../../util/utils';
 import CartesianFrame from '../common/CartesianFrame';
 import ChartTooltip from '../common/ChartTooltip';
 
 type Props = ChartProps & {
-  children?: ({ tooltipData }: { tooltipData: { x: string; y: number } }) => React.ReactNode;
+  children?: TooltipRenderer<XYDatum>;
   fillGradient?: boolean;
   drawStroke?: boolean;
   /**
@@ -51,10 +51,7 @@ const AreaChart = ({
   showGridVertical = true,
   showGridHorizontal = true,
 }: Props) => {
-  const { tooltip, showTooltip, hideTooltip } = useChartTooltip<{
-    x: string;
-    y: number;
-  }>();
+  const { tooltip, showTooltip, hideTooltip } = useChartTooltip<XYDatum>();
 
   const { ref: parentRef, height: parentHeight, width: parentWidth } = useParentSize();
 
@@ -77,14 +74,14 @@ const AreaChart = ({
   }, [data, x]);
 
   const areaGenerator = useMemo(() => {
-    return area<{ x: string; y: number }>()
+    return area<XYDatum>()
       .x((d) => x(d.x)! + x.bandwidth() / 2)
       .y0((d) => y(d.y))
       .y1(() => y(0));
   }, [x, y]);
 
   const lineGenerator = useMemo(() => {
-    return line<{ x: string; y: number }>()
+    return line<XYDatum>()
       .x((d) => x(d.x)! + x.bandwidth() / 2)
       .y((d) => y(d.y));
   }, [x, y]);

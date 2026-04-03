@@ -11,46 +11,23 @@ import { useCallback, useEffect, useMemo, useRef } from 'react';
 
 import { useChartTooltip } from '../../hooks/useChartTooltip';
 import { useParentSize } from '../../hooks/useParentSize';
-import type { TooltipPositionMode } from '../../util/types';
+import type {
+  CartesianChartProps,
+  Margin,
+  ScatterDatum,
+  TooltipOffset,
+  TooltipPositionMode,
+  TooltipRenderer,
+} from '../../util/types';
 import CartesianFrame from '../common/CartesianFrame';
 import ChartTooltip from '../common/ChartTooltip';
 
-type Props = {
-  /**
-   * Width of the chart.
-   */
-  width?: number;
-  /**
-   * Height of the chart.
-   */
-  height?: number;
-  /**
-   * Margin of the chart.
-   * @default { top: 20, right: 20, bottom: 50, left: 50 }
-   */
-  margin?: {
-    top: number;
-    right: number;
-    bottom: number;
-    left: number;
-  };
+type Props = CartesianChartProps<ScatterDatum> & {
   /**
    * Tooltip children.
    * @param tooltipData
    */
-  children?: ({
-    tooltipData,
-  }: {
-    tooltipData: { x: string; y: number; value: number };
-  }) => React.ReactNode;
-  /**
-   * Data for the chart.
-   */
-  data: {
-    x: string;
-    y: number;
-    value: number;
-  }[];
+  children?: TooltipRenderer<ScatterDatum>;
   /**
    * Min size of circle.
    */
@@ -71,7 +48,7 @@ type Props = {
    * Offset of tooltip.
    * @default { x: 20, y: -20 }
    */
-  tooltipOffset?: { x: number; y: number };
+  tooltipOffset?: TooltipOffset;
   /**
    * color of the chart.
    */
@@ -92,7 +69,7 @@ type Props = {
   tooltipPosition?: TooltipPositionMode;
 };
 
-const defaultMargin = {
+const defaultMargin: Margin = {
   top: 20,
   right: 20,
   bottom: 50,
@@ -115,11 +92,7 @@ const ScatterChart = ({
   showGridVertical = true,
   tooltipPosition = 'cursor',
 }: Props) => {
-  const { tooltip, showTooltip, hideTooltip } = useChartTooltip<{
-    x: string;
-    y: number;
-    value: number;
-  }>();
+  const { tooltip, showTooltip, hideTooltip } = useChartTooltip<ScatterDatum>();
 
   const { ref: parentRef, height: parentHeight, width: parentWidth } = useParentSize();
 

@@ -13,25 +13,24 @@ import { useCallback, useEffect, useMemo, useRef } from 'react';
 
 import { useChartTooltip } from '../../hooks/useChartTooltip';
 import { useParentSize } from '../../hooks/useParentSize';
-import type { ChartProps, TooltipPositionMode } from '../../util/types';
+import type {
+  CartesianChartProps,
+  ColorListProps,
+  GroupedDatum,
+  TooltipOffset,
+  TooltipPositionMode,
+  TooltipRenderer,
+  XYDatum,
+} from '../../util/types';
 import CartesianFrame from '../common/CartesianFrame';
 import ChartTooltip from '../common/ChartTooltip';
 
-type DataType = {
-  x: string;
-  [key: string]: number | string;
-};
-
-type Props = Omit<ChartProps, 'data' | 'color'> & {
+type Props = CartesianChartProps<GroupedDatum> &
+  ColorListProps & {
   /**
    * Data to display in the chart.
    */
-  data: DataType[];
-  /**
-   * List of colors to use for the chart.
-   * It will be used in order for each data.
-   */
-  colorList: string[];
+  data: GroupedDatum[];
   /**
    * Gap between the bars.
    */
@@ -44,12 +43,12 @@ type Props = Omit<ChartProps, 'data' | 'color'> & {
    * @param tooltipData - The data of the tooltip.
    * @returns The children to render.
    */
-  children?: ({ tooltipData }: { tooltipData: { x: string; y: number } }) => React.ReactNode;
+  children?: TooltipRenderer<XYDatum>;
   /**
    * Offset of the tooltip from the mouse pointer.
    * @default { x: 10, y: -10 }
    */
-  tooltipOffset?: { x: number; y: number };
+  tooltipOffset?: TooltipOffset;
   /**
    * Tooltip anchor position.
    * `cursor` follows the mouse and `point` sticks to the matched data point.
@@ -79,7 +78,7 @@ const StackBarChart = ({
   showGridHorizontal = true,
   showGridVertical = true,
 }: Props) => {
-  const { tooltip, showTooltip, hideTooltip } = useChartTooltip<{ x: string; y: number }>();
+  const { tooltip, showTooltip, hideTooltip } = useChartTooltip<XYDatum>();
 
   const { ref: parentRef, height: parentHeight, width: parentWidth } = useParentSize();
 
@@ -99,7 +98,7 @@ const StackBarChart = ({
   }, [colorList, keyList]);
 
   const series = useMemo(() => {
-    return stack<DataType>()
+    return stack<GroupedDatum>()
       .keys(keyList)
       .value((d, key) => (d[key] as number) ?? 0)(data);
   }, [data, keyList]);

@@ -3,28 +3,21 @@ import { useCallback, useEffect, useMemo, useRef } from 'react';
 
 import { useChartTooltip } from '../../hooks/useChartTooltip';
 import { useParentSize } from '../../hooks/useParentSize';
-import type { TooltipPositionMode } from '../../util/types';
+import type {
+  BaseChartProps,
+  RadarSeriesDatum,
+  TooltipOffset,
+  TooltipPositionMode,
+  TooltipRenderer,
+  XYDatum,
+} from '../../util/types';
 import ChartTooltip from '../common/ChartTooltip';
 
-type Props = {
-  /**
-   * Width of the chart.
-   */
-  width?: number;
-  /**
-   * Height of the chart.
-   */
-  height?: number;
+type Props = Pick<BaseChartProps, 'width' | 'height'> & {
   /**
    * Data to display in the chart.
    */
-  data: {
-    key: string;
-    data: {
-      x: string;
-      y: number;
-    }[];
-  }[];
+  data: RadarSeriesDatum[];
   /**
    * List of colors to use for the chart.
    */
@@ -41,12 +34,12 @@ type Props = {
    * @param tooltipData - The data of the tooltip.
    * @returns The children to render.
    */
-  children?: ({ tooltipData }: { tooltipData: { x: string; y: number } }) => React.ReactNode;
+  children?: TooltipRenderer<XYDatum>;
   /**
    * Offset of the tooltip from the mouse pointer.
    * @default { x: 10, y: -10 }
    */
-  tooltipOffset?: { x: number; y: number };
+  tooltipOffset?: TooltipOffset;
   /**
    * Tooltip anchor position.
    * `cursor` follows the mouse and `point` sticks to the matched radar point.
@@ -65,7 +58,7 @@ const RadarChart = ({
   tooltipOffset = { x: 10, y: -10 },
   tooltipPosition = 'cursor',
 }: Props) => {
-  const { tooltip, showTooltip, hideTooltip } = useChartTooltip<{ x: string; y: number }>();
+  const { tooltip, showTooltip, hideTooltip } = useChartTooltip<XYDatum>();
 
   const { ref: parentRef, height: parentHeight, width: parentWidth } = useParentSize();
 

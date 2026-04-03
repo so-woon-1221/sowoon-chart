@@ -11,35 +11,34 @@ import { type PointerEventHandler, useCallback, useEffect, useMemo, useRef } fro
 
 import { useChartTooltip } from '../../hooks/useChartTooltip';
 import { useParentSize } from '../../hooks/useParentSize';
-import type { ChartProps } from '../../util/types';
-import type { TooltipPositionMode } from '../../util/types';
+import type {
+  CartesianChartProps,
+  ColorListProps,
+  GroupedDatum,
+  TooltipOffset,
+  TooltipPositionMode,
+  TooltipRenderer,
+  XYDatum,
+} from '../../util/types';
 import { getClosestIndex } from '../../util/utils';
 import CartesianFrame from '../common/CartesianFrame';
 import ChartTooltip from '../common/ChartTooltip';
 
-type DataType = {
-  x: string;
-  [key: string]: number | string;
-};
-
-type Props = Omit<ChartProps, 'data' | 'color'> & {
+type Props = CartesianChartProps<GroupedDatum> &
+  ColorListProps & {
   /**
    * Data to display in the chart.
    */
-  data: DataType[];
+  data: GroupedDatum[];
   /**
    * Tooltip children.
    * @param tooltipData
    */
-  children?: ({ tooltipData }: { tooltipData: { x: string; y: number } }) => React.ReactNode;
-  /**
-   * List of colors to use for the chart.
-   */
-  colorList?: string[];
+  children?: TooltipRenderer<XYDatum>;
   /**
    * Offset of the tooltip from the mouse pointer.
    */
-  tooltipOffset?: { x: number; y: number };
+  tooltipOffset?: TooltipOffset;
   /**
    * Gap between bars.
    */
@@ -85,7 +84,7 @@ const GroupBarChart = ({
   showGridHorizontal = true,
   showGridVertical = true,
 }: Props) => {
-  const { tooltip, showTooltip, hideTooltip } = useChartTooltip<{ x: string; y: number }>();
+  const { tooltip, showTooltip, hideTooltip } = useChartTooltip<XYDatum>();
 
   const { ref: parentRef, width: parentWidth, height: parentHeight } = useParentSize();
 

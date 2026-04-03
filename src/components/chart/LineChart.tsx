@@ -3,13 +3,13 @@ import { type PointerEventHandler, useCallback, useEffect, useMemo, useRef } fro
 
 import { useChartTooltip } from '../../hooks/useChartTooltip';
 import { useParentSize } from '../../hooks/useParentSize';
-import type { ChartProps, TooltipPositionMode } from '../../util/types';
+import type { ChartProps, TooltipPositionMode, TooltipRenderer, XYDatum } from '../../util/types';
 import { getClosestIndex } from '../../util/utils';
 import CartesianFrame from '../common/CartesianFrame';
 import ChartTooltip from '../common/ChartTooltip';
 
 type LineChartProps = ChartProps & {
-  children?: ({ tooltipData }: { tooltipData: { x: string; y: number } }) => React.ReactNode;
+  children?: TooltipRenderer<XYDatum>;
   /**
    * Tooltip anchor position.
    * `cursor` follows the mouse and `point` sticks to the matched data point.
@@ -41,7 +41,7 @@ const LineChart = ({
   showGridVertical = true,
   showGridHorizontal = true,
 }: LineChartProps) => {
-  const { tooltip, showTooltip, hideTooltip } = useChartTooltip<{ x: string; y: number }>();
+  const { tooltip, showTooltip, hideTooltip } = useChartTooltip<XYDatum>();
 
   const { ref: parentRef, width: parentWidth, height: parentHeight } = useParentSize();
 
@@ -90,7 +90,7 @@ const LineChart = ({
     const svg = select(ref.current);
 
     const lineArea = svg.select('.line');
-    const lineGenerator = line<{ x: string; y: number }>()
+    const lineGenerator = line<XYDatum>()
       .x((d) => x(d.x)! + x.bandwidth() / 2)
       .y((d) => y(d.y));
 

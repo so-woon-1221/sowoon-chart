@@ -3,7 +3,7 @@ import { type PointerEventHandler, useCallback, useEffect, useMemo, useRef } fro
 
 import { useChartTooltip } from '../../hooks/useChartTooltip';
 import { useParentSize } from '../../hooks/useParentSize';
-import type { ChartProps, TooltipPositionMode } from '../../util/types';
+import type { ChartProps, TooltipPositionMode, TooltipRenderer, XYDatum } from '../../util/types';
 import { getClosestIndex } from '../../util/utils';
 import CartesianFrame from '../common/CartesianFrame';
 import ChartTooltip from '../common/ChartTooltip';
@@ -13,7 +13,7 @@ type BarChartProps = ChartProps & {
    * padding between bars.
    */
   padding?: number;
-  children?: ({ tooltipData }: { tooltipData: { x: string; y: number } }) => React.ReactNode;
+  children?: TooltipRenderer<XYDatum>;
   /**
    * Tooltip anchor position.
    * `cursor` follows the mouse and `point` sticks to the matched data point.
@@ -43,7 +43,7 @@ const BarChart = ({
   showGridVertical = true,
   showGridHorizontal = true,
 }: BarChartProps) => {
-  const { tooltip, showTooltip, hideTooltip } = useChartTooltip<{ x: string; y: number }>();
+  const { tooltip, showTooltip, hideTooltip } = useChartTooltip<XYDatum>();
 
   const { ref: parentRef, width: parentWidth, height: parentHeight } = useParentSize();
 

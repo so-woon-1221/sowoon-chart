@@ -1,16 +1,23 @@
 import { arc, pie, type PieArcDatum, pointer, scaleOrdinal, select } from 'd3';
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { type ReactNode, useCallback, useEffect, useMemo, useRef } from 'react';
 
 import { useChartTooltip } from '../../hooks/useChartTooltip';
 import { useParentSize } from '../../hooks/useParentSize';
-import type { ChartProps, TooltipPositionMode } from '../../util/types';
+import type {
+  BaseChartProps,
+  TooltipOffset,
+  TooltipPositionMode,
+  TooltipRenderer,
+  XYDatum,
+} from '../../util/types';
 import ChartTooltip from '../common/ChartTooltip';
 
-type Props = Pick<ChartProps, 'width' | 'height' | 'data'> & {
+type Props = Pick<BaseChartProps, 'width' | 'height'> & {
+  data: XYDatum[];
   /**
    * Center node to display in the middle of the pie chart.
    */
-  centerNode?: React.ReactNode;
+  centerNode?: ReactNode;
   /**
    * List of colors to use for the pie chart.
    * It will be used in order for each data.
@@ -24,12 +31,12 @@ type Props = Pick<ChartProps, 'width' | 'height' | 'data'> & {
    * @param tooltipData - The data of the tooltip.
    * @returns The children to render.
    */
-  children?: ({ tooltipData }: { tooltipData: { x: string; y: number } }) => React.ReactNode;
+  children?: TooltipRenderer<XYDatum>;
   /**
    * Offset of the tooltip from the mouse pointer.
    * @default { x: 10, y: -10 }
    */
-  tooltipOffset?: { x: number; y: number };
+  tooltipOffset?: TooltipOffset;
   /**
    * Tooltip anchor position.
    * `cursor` follows the mouse and `point` sticks to the matched pie slice.
@@ -48,7 +55,7 @@ const PieChart = ({
   tooltipOffset = { x: 10, y: -10 },
   tooltipPosition = 'cursor',
 }: Props) => {
-  const { tooltip, showTooltip, hideTooltip } = useChartTooltip<{ x: string; y: number }>();
+  const { tooltip, showTooltip, hideTooltip } = useChartTooltip<XYDatum>();
 
   const { ref: parentRef, width: parentWidth, height: parentHeight } = useParentSize();
 
@@ -66,11 +73,11 @@ const PieChart = ({
     const pieWidth = parentWidth;
     const pieHeight = parentHeight;
     const radius = Math.min(pieWidth, pieHeight) / 2;
-    const arcValue = arc<PieArcDatum<{ x: string; y: number }>>()
+    const arcValue = arc<PieArcDatum<XYDatum>>()
       .innerRadius(radius * 0.5)
       .outerRadius(radius * 0.85);
 
-    const pieGenerator = pie<{ x: string; y: number }>()
+    const pieGenerator = pie<XYDatum>()
       .sort(null)
       .value((d) => d.y);
 
