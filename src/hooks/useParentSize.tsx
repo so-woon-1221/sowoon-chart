@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from 'react';
 
 interface Size {
   width?: number;
@@ -18,9 +18,7 @@ export const useParentSize = (props?: Size) => {
 
     const updateSize = (width: number, height: number) => {
       setParentWidth((prevWidth) => (prevWidth === width ? prevWidth : width));
-      setParentHeight((prevHeight) =>
-        prevHeight === height ? prevHeight : height,
-      );
+      setParentHeight((prevHeight) => (prevHeight === height ? prevHeight : height));
     };
 
     const syncRectSize = () => {
@@ -30,9 +28,9 @@ export const useParentSize = (props?: Size) => {
 
     syncRectSize();
 
-    if (typeof ResizeObserver === "undefined") {
-      window.addEventListener("resize", syncRectSize);
-      return () => window.removeEventListener("resize", syncRectSize);
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', syncRectSize);
+      return () => window.removeEventListener('resize', syncRectSize);
     }
 
     const resizeObserver = new ResizeObserver(([entry]) => {

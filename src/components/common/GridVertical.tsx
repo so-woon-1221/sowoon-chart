@@ -1,36 +1,25 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react'
-import {
-  axisBottom,
-  type AxisDomain,
-  type AxisScale,
-  select,
-  Selection
-} from 'd3'
+import { axisBottom, type AxisDomain, type AxisScale, select, type Selection } from 'd3';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 
 interface Props {
-  scale: AxisScale<AxisDomain>
-  size: number
-  count?: number
-  top?: number
+  scale: AxisScale<AxisDomain>;
+  size: number;
+  count?: number;
+  top?: number;
 }
 
 const GridVertical = ({ scale, size, count = 4, top }: Props) => {
-  const ref = useRef<SVGGElement>(null)
+  const ref = useRef<SVGGElement>(null);
 
   const gridScale = useMemo(() => {
     return axisBottom(scale)
       .ticks(count)
       .tickSize(-size)
-      .tickFormat(() => '')
-  }, [scale, count, size])
+      .tickFormat(() => '');
+  }, [scale, count, size]);
 
   const drawGrid = useCallback(() => {
-    const container = select(ref.current) as Selection<
-      SVGGElement,
-      unknown,
-      null,
-      undefined
-    >
+    const container = select(ref.current) as Selection<SVGGElement, unknown, null, undefined>;
 
     // Draw grid lines
     container
@@ -38,14 +27,14 @@ const GridVertical = ({ scale, size, count = 4, top }: Props) => {
       .attr('stroke', '#e0e0e044')
       .attr('stroke-width', 0.5)
       .attr('stroke-dasharray', '2,2')
-      .call(gridScale)
-  }, [gridScale, top])
+      .call(gridScale);
+  }, [gridScale, top]);
 
   useEffect(() => {
-    drawGrid()
-  }, [drawGrid])
+    drawGrid();
+  }, [drawGrid]);
 
-  return <g ref={ref} />
-}
+  return <g ref={ref} />;
+};
 
-export default GridVertical
+export default GridVertical;

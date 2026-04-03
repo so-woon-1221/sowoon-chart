@@ -1,66 +1,63 @@
-import { Meta, StoryObj } from '@storybook/react'
-import AreaChart from '../src/components/chart/AreaChart'
+import { type Meta, type StoryObj } from '@storybook/react';
+
+import AreaChart from '../src/components/chart/AreaChart';
 
 const meta = {
   title: 'chart/AreaChart',
   component: AreaChart,
-  tags: ['autodocs']
-} satisfies Meta<typeof AreaChart>
+  tags: ['autodocs'],
+} satisfies Meta<typeof AreaChart>;
 
-export default meta
+export default meta;
 
-type Story = StoryObj<typeof AreaChart>
+type Story = StoryObj<typeof AreaChart>;
 
 const data = [
   { x: 'A', y: 10 },
   { x: 'B', y: 20 },
   { x: 'C', y: 30 },
   { x: 'D', y: 40 },
-  { x: 'E', y: 50 }
-]
+  { x: 'E', y: 50 },
+];
 
 const negativeData = [
   { x: 'A', y: -10 },
   { x: 'B', y: 12 },
   { x: 'C', y: -4 },
   { x: 'D', y: 16 },
-  { x: 'E', y: 6 }
-]
+  { x: 'E', y: 6 },
+];
 
-const renderTooltip = ({
-  tooltipData
-}: {
-  tooltipData: { x: string; y: number }
-}) => (
+const renderTooltip = ({ tooltipData }: { tooltipData: { x: string; y: number } }) => (
   <div style={{ background: 'black', color: 'white', padding: '4px' }}>
     {tooltipData.x}: {tooltipData.y}
   </div>
-)
+);
 
 export const 기본: Story = {
   args: {
     data,
     height: 400,
     tooltipPosition: 'point',
-    children: renderTooltip
+    children: renderTooltip,
   },
   argTypes: {
     color: {
       control: {
-        type: 'color'
-      }
-    }
-  }
-}
+        type: 'color',
+      },
+    },
+  },
+};
 
 export const 커서툴팁: Story = {
   args: {
     data,
     height: 400,
     tooltipPosition: 'cursor',
-    children: renderTooltip
-  }
-}
+    children: renderTooltip,
+  },
+};
 
 export const 음수값: Story = {
   args: {
@@ -69,6 +66,6 @@ export const 음수값: Story = {
     minY: -20,
     maxY: 20,
     tooltipPosition: 'point',
-    children: renderTooltip
-  }
-}
+    children: renderTooltip,
+  },
+};

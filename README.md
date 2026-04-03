@@ -36,31 +36,26 @@ npm install sowoon-chart react react-dom d3
 가장 기본적인 사용 예시는 아래와 같습니다.
 
 ```tsx
-import { LineChart } from 'sowoon-chart'
+import { LineChart } from 'sowoon-chart';
 
 const data = [
   { x: 'A', y: 10 },
   { x: 'B', y: 20 },
   { x: 'C', y: 15 },
-  { x: 'D', y: 30 }
-]
+  { x: 'D', y: 30 },
+];
 
 export default function Example() {
   return (
     <div style={{ width: 720, height: 360 }}>
-      <LineChart
-        data={data}
-        height={360}
-        color="#111827"
-        tooltipPosition="cursor"
-      >
+      <LineChart data={data} height={360} color="#111827" tooltipPosition="cursor">
         {({ tooltipData }) => (
           <div
             style={{
               background: '#111827',
               color: '#fff',
               padding: '6px 8px',
-              borderRadius: 8
+              borderRadius: 8,
             }}
           >
             {tooltipData.x}: {tooltipData.y}
@@ -68,7 +63,7 @@ export default function Example() {
         )}
       </LineChart>
     </div>
-  )
+  );
 }
 ```
 
@@ -121,7 +116,7 @@ export default function Example() {
   data={[
     { x: 'A', y: 10 },
     { x: 'B', y: 24 },
-    { x: 'C', y: 18 }
+    { x: 'C', y: 18 },
   ]}
   height={320}
   color="#0f766e"
@@ -165,11 +160,7 @@ tooltip은 `children` render prop으로 전달합니다.
 예시:
 
 ```tsx
-<LineChart
-  data={data}
-  height={320}
-  tooltipPosition="point"
->
+<LineChart data={data} height={320} tooltipPosition="point">
   {({ tooltipData }) => (
     <div>
       {tooltipData.x}: {tooltipData.y}
@@ -188,8 +179,8 @@ tooltip은 `children` render prop으로 전달합니다.
 [
   { x: 'A', y: 10 },
   { x: 'B', y: 20 },
-  { x: 'C', y: 30 }
-]
+  { x: 'C', y: 30 },
+];
 ```
 
 ### 그룹형 / 스택형
@@ -200,8 +191,8 @@ tooltip은 `children` render prop으로 전달합니다.
 [
   { x: 'A', sales: 10, profit: 4, cost: 6 },
   { x: 'B', sales: 20, profit: 8, cost: 12 },
-  { x: 'C', sales: 15, profit: 5, cost: 10 }
-]
+  { x: 'C', sales: 15, profit: 5, cost: 10 },
+];
 ```
 
 ### 산점도
@@ -212,8 +203,8 @@ tooltip은 `children` render prop으로 전달합니다.
 [
   { x: 'A', y: 10, value: 8 },
   { x: 'B', y: 20, value: 14 },
-  { x: 'C', y: 16, value: 10 }
-]
+  { x: 'C', y: 16, value: 10 },
+];
 ```
 
 ### 네트워크 차트
@@ -239,11 +230,11 @@ tooltip은 `children` render prop으로 전달합니다.
 `ExportImage`는 특정 DOM 또는 SVG 영역을 `png` 또는 `svg`로 저장할 때 사용합니다.
 
 ```tsx
-import { useRef } from 'react'
-import { BarChart, ExportImage } from 'sowoon-chart'
+import { useRef } from 'react';
+import { BarChart, ExportImage } from 'sowoon-chart';
 
 export default function ExportExample() {
-  const ref = useRef<HTMLDivElement | null>(null)
+  const ref = useRef<HTMLDivElement | null>(null);
 
   return (
     <div ref={ref}>
@@ -252,11 +243,11 @@ export default function ExportExample() {
         data={[
           { x: 'A', y: 10 },
           { x: 'B', y: 20 },
-          { x: 'C', y: 15 }
+          { x: 'C', y: 15 },
         ]}
         height={320}
       />
     </div>
-  )
+  );
 }
 ```

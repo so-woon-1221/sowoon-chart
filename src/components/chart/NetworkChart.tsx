@@ -1,13 +1,7 @@
-import { useEffect, useMemo, useRef } from "react";
-import { useParentSize } from "../../hooks/useParentSize";
 import {
   type D3DragEvent,
-  type DragBehavior,
-  type Simulation,
-  type SimulationLinkDatum,
-  type SimulationNodeDatum,
-  type SubjectPosition,
   drag,
+  type DragBehavior,
   extent,
   forceCenter,
   forceCollide,
@@ -19,8 +13,15 @@ import {
   hsl,
   scaleLinear,
   select,
+  type Simulation,
+  type SimulationLinkDatum,
+  type SimulationNodeDatum,
+  type SubjectPosition,
   zoom,
-} from "d3";
+} from 'd3';
+import { useEffect, useMemo, useRef } from 'react';
+
+import { useParentSize } from '../../hooks/useParentSize';
 
 type Props = {
   data: {
@@ -51,7 +52,7 @@ interface Link extends SimulationLinkDatum<Node> {
 const getScaleDomain = (values: number[], fallback: [number, number]) => {
   const [min, max] = extent(values);
 
-  if (min == null || max == null) {
+  if (min === undefined || max === undefined) {
     return fallback;
   }
 
@@ -74,13 +75,9 @@ const NetworkChart = ({
   minRadius = 15,
   maxLinkWidth = 10,
   minLinkWidth = 1,
-  color = "#9b5de5",
+  color = '#9b5de5',
 }: Props) => {
-  const {
-    ref: parentRef,
-    width: parentWidth,
-    height: parentHeight,
-  } = useParentSize();
+  const { ref: parentRef, width: parentWidth, height: parentHeight } = useParentSize();
   const ref = useRef<SVGSVGElement>(null);
 
   const strokeScale = useMemo(
@@ -135,10 +132,7 @@ const NetworkChart = ({
       event.subject.fy = null;
     };
 
-    return drag<Element, Node>()
-      .on("start", dragStarted)
-      .on("drag", dragged)
-      .on("end", dragEnded);
+    return drag<Element, Node>().on('start', dragStarted).on('drag', dragged).on('end', dragEnded);
   };
 
   useEffect(() => {
@@ -155,40 +149,40 @@ const NetworkChart = ({
     }));
 
     const svg = select(svgElement);
-    const chartArea = svg.select<SVGGElement>("g.chart");
+    const chartArea = svg.select<SVGGElement>('g.chart');
 
-    chartArea.attr("transform", null);
-    svg.on(".zoom", null);
+    chartArea.attr('transform', null);
+    svg.on('.zoom', null);
 
     if (nodes.length === 0) {
-      chartArea.select("g.link").selectAll("*").remove();
-      chartArea.select("g.node").selectAll("*").remove();
-      chartArea.select("g.text").selectAll("*").remove();
+      chartArea.select('g.link').selectAll('*').remove();
+      chartArea.select('g.node').selectAll('*').remove();
+      chartArea.select('g.text').selectAll('*').remove();
       return;
     }
 
     const simulation = forceSimulation<Node>(nodes)
       .force(
-        "link",
+        'link',
         forceLink<Node, Link>(links)
           .id((node) => node.id)
           .distance(100),
       )
-      .force("center", forceCenter(parentWidth / 2, parentHeight / 2))
-      .force("charge", forceManyBody().strength(-200))
+      .force('center', forceCenter(parentWidth / 2, parentHeight / 2))
+      .force('charge', forceManyBody().strength(-200))
       .force(
-        "collide",
+        'collide',
         forceCollide<Node>()
           .radius((node) => circleScale(+node.value) + 10)
           .strength(1),
       )
-      .force("x", forceX(parentWidth))
-      .force("y", forceY(parentHeight));
+      .force('x', forceX(parentWidth))
+      .force('y', forceY(parentHeight));
 
     const nodeLinkStatus: Record<string, boolean> = {};
     links.forEach((link) => {
-      if (typeof link.source !== "string" && typeof link.target !== "string") {
-        if (link.source.index != null && link.target.index != null) {
+      if (typeof link.source !== 'string' && typeof link.target !== 'string') {
+        if (link.source.index !== undefined && link.target.index !== undefined) {
           nodeLinkStatus[`${link.source.index},${link.target.index}`] = true;
           nodeLinkStatus[`${link.target.index},${link.source.index}`] = true;
         }
@@ -204,58 +198,55 @@ const NetworkChart = ({
     };
 
     const link = chartArea
-      .select("g.link")
-      .selectAll("line")
+      .select('g.link')
+      .selectAll('line')
       .data(links)
-      .join("line")
-      .style("stroke-width", (currentLink) => strokeScale(+currentLink.value))
-      .attr("stroke", "#aaa");
+      .join('line')
+      .style('stroke-width', (currentLink) => strokeScale(+currentLink.value))
+      .attr('stroke', '#aaa');
 
     const text = chartArea
-      .select("g.text")
-      .selectAll("text")
+      .select('g.text')
+      .selectAll('text')
       .data(nodes)
-      .join("text")
+      .join('text')
       .text((node) => node.id)
-      .attr("fill", () => {
+      .attr('fill', () => {
         const hslColor = hsl(color);
-        return hslColor.l > 0.5 ? "#000" : "#fff";
+        return hslColor.l > 0.5 ? '#000' : '#fff';
       })
-      .attr("text-anchor", "middle")
-      .attr("alignment-baseline", "middle")
-      .attr("font-size", (node) => `${circleScale(node.value) / 1.5}px`)
-      .attr("pointer-events", "none");
+      .attr('text-anchor', 'middle')
+      .attr('alignment-baseline', 'middle')
+      .attr('font-size', (node) => `${circleScale(node.value) / 1.5}px`)
+      .attr('pointer-events', 'none');
 
     const node = chartArea
-      .select("g.node")
-      .selectAll("circle")
+      .select('g.node')
+      .selectAll('circle')
       .data(nodes)
-      .join("circle")
-      .attr("r", (currentNode) => circleScale(+currentNode.value))
-      .attr("fill", color)
-      .on("mouseover", (_, hoveredNode) => {
+      .join('circle')
+      .attr('r', (currentNode) => circleScale(+currentNode.value))
+      .attr('fill', color)
+      .on('mouseover', (_, hoveredNode) => {
         node
           .interrupt()
           .transition()
-          .attr("r", (candidate) => {
+          .attr('r', (candidate) => {
             if (isConnected(hoveredNode, candidate)) {
               return 30;
             }
 
             return circleScale(candidate.value);
           })
-          .style("opacity", (candidate) => {
+          .style('opacity', (candidate) => {
             return isConnected(hoveredNode, candidate) ? 1 : 0.1;
           });
 
         link
           .interrupt()
           .transition()
-          .style("opacity", (currentLink) => {
-            if (
-              hoveredNode === currentLink.source ||
-              hoveredNode === currentLink.target
-            ) {
+          .style('opacity', (currentLink) => {
+            if (hoveredNode === currentLink.source || hoveredNode === currentLink.target) {
               return 1;
             }
 
@@ -265,61 +256,56 @@ const NetworkChart = ({
         text
           .interrupt()
           .transition()
-          .attr("font-size", (candidate) => {
+          .attr('font-size', (candidate) => {
             if (isConnected(hoveredNode, candidate)) {
-              return "20px";
+              return '20px';
             }
 
             return `${circleScale(candidate.value) / 1.5}px`;
           });
       })
-      .on("mouseleave", () => {
+      .on('mouseleave', () => {
         node
           .interrupt()
           .transition()
-          .attr("r", (currentNode) => circleScale(currentNode.value))
-          .style("opacity", 1);
+          .attr('r', (currentNode) => circleScale(currentNode.value))
+          .style('opacity', 1);
 
-        link.interrupt().transition().style("opacity", 1);
+        link.interrupt().transition().style('opacity', 1);
 
         text
           .interrupt()
           .transition()
-          .attr(
-            "font-size",
-            (currentNode) => `${circleScale(currentNode.value) / 1.5}px`,
-          );
+          .attr('font-size', (currentNode) => `${circleScale(currentNode.value) / 1.5}px`);
       })
       .call(nodeDrag(simulation) as never);
 
     const ticked = () => {
       link
-        .attr("x1", (currentLink) =>
-          typeof currentLink.source === "string" ? 0 : currentLink.source.x ?? 0,
+        .attr('x1', (currentLink) =>
+          typeof currentLink.source === 'string' ? 0 : (currentLink.source.x ?? 0),
         )
-        .attr("y1", (currentLink) =>
-          typeof currentLink.source === "string" ? 0 : currentLink.source.y ?? 0,
+        .attr('y1', (currentLink) =>
+          typeof currentLink.source === 'string' ? 0 : (currentLink.source.y ?? 0),
         )
-        .attr("x2", (currentLink) =>
-          typeof currentLink.target === "string" ? 0 : currentLink.target.x ?? 0,
+        .attr('x2', (currentLink) =>
+          typeof currentLink.target === 'string' ? 0 : (currentLink.target.x ?? 0),
         )
-        .attr("y2", (currentLink) =>
-          typeof currentLink.target === "string" ? 0 : currentLink.target.y ?? 0,
+        .attr('y2', (currentLink) =>
+          typeof currentLink.target === 'string' ? 0 : (currentLink.target.y ?? 0),
         );
 
-      node.attr("cx", (currentNode) => currentNode.x ?? 0).attr(
-        "cy",
-        (currentNode) => currentNode.y ?? 0,
-      );
+      node
+        .attr('cx', (currentNode) => currentNode.x ?? 0)
+        .attr('cy', (currentNode) => currentNode.y ?? 0);
 
-      text.attr("x", (currentNode) => currentNode.x ?? 0).attr(
-        "y",
-        (currentNode) => currentNode.y ?? 0,
-      );
+      text
+        .attr('x', (currentNode) => currentNode.x ?? 0)
+        .attr('y', (currentNode) => currentNode.y ?? 0);
     };
 
     ticked();
-    simulation.on("tick", ticked);
+    simulation.on('tick', ticked);
     simulation.alpha(1).restart();
 
     const zoomBehavior = zoom<SVGSVGElement, unknown>()
@@ -328,37 +314,29 @@ const NetworkChart = ({
         [0, 0],
         [parentWidth, parentHeight],
       ])
-      .on("zoom", (event) => {
-        chartArea.attr("transform", event.transform.toString());
+      .on('zoom', (event) => {
+        chartArea.attr('transform', event.transform.toString());
       });
 
     svg.call(zoomBehavior as never);
 
     return () => {
       simulation.stop();
-      simulation.on("tick", null);
-      svg.on(".zoom", null);
-      chartArea.selectAll("*").interrupt();
+      simulation.on('tick', null);
+      svg.on('.zoom', null);
+      chartArea.selectAll('*').interrupt();
     };
-  }, [
-    circleScale,
-    color,
-    data.links,
-    data.nodes,
-    parentHeight,
-    parentWidth,
-    strokeScale,
-  ]);
+  }, [circleScale, color, data.links, data.nodes, parentHeight, parentWidth, strokeScale]);
 
   return (
     <div
       ref={parentRef}
       style={{
-        width: width ?? "100%",
-        height: height ?? "100%",
+        width: width ?? '100%',
+        height: height ?? '100%',
       }}
     >
-      <svg width={"100%"} height={"100%"} ref={ref} className="z-[-1]">
+      <svg width={'100%'} height={'100%'} ref={ref} className="z-[-1]">
         <g className="chart">
           <g className="link" />
           <g className="node" />

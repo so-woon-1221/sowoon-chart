@@ -1,59 +1,59 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useState } from 'react';
 
 type TooltipPosition = {
-  left: number
-  top: number
-}
+  left: number;
+  top: number;
+};
 
 type TooltipState<T> = TooltipPosition & {
-  data: T | null
-  isOpen: boolean
-}
+  data: T | null;
+  isOpen: boolean;
+};
 
 const defaultTooltipState = {
   left: 0,
   top: 0,
   data: null,
-  isOpen: false
-}
+  isOpen: false,
+};
 
 export const useChartTooltip = <T>() => {
-  const [tooltip, setTooltip] = useState<TooltipState<T>>(defaultTooltipState)
+  const [tooltip, setTooltip] = useState<TooltipState<T>>(defaultTooltipState);
 
   const showTooltip = useCallback(
     ({
       left,
       top,
-      data
+      data,
     }: TooltipPosition & {
-      data: T
+      data: T;
     }) => {
       setTooltip({
         left,
         top,
         data,
-        isOpen: true
-      })
+        isOpen: true,
+      });
     },
-    []
-  )
+    [],
+  );
 
   const hideTooltip = useCallback(() => {
-    setTooltip(prev => {
+    setTooltip((prev) => {
       if (!prev.isOpen) {
-        return prev
+        return prev;
       }
 
       return {
         ...prev,
-        isOpen: false
-      }
-    })
-  }, [])
+        isOpen: false,
+      };
+    });
+  }, []);
 
   return {
     tooltip,
     showTooltip,
-    hideTooltip
-  }
-}
+    hideTooltip,
+  };
+};

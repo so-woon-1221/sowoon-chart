@@ -1,17 +1,10 @@
-import { useParentSize } from "../../hooks/useParentSize";
-import { useCallback, useEffect, useMemo, useRef } from "react";
-import {
-  curveLinearClosed,
-  lineRadial,
-  max,
-  pointer,
-  scaleLinear,
-  scaleOrdinal,
-  select,
-} from "d3";
-import { useChartTooltip } from "../../hooks/useChartTooltip";
-import ChartTooltip from "../common/ChartTooltip";
-import type { TooltipPositionMode } from "../../util/types";
+import { curveLinearClosed, lineRadial, max, pointer, scaleLinear, scaleOrdinal, select } from 'd3';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
+
+import { useChartTooltip } from '../../hooks/useChartTooltip';
+import { useParentSize } from '../../hooks/useParentSize';
+import type { TooltipPositionMode } from '../../util/types';
+import ChartTooltip from '../common/ChartTooltip';
 
 type Props = {
   /**
@@ -48,11 +41,7 @@ type Props = {
    * @param tooltipData - The data of the tooltip.
    * @returns The children to render.
    */
-  children?: ({
-    tooltipData,
-  }: {
-    tooltipData: { x: string; y: number };
-  }) => React.ReactNode;
+  children?: ({ tooltipData }: { tooltipData: { x: string; y: number } }) => React.ReactNode;
   /**
    * Offset of the tooltip from the mouse pointer.
    * @default { x: 10, y: -10 }
@@ -74,16 +63,11 @@ const RadarChart = ({
   colorList,
   children,
   tooltipOffset = { x: 10, y: -10 },
-  tooltipPosition = "cursor",
+  tooltipPosition = 'cursor',
 }: Props) => {
-  const { tooltip, showTooltip, hideTooltip } =
-    useChartTooltip<{ x: string; y: number }>();
+  const { tooltip, showTooltip, hideTooltip } = useChartTooltip<{ x: string; y: number }>();
 
-  const {
-    ref: parentRef,
-    height: parentHeight,
-    width: parentWidth,
-  } = useParentSize();
+  const { ref: parentRef, height: parentHeight, width: parentWidth } = useParentSize();
 
   const ref = useRef<SVGSVGElement>(null);
 
@@ -132,109 +116,85 @@ const RadarChart = ({
 
   const drawChart = useCallback(() => {
     const svg = select(ref.current);
-    const chartContainer = svg.select(".chart");
-    chartContainer.attr(
-      "transform",
-      `translate(${parentWidth / 2}, ${parentHeight / 2})`,
-    );
+    const chartContainer = svg.select('.chart');
+    chartContainer.attr('transform', `translate(${parentWidth / 2}, ${parentHeight / 2})`);
 
     chartContainer
-      .selectAll("path.axis")
+      .selectAll('path.axis')
       .data(backLineList)
-      .join("path")
-      .attr("class", "axis")
-      .attr("d", (d) => radarLine(d))
-      .style("fill", "#CDCDCD")
-      .style("stroke", "#CDCDCD")
-      .style("fill-opacity", 0.1);
+      .join('path')
+      .attr('class', 'axis')
+      .attr('d', (d) => radarLine(d))
+      .style('fill', '#CDCDCD')
+      .style('stroke', '#CDCDCD')
+      .style('fill-opacity', 0.1);
 
     chartContainer
-      .selectAll("line")
+      .selectAll('line')
       .data(axisList)
-      .join("line")
-      .attr("x1", 0)
-      .attr("y1", 0)
-      .attr(
-        "x2",
-        (_, i) => rScale(maxY! * 1.1) * Math.cos(angleSlice * i - Math.PI / 2),
-      )
-      .attr(
-        "y2",
-        (_, i) => rScale(maxY! * 1.1) * Math.sin(angleSlice * i - Math.PI / 2),
-      )
-      .attr("class", "line")
-      .style("stroke", "white")
-      .style("stroke-width", "2px");
+      .join('line')
+      .attr('x1', 0)
+      .attr('y1', 0)
+      .attr('x2', (_, i) => rScale(maxY! * 1.1) * Math.cos(angleSlice * i - Math.PI / 2))
+      .attr('y2', (_, i) => rScale(maxY! * 1.1) * Math.sin(angleSlice * i - Math.PI / 2))
+      .attr('class', 'line')
+      .style('stroke', 'white')
+      .style('stroke-width', '2px');
 
     chartContainer
-      .selectAll("text")
+      .selectAll('text')
       .data(axisList)
-      .join("text")
-      .style("font-size", "12px")
-      .attr("text-anchor", "middle")
-      .attr("font-family", "monospace")
-      .attr("dy", "0.35em")
-      .attr(
-        "x",
-        (_, i) => rScale(maxY! * 1.1) * Math.cos(angleSlice * i - Math.PI / 2),
-      )
-      .attr(
-        "y",
-        (_, i) => rScale(maxY! * 1.1) * Math.sin(angleSlice * i - Math.PI / 2),
-      )
+      .join('text')
+      .style('font-size', '12px')
+      .attr('text-anchor', 'middle')
+      .attr('font-family', 'monospace')
+      .attr('dy', '0.35em')
+      .attr('x', (_, i) => rScale(maxY! * 1.1) * Math.cos(angleSlice * i - Math.PI / 2))
+      .attr('y', (_, i) => rScale(maxY! * 1.1) * Math.sin(angleSlice * i - Math.PI / 2))
       .text((d) => d);
 
     chartContainer
-      .selectAll("path.data")
+      .selectAll('path.data')
       .data(data)
-      .join("path")
-      .attr("class", "data")
-      .attr("d", (d) => radarLine(d.data.map(() => 0)))
+      .join('path')
+      .attr('class', 'data')
+      .attr('d', (d) => radarLine(d.data.map(() => 0)))
       .transition()
-      .attr("d", (d) => {
+      .attr('d', (d) => {
         return radarLine(d.data.map((a) => a.y));
       })
-      .attr("fill", (d) => color(d.key))
-      .attr("fill-opacity", 0.1)
-      .attr("stroke", (d) => color(d.key))
-      .attr("stroke-dasharray", (_, i) => (i % 2 === 1 ? "5,5" : "0,0"))
-      .attr("stroke-width", 2)
-      .attr("pointer-events", "none");
+      .attr('fill', (d) => color(d.key))
+      .attr('fill-opacity', 0.1)
+      .attr('stroke', (d) => color(d.key))
+      .attr('stroke-dasharray', (_, i) => (i % 2 === 1 ? '5,5' : '0,0'))
+      .attr('stroke-width', 2)
+      .attr('pointer-events', 'none');
 
     chartContainer
-      .selectAll("g")
+      .selectAll('g')
       .data(data)
-      .join("g")
-      .attr("stroke", (d) => color(d.key))
-      .attr("fill", (d) => color(d.key))
-      .selectAll("circle")
+      .join('g')
+      .attr('stroke', (d) => color(d.key))
+      .attr('fill', (d) => color(d.key))
+      .selectAll('circle')
       .data((d) => d.data.map((point, index) => ({ ...point, index })))
-      .join("circle")
-      .attr("r", 4)
-      .attr(
-        "cx",
-        (d) => rScale(d.y) * Math.cos(angleSlice * d.index - Math.PI / 2),
-      )
-      .attr(
-        "cy",
-        (d) => rScale(d.y) * Math.sin(angleSlice * d.index - Math.PI / 2),
-      )
-      .on("mouseover", (e, d) => {
+      .join('circle')
+      .attr('r', 4)
+      .attr('cx', (d) => rScale(d.y) * Math.cos(angleSlice * d.index - Math.PI / 2))
+      .attr('cy', (d) => rScale(d.y) * Math.sin(angleSlice * d.index - Math.PI / 2))
+      .on('mouseover', (e, d) => {
         const [xPoint, yPoint] = pointer(e, ref.current);
-        const pointX =
-          parentWidth / 2 +
-          rScale(d.y) * Math.cos(angleSlice * d.index - Math.PI / 2);
+        const pointX = parentWidth / 2 + rScale(d.y) * Math.cos(angleSlice * d.index - Math.PI / 2);
         const pointY =
-          parentHeight / 2 +
-          rScale(d.y) * Math.sin(angleSlice * d.index - Math.PI / 2);
-        const isPointTooltip = tooltipPosition === "point";
+          parentHeight / 2 + rScale(d.y) * Math.sin(angleSlice * d.index - Math.PI / 2);
+        const isPointTooltip = tooltipPosition === 'point';
         showTooltip({
           left: isPointTooltip ? pointX : xPoint,
           top: isPointTooltip ? pointY : yPoint,
           data: { x: d.x, y: d.y },
         });
       })
-      .on("mouseleave", hideTooltip);
+      .on('mouseleave', hideTooltip);
   }, [
     angleSlice,
     axisList,
@@ -261,21 +221,21 @@ const RadarChart = ({
     <div
       ref={parentRef}
       style={{
-        width: width ?? "100%",
-        height: height ?? "100%",
-        position: "relative",
-        display: "flex",
-        justifyContent: "center",
+        width: width ?? '100%',
+        height: height ?? '100%',
+        position: 'relative',
+        display: 'flex',
+        justifyContent: 'center',
       }}
     >
-      <svg width={"100%"} height={"100%"} ref={ref}>
-        <g className={"chart"} />
+      <svg width={'100%'} height={'100%'} ref={ref}>
+        <g className={'chart'} />
       </svg>
       {children && tooltip.isOpen && tooltip.data && (
         <ChartTooltip
           left={tooltip.left}
           top={tooltip.top}
-          align={tooltipPosition === "point" ? "center" : "cursor"}
+          align={tooltipPosition === 'point' ? 'center' : 'cursor'}
           offsetX={tooltipOffset.x}
           offsetY={tooltipOffset.y}
         >
@@ -286,27 +246,27 @@ const RadarChart = ({
       )}
       <div
         style={{
-          position: "absolute",
+          position: 'absolute',
           bottom: 0,
-          display: "flex",
-          gap: "8px",
-          fontSize: "14px",
-          padding: "4px",
+          display: 'flex',
+          gap: '8px',
+          fontSize: '14px',
+          padding: '4px',
         }}
       >
         {keyList.map((key) => (
           <div
             key={`legend-${key}`}
             style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "4px",
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
             }}
           >
             <div
               style={{
-                width: "14px",
-                height: "14px",
+                width: '14px',
+                height: '14px',
                 background: color(key) as string,
               }}
             />
