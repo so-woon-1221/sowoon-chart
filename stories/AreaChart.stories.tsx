@@ -11,21 +11,38 @@ export default meta
 
 type Story = StoryObj<typeof AreaChart>
 
-export const Area차트: Story = {
+const data = [
+  { x: 'A', y: 10 },
+  { x: 'B', y: 20 },
+  { x: 'C', y: 30 },
+  { x: 'D', y: 40 },
+  { x: 'E', y: 50 }
+]
+
+const negativeData = [
+  { x: 'A', y: -10 },
+  { x: 'B', y: 12 },
+  { x: 'C', y: -4 },
+  { x: 'D', y: 16 },
+  { x: 'E', y: 6 }
+]
+
+const renderTooltip = ({
+  tooltipData
+}: {
+  tooltipData: { x: string; y: number }
+}) => (
+  <div style={{ background: 'black', color: 'white', padding: '4px' }}>
+    {tooltipData.x}: {tooltipData.y}
+  </div>
+)
+
+export const 기본: Story = {
   args: {
-    data: [
-      { x: 'A', y: 10 },
-      { x: 'B', y: 20 },
-      { x: 'C', y: 30 },
-      { x: 'D', y: 40 },
-      { x: 'E', y: 50 }
-    ],
+    data,
     height: 400,
-    children: ({ tooltipData }: { tooltipData: { x: string; y: number } }) => (
-      <div style={{ background: 'black', color: 'white', padding: '4px' }}>
-        {tooltipData.x}: {tooltipData.y}
-      </div>
-    )
+    tooltipPosition: 'point',
+    children: renderTooltip
   },
   argTypes: {
     color: {
@@ -33,5 +50,25 @@ export const Area차트: Story = {
         type: 'color'
       }
     }
+  }
+}
+
+export const 커서툴팁: Story = {
+  args: {
+    data,
+    height: 400,
+    tooltipPosition: 'cursor',
+    children: renderTooltip
+  }
+}
+
+export const 음수값: Story = {
+  args: {
+    data: negativeData,
+    height: 400,
+    minY: -20,
+    maxY: 20,
+    tooltipPosition: 'point',
+    children: renderTooltip
   }
 }
