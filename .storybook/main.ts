@@ -5,20 +5,34 @@ const config: StorybookConfig = {
   addons: [
     '@storybook/addon-onboarding',
     '@storybook/addon-links',
-    '@storybook/addon-essentials',
     '@chromatic-com/storybook',
-    '@storybook/addon-interactions',
+    '@storybook/addon-docs'
   ],
   framework: {
     name: '@storybook/react-vite',
     options: {},
   },
   viteFinal: (config) => {
-    config.resolve!.alias = {
-      ...config.resolve!.alias,
-      'web-worker:./lib/wordcloud.worker.js': './lib/wordcloud.worker.js?worker',
+    const alias = config.resolve?.alias;
+
+    return {
+      ...config,
+      resolve: {
+        ...config.resolve,
+        alias: Array.isArray(alias)
+          ? [
+              ...alias,
+              {
+                find: 'web-worker:./lib/wordcloud.worker.js',
+                replacement: './lib/wordcloud.worker.js?worker',
+              },
+            ]
+          : {
+              ...(alias ?? {}),
+              'web-worker:./lib/wordcloud.worker.js': './lib/wordcloud.worker.js?worker',
+            },
+      },
     };
-    return config;
   },
 };
 export default config;

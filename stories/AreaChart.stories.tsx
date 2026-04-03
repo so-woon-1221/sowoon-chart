@@ -1,4 +1,4 @@
-import { type Meta, type StoryObj } from '@storybook/react';
+import { type Meta, type StoryObj } from '@storybook/react-vite';
 
 import AreaChart from '../src/components/chart/AreaChart';
 
@@ -66,6 +66,27 @@ export const 음수값: Story = {
     minY: -20,
     maxY: 20,
     tooltipPosition: 'point',
+    children: renderTooltip,
+  },
+};
+
+export const 액티브마커: Story = {
+  args: {
+    data,
+    height: 400,
+    tooltipPosition: 'point',
+    showActiveMarker: true,
+    children: renderTooltip,
+  },
+};
+
+export const 크로스헤어: Story = {
+  args: {
+    data,
+    height: 400,
+    tooltipPosition: 'point',
+    showActiveMarker: true,
+    showCrosshair: true,
     children: renderTooltip,
   },
 };
