@@ -23,6 +23,6 @@ dist-ssr
 *.sln
 *.sw?
 
-# Local review docs
-CHANGE_REVIEW.md
-REFACTORING_PLAN.md
+# Local docs
+.local-docs/
+AGENTS.md
