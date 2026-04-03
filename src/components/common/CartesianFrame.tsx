@@ -14,8 +14,8 @@ type Margin = {
 };
 
 type Props = {
-  containerRef: RefObject<HTMLDivElement>;
-  svgRef: RefObject<SVGSVGElement>;
+  containerRef: RefObject<HTMLDivElement | null>;
+  svgRef: RefObject<SVGSVGElement | null>;
   width?: number;
   height?: number;
   parentWidth: number;

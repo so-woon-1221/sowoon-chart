@@ -28,7 +28,7 @@ export default {
       targetPlatform: 'browser',
     }),
     typescript({
-      tsconfig: './tsconfig.app.json',
+      tsconfig: './tsconfig.rollup.json',
       compilerOptions: {
         declaration: true,
         declarationDir: './dist/types',
@@ -42,5 +42,5 @@ export default {
     }),
     terser(),
   ],
-  external: ['react', 'react-dom'],
+  external: ['react', 'react-dom', 'd3'],
 };
