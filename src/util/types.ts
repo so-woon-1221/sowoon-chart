@@ -39,6 +39,24 @@ export type TooltipRenderProps<TData> = {
 
 export type TooltipRenderer<TData> = (props: TooltipRenderProps<TData>) => ReactNode;
 
+export interface TooltipInteractionProps {
+  /**
+   * Tooltip anchor position.
+   * `cursor` follows the pointer and `point` sticks to the matched chart point.
+   */
+  tooltipPosition?: TooltipPositionMode;
+  /**
+   * Show an active point marker while hovering.
+   * @default false
+   */
+  showActiveMarker?: boolean;
+  /**
+   * Show crosshair guides while hovering.
+   * @default false
+   */
+  showCrosshair?: boolean;
+}
+
 export interface BaseChartProps {
   /**
    * Width of the chart.

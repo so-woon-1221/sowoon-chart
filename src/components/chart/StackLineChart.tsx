@@ -11,7 +11,7 @@ import {
   select,
   stack,
 } from 'd3';
-import { type PointerEventHandler, useCallback, useEffect, useMemo, useRef } from 'react';
+import { type PointerEventHandler, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useChartTooltip } from '../../hooks/useChartTooltip';
 import { useParentSize } from '../../hooks/useParentSize';
@@ -19,14 +19,20 @@ import type {
   CartesianChartProps,
   ColorListProps,
   GroupedDatum,
+  TooltipInteractionProps,
   TooltipOffset,
-  TooltipPositionMode,
   TooltipRenderer,
   XYDatum,
 } from '../../util/types';
 import { getClosestIndex } from '../../util/utils';
 import CartesianFrame from '../common/CartesianFrame';
 import ChartTooltip from '../common/ChartTooltip';
+
+type ActivePoint = {
+  left: number;
+  top: number;
+  color: string;
+};
 
 type Props = CartesianChartProps<GroupedDatum> &
   ColorListProps & {
@@ -48,13 +54,8 @@ type Props = CartesianChartProps<GroupedDatum> &
      * @default { x: 10, y: -10 }
      */
     tooltipOffset?: TooltipOffset;
-    /**
-     * Tooltip anchor position.
-     * `cursor` follows the mouse and `point` sticks to the matched data point.
-     * @default "point"
-     */
-    tooltipPosition?: TooltipPositionMode;
-  };
+  } &
+  TooltipInteractionProps;
 
 const defaultMargin = {
   top: 20,
@@ -74,10 +75,13 @@ const StackLineChart = ({
   children,
   tooltipOffset = { x: 20, y: -20 },
   tooltipPosition = 'point',
+  showActiveMarker = false,
+  showCrosshair = false,
   showGridVertical = true,
   showGridHorizontal = true,
 }: Props) => {
   const { tooltip, showTooltip, hideTooltip } = useChartTooltip<XYDatum>();
+  const [activePoint, setActivePoint] = useState<ActivePoint | null>(null);
 
   const { ref: parentRef, height: parentHeight, width: parentWidth } = useParentSize();
 
@@ -157,24 +161,35 @@ const StackLineChart = ({
 
   const onMouseMove: PointerEventHandler = useCallback(
     (e) => {
+      if (!children && !showActiveMarker && !showCrosshair) {
+        return;
+      }
+
+      const [xPoint, yPoint] = pointer(e);
+      const index = getClosestIndex(xPositions, xPoint);
+      const point = data[index];
+
+      if (!point || series.length === 0) {
+        setActivePoint(null);
+        return;
+      }
+
+      const yData = y.invert(yPoint);
+      const yDomain = series.map((d) => d[index][1] as number);
+      const yIndex = Math.max(0, Math.min(yDomain.length - 1, bisectCenter(yDomain, yData)));
+      const pointLeft = xPositions[index];
+      const pointTop = y(series[yIndex][index][1] as number);
+      setActivePoint({
+        left: pointLeft,
+        top: pointTop,
+        color: colorScale(keyList[yIndex]) as string,
+      });
+
       if (children) {
-        const [xPoint, yPoint] = pointer(e);
-        const index = getClosestIndex(xPositions, xPoint);
-        const point = data[index];
-
-        if (!point || series.length === 0) {
-          return;
-        }
-
-        const yData = y.invert(yPoint);
-        const yDomain = series.map((d) => d[index][1] as number);
-        const yIndex = Math.max(0, Math.min(yDomain.length - 1, bisectCenter(yDomain, yData)));
-
-        const tooltipY = y(series[yIndex][index][1] as number);
         const isPointTooltip = tooltipPosition === 'point';
         showTooltip({
-          left: isPointTooltip ? xPositions[index] : xPoint,
-          top: isPointTooltip ? tooltipY : yPoint,
+          left: isPointTooltip ? pointLeft : xPoint,
+          top: isPointTooltip ? pointTop : yPoint,
           data: {
             x: point.x,
             y: series[yIndex][index][1] - series[yIndex][index][0],
@@ -182,12 +197,67 @@ const StackLineChart = ({
         });
       }
     },
-    [children, data, series, showTooltip, tooltipPosition, xPositions, y],
+    [
+      children,
+      colorScale,
+      data,
+      keyList,
+      series,
+      showActiveMarker,
+      showCrosshair,
+      showTooltip,
+      tooltipPosition,
+      xPositions,
+      y,
+    ],
   );
+
+  const onMouseLeave = useCallback(() => {
+    setActivePoint(null);
+    hideTooltip();
+  }, [hideTooltip]);
 
   useEffect(() => {
     drawChart();
   }, [drawChart]);
+
+  const activeOverlay =
+    activePoint && (showCrosshair || showActiveMarker) ? (
+      <g className="active-overlay" pointerEvents="none">
+        {showCrosshair && (
+          <>
+            <line
+              x1={activePoint.left}
+              x2={activePoint.left}
+              y1={margin.top}
+              y2={parentHeight - margin.bottom}
+              stroke={activePoint.color}
+              strokeDasharray="4 4"
+              strokeOpacity={0.35}
+            />
+            <line
+              x1={margin.left}
+              x2={parentWidth - margin.right}
+              y1={activePoint.top}
+              y2={activePoint.top}
+              stroke={activePoint.color}
+              strokeDasharray="4 4"
+              strokeOpacity={0.35}
+            />
+          </>
+        )}
+        {showActiveMarker && (
+          <circle
+            cx={activePoint.left}
+            cy={activePoint.top}
+            r={4}
+            fill="white"
+            stroke={activePoint.color}
+            strokeWidth={2}
+          />
+        )}
+      </g>
+    ) : null;
 
   const legend = (
     <div
@@ -236,8 +306,13 @@ const StackLineChart = ({
       showGridVertical={showGridVertical}
       showGridHorizontal={showGridHorizontal}
       onPointerMove={onMouseMove}
-      onPointerLeave={hideTooltip}
-      chart={<g className="chart" />}
+      onPointerLeave={onMouseLeave}
+      chart={
+        <>
+          <g className="chart" />
+          {activeOverlay}
+        </>
+      }
       tooltip={
         children &&
         tooltip.isOpen &&

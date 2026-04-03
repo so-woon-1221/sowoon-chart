@@ -8,7 +8,7 @@ import {
   scaleOrdinal,
   select,
 } from 'd3';
-import { type PointerEventHandler, useCallback, useEffect, useMemo, useRef } from 'react';
+import { type PointerEventHandler, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useChartTooltip } from '../../hooks/useChartTooltip';
 import { useParentSize } from '../../hooks/useParentSize';
@@ -17,8 +17,8 @@ import type {
   ColorListProps,
   GroupedDatum,
   ScatterDatum,
+  TooltipInteractionProps,
   TooltipOffset,
-  TooltipPositionMode,
   TooltipRenderer,
   XYDatum,
 } from '../../util/types';
@@ -26,28 +26,18 @@ import { getClosestIndex } from '../../util/utils';
 import CartesianFrame from '../common/CartesianFrame';
 import ChartTooltip from '../common/ChartTooltip';
 
+type ActivePoint = {
+  left: number;
+  top: number;
+  color: string;
+};
+
 type Props = CartesianChartProps<GroupedDatum> &
   ColorListProps & {
-  /**
-   * Data to display in the chart.
-   */
-  data: GroupedDatum[];
-  /**
-   * Tooltip children.
-   * @param tooltipData
-   */
-  children?: TooltipRenderer<ScatterDatum>;
-  /**
-   * Offset of the tooltip from the mouse pointer.
-   */
-  tooltipOffset?: TooltipOffset;
-  /**
-   * Tooltip anchor position.
-   * `cursor` follows the mouse and `point` sticks to the matched data point.
-   * @default "point"
-   */
-  tooltipPosition?: TooltipPositionMode;
-};
+    children?: TooltipRenderer<ScatterDatum>;
+    tooltipOffset?: TooltipOffset;
+  } &
+  TooltipInteractionProps;
 
 const defaultMargin = {
   top: 20,
@@ -67,10 +57,13 @@ const GroupLineChart = ({
   colorList = ['#98abc5', '#8a89a6', '#7b6888', '#6b486b', '#a05d56', '#d0743c', '#ff8c00'],
   tooltipOffset = { x: 10, y: -10 },
   tooltipPosition = 'point',
+  showActiveMarker = false,
+  showCrosshair = false,
   showGridHorizontal = true,
   showGridVertical = true,
 }: Props) => {
   const { tooltip, showTooltip, hideTooltip } = useChartTooltip<ScatterDatum>();
+  const [activePoint, setActivePoint] = useState<ActivePoint | null>(null);
 
   const { ref: parentRef, width: parentWidth, height: parentHeight } = useParentSize();
 
@@ -136,39 +129,53 @@ const GroupLineChart = ({
 
   const onMouseMove: PointerEventHandler = useCallback(
     (e) => {
+      if (!children && !showActiveMarker && !showCrosshair) {
+        return;
+      }
+
+      const [xPoint, yPoint] = pointer(e);
+      const index = getClosestIndex(xPositions, xPoint);
+      const point = data[index];
+
+      if (!point || keyList.length === 0) {
+        setActivePoint(null);
+        return;
+      }
+
+      const yData = y.invert(yPoint);
+      const yIndex = keyList.reduce((closestIndex, key, currentIndex) => {
+        const currentValue = point[key];
+        const closestValue = point[keyList[closestIndex]];
+
+        if (typeof currentValue !== 'number' || typeof closestValue !== 'number') {
+          return closestIndex;
+        }
+
+        return Math.abs(currentValue - yData) < Math.abs(closestValue - yData)
+          ? currentIndex
+          : closestIndex;
+      }, 0);
+      const activeKey = keyList[yIndex];
+      const value = point[activeKey];
+
+      if (typeof value !== 'number') {
+        setActivePoint(null);
+        return;
+      }
+
+      const pointLeft = xPositions[index];
+      const pointTop = y(value);
+      setActivePoint({
+        left: pointLeft,
+        top: pointTop,
+        color: colorScale(activeKey) as string,
+      });
+
       if (children) {
-        const [xPoint, yPoint] = pointer(e);
-        const index = getClosestIndex(xPositions, xPoint);
-        const point = data[index];
-
-        if (!point || keyList.length === 0) {
-          return;
-        }
-
-        const yData = y.invert(yPoint);
-        const yIndex = keyList.reduce((closestIndex, key, currentIndex) => {
-          const currentValue = point[key];
-          const closestValue = point[keyList[closestIndex]];
-
-          if (typeof currentValue !== 'number' || typeof closestValue !== 'number') {
-            return closestIndex;
-          }
-
-          return Math.abs(currentValue - yData) < Math.abs(closestValue - yData)
-            ? currentIndex
-            : closestIndex;
-        }, 0);
-        const value = point[keyList[yIndex]];
-
-        if (typeof value !== 'number') {
-          return;
-        }
-
         const isPointTooltip = tooltipPosition === 'point';
-
         showTooltip({
-          left: isPointTooltip ? xPositions[index] : xPoint,
-          top: isPointTooltip ? y(value) : yPoint,
+          left: isPointTooltip ? pointLeft : xPoint,
+          top: isPointTooltip ? pointTop : yPoint,
           data: {
             x: point.x,
             y: value,
@@ -177,8 +184,62 @@ const GroupLineChart = ({
         });
       }
     },
-    [children, data, keyList, showTooltip, tooltipPosition, xPositions, y],
+    [
+      children,
+      colorScale,
+      data,
+      keyList,
+      showActiveMarker,
+      showCrosshair,
+      showTooltip,
+      tooltipPosition,
+      xPositions,
+      y,
+    ],
   );
+
+  const onMouseLeave = useCallback(() => {
+    setActivePoint(null);
+    hideTooltip();
+  }, [hideTooltip]);
+
+  const activeOverlay =
+    activePoint && (showCrosshair || showActiveMarker) ? (
+      <g className="active-overlay" pointerEvents="none">
+        {showCrosshair && (
+          <>
+            <line
+              x1={activePoint.left}
+              x2={activePoint.left}
+              y1={margin.top}
+              y2={parentHeight - margin.bottom}
+              stroke={activePoint.color}
+              strokeDasharray="4 4"
+              strokeOpacity={0.35}
+            />
+            <line
+              x1={margin.left}
+              x2={parentWidth - margin.right}
+              y1={activePoint.top}
+              y2={activePoint.top}
+              stroke={activePoint.color}
+              strokeDasharray="4 4"
+              strokeOpacity={0.35}
+            />
+          </>
+        )}
+        {showActiveMarker && (
+          <circle
+            cx={activePoint.left}
+            cy={activePoint.top}
+            r={4}
+            fill="white"
+            stroke={activePoint.color}
+            strokeWidth={2}
+          />
+        )}
+      </g>
+    ) : null;
 
   return (
     <CartesianFrame
@@ -194,8 +255,13 @@ const GroupLineChart = ({
       showGridVertical={showGridVertical}
       showGridHorizontal={showGridHorizontal}
       onPointerMove={onMouseMove}
-      onPointerLeave={hideTooltip}
-      chart={<g className="chart" />}
+      onPointerLeave={onMouseLeave}
+      chart={
+        <>
+          <g className="chart" />
+          {activeOverlay}
+        </>
+      }
       tooltip={
         children &&
         tooltip.isOpen &&

@@ -1,21 +1,27 @@
 import { type AxisDomain, type AxisScale, line, pointer, scaleBand, scaleLinear, select } from 'd3';
-import { type PointerEventHandler, useCallback, useEffect, useMemo, useRef } from 'react';
+import { type PointerEventHandler, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useChartTooltip } from '../../hooks/useChartTooltip';
 import { useParentSize } from '../../hooks/useParentSize';
-import type { ChartProps, TooltipPositionMode, TooltipRenderer, XYDatum } from '../../util/types';
+import type {
+  ChartProps,
+  TooltipInteractionProps,
+  TooltipRenderer,
+  XYDatum,
+} from '../../util/types';
 import { getClosestIndex } from '../../util/utils';
 import CartesianFrame from '../common/CartesianFrame';
 import ChartTooltip from '../common/ChartTooltip';
 
-type LineChartProps = ChartProps & {
+type ActivePoint = {
+  left: number;
+  top: number;
+  color: string;
+};
+
+type LineChartProps = ChartProps &
+  TooltipInteractionProps & {
   children?: TooltipRenderer<XYDatum>;
-  /**
-   * Tooltip anchor position.
-   * `cursor` follows the mouse and `point` sticks to the matched data point.
-   * @default "cursor"
-   */
-  tooltipPosition?: TooltipPositionMode;
 };
 
 const defaultMargin = {
@@ -38,10 +44,13 @@ const LineChart = ({
   height,
   children,
   tooltipPosition = 'cursor',
+  showActiveMarker = false,
+  showCrosshair = false,
   showGridVertical = true,
   showGridHorizontal = true,
 }: LineChartProps) => {
   const { tooltip, showTooltip, hideTooltip } = useChartTooltip<XYDatum>();
+  const [activePoint, setActivePoint] = useState<ActivePoint | null>(null);
 
   const { ref: parentRef, width: parentWidth, height: parentHeight } = useParentSize();
 
@@ -65,26 +74,43 @@ const LineChart = ({
 
   const onMouseMove: PointerEventHandler = useCallback(
     (e) => {
+      if (!children && !showActiveMarker && !showCrosshair) {
+        return;
+      }
+
+      const [xPoint, yPoint] = pointer(e);
+      const index = getClosestIndex(xPositions, xPoint);
+      const point = data[index];
+
+      if (!point) {
+        setActivePoint(null);
+        return;
+      }
+
+      const pointLeft = xPositions[index];
+      const pointTop = y(point.y);
+      setActivePoint({
+        left: pointLeft,
+        top: pointTop,
+        color,
+      });
+
       if (children) {
-        const [xPoint, yPoint] = pointer(e);
-        const index = getClosestIndex(xPositions, xPoint);
-        const point = data[index];
-
-        if (!point) {
-          return;
-        }
-
         const isPointTooltip = tooltipPosition === 'point';
-
         showTooltip({
-          left: isPointTooltip ? xPositions[index] : xPoint,
-          top: isPointTooltip ? y(point.y) : yPoint,
+          left: isPointTooltip ? pointLeft : xPoint,
+          top: isPointTooltip ? pointTop : yPoint,
           data: point,
         });
       }
     },
-    [children, data, showTooltip, tooltipPosition, xPositions, y],
+    [children, color, data, showActiveMarker, showCrosshair, showTooltip, tooltipPosition, xPositions, y],
   );
+
+  const onMouseLeave = useCallback(() => {
+    setActivePoint(null);
+    hideTooltip();
+  }, [hideTooltip]);
 
   const drawChart = useCallback(() => {
     const svg = select(ref.current);
@@ -108,6 +134,44 @@ const LineChart = ({
     drawChart();
   }, [drawChart]);
 
+  const activeOverlay =
+    activePoint && (showCrosshair || showActiveMarker) ? (
+      <g className="active-overlay" pointerEvents="none">
+        {showCrosshair && (
+          <>
+            <line
+              x1={activePoint.left}
+              x2={activePoint.left}
+              y1={margin.top}
+              y2={parentHeight - margin.bottom}
+              stroke={activePoint.color}
+              strokeDasharray="4 4"
+              strokeOpacity={0.35}
+            />
+            <line
+              x1={margin.left}
+              x2={parentWidth - margin.right}
+              y1={activePoint.top}
+              y2={activePoint.top}
+              stroke={activePoint.color}
+              strokeDasharray="4 4"
+              strokeOpacity={0.35}
+            />
+          </>
+        )}
+        {showActiveMarker && (
+          <circle
+            cx={activePoint.left}
+            cy={activePoint.top}
+            r={4}
+            fill="white"
+            stroke={activePoint.color}
+            strokeWidth={2}
+          />
+        )}
+      </g>
+    ) : null;
+
   return (
     <CartesianFrame
       containerRef={parentRef}
@@ -122,8 +186,13 @@ const LineChart = ({
       showGridVertical={showGridVertical}
       showGridHorizontal={showGridHorizontal}
       onPointerMove={onMouseMove}
-      onPointerLeave={hideTooltip}
-      chart={<g className="line" />}
+      onPointerLeave={onMouseLeave}
+      chart={
+        <>
+          <g className="line" />
+          {activeOverlay}
+        </>
+      }
       tooltip={
         children &&
         tooltip.isOpen &&

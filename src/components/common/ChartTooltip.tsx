@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react';
 
+import { useTooltipPlacement } from '../../hooks/useTooltipPlacement';
+
 type Props = {
   left: number;
   top: number;
@@ -12,18 +14,22 @@ type Props = {
 const ChartTooltip = ({ left, top, children, offsetX, offsetY, align = 'cursor' }: Props) => {
   const resolvedOffsetX = offsetX ?? (align === 'center' ? 0 : 12);
   const resolvedOffsetY = offsetY ?? -12;
-  const transform =
-    align === 'center'
-      ? `translate(calc(-50% + ${resolvedOffsetX}px), calc(-100% + ${resolvedOffsetY}px))`
-      : `translate(${resolvedOffsetX}px, calc(-100% + ${resolvedOffsetY}px))`;
+  const { ref } = useTooltipPlacement({
+    left,
+    top,
+    offsetX: resolvedOffsetX,
+    offsetY: resolvedOffsetY,
+    align,
+  });
 
   return (
     <div
+      ref={ref}
       style={{
         position: 'absolute',
         left,
         top,
-        transform,
+        visibility: 'hidden',
         pointerEvents: 'none',
         zIndex: 10,
       }}

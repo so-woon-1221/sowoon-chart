@@ -43,6 +43,7 @@ export type {
   RadarSeriesDatum,
   ScatterDatum,
   TooltipData,
+  TooltipInteractionProps,
   TooltipOffset,
   TooltipPositionMode,
   TooltipRenderer,
