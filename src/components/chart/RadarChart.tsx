@@ -1,8 +1,9 @@
 import { curveLinearClosed, lineRadial, max, pointer, scaleLinear, scaleOrdinal, select } from 'd3';
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useChartTooltip } from '../../hooks/useChartTooltip';
 import { useParentSize } from '../../hooks/useParentSize';
+import { getEventPointerType, getTooltipAlign, resolveTooltipPositionMode } from '../../util/tooltip';
 import type {
   BaseChartProps,
   RadarSeriesDatum,
@@ -59,6 +60,7 @@ const RadarChart = ({
   tooltipPosition = 'cursor',
 }: Props) => {
   const { tooltip, showTooltip, hideTooltip } = useChartTooltip<XYDatum>();
+  const [activeKey, setActiveKey] = useState<string | null>(null);
 
   const { ref: parentRef, height: parentHeight, width: parentWidth } = useParentSize();
 
@@ -157,38 +159,59 @@ const RadarChart = ({
         return radarLine(d.data.map((a) => a.y));
       })
       .attr('fill', (d) => color(d.key))
-      .attr('fill-opacity', 0.1)
+      .attr('fill-opacity', (d) => (activeKey && d.key !== activeKey ? 0.04 : 0.1))
       .attr('stroke', (d) => color(d.key))
       .attr('stroke-dasharray', (_, i) => (i % 2 === 1 ? '5,5' : '0,0'))
-      .attr('stroke-width', 2)
+      .attr('stroke-opacity', (d) => (activeKey && d.key !== activeKey ? 0.3 : 1))
+      .attr('stroke-width', (d) => (activeKey === d.key ? 3 : 2))
       .attr('pointer-events', 'none');
 
     chartContainer
-      .selectAll('g')
+      .selectAll('g.series')
       .data(data)
       .join('g')
+      .attr('class', 'series')
       .attr('stroke', (d) => color(d.key))
       .attr('fill', (d) => color(d.key))
+      .attr('opacity', (d) => (activeKey && d.key !== activeKey ? 0.35 : 1))
       .selectAll('circle')
-      .data((d) => d.data.map((point, index) => ({ ...point, index })))
+      .data((d) => d.data.map((point, index) => ({ ...point, index, seriesKey: d.key })))
       .join('circle')
       .attr('r', 4)
       .attr('cx', (d) => rScale(d.y) * Math.cos(angleSlice * d.index - Math.PI / 2))
       .attr('cy', (d) => rScale(d.y) * Math.sin(angleSlice * d.index - Math.PI / 2))
-      .on('mouseover', (e, d) => {
+      .on('pointermove', (e, d) => {
         const [xPoint, yPoint] = pointer(e, ref.current);
         const pointX = parentWidth / 2 + rScale(d.y) * Math.cos(angleSlice * d.index - Math.PI / 2);
         const pointY =
           parentHeight / 2 + rScale(d.y) * Math.sin(angleSlice * d.index - Math.PI / 2);
-        const isPointTooltip = tooltipPosition === 'point';
+        const resolvedTooltipPosition = resolveTooltipPositionMode(
+          tooltipPosition,
+          getEventPointerType(e),
+        );
+        const isPointTooltip = resolvedTooltipPosition === 'point';
+        setActiveKey(d.seriesKey);
         showTooltip({
           left: isPointTooltip ? pointX : xPoint,
           top: isPointTooltip ? pointY : yPoint,
           data: { x: d.x, y: d.y },
+          positionMode: resolvedTooltipPosition,
         });
       })
-      .on('mouseleave', hideTooltip);
+      .on('pointerleave', () => {
+        setActiveKey(null);
+        hideTooltip();
+      })
+      .on('pointerup', () => {
+        setActiveKey(null);
+        hideTooltip();
+      })
+      .on('pointercancel', () => {
+        setActiveKey(null);
+        hideTooltip();
+      });
   }, [
+    activeKey,
     angleSlice,
     axisList,
     backLineList,
@@ -228,7 +251,7 @@ const RadarChart = ({
         <ChartTooltip
           left={tooltip.left}
           top={tooltip.top}
-          align={tooltipPosition === 'point' ? 'center' : 'cursor'}
+          align={getTooltipAlign(tooltip.positionMode)}
           offsetX={tooltipOffset.x}
           offsetY={tooltipOffset.y}
         >
@@ -250,10 +273,17 @@ const RadarChart = ({
         {keyList.map((key) => (
           <div
             key={`legend-${key}`}
+            onPointerEnter={() => setActiveKey(key)}
+            onPointerLeave={() => setActiveKey(null)}
+            onFocus={() => setActiveKey(key)}
+            onBlur={() => setActiveKey(null)}
+            tabIndex={0}
             style={{
               display: 'flex',
               alignItems: 'center',
               gap: '4px',
+              cursor: 'pointer',
+              opacity: !activeKey || activeKey === key ? 1 : 0.45,
             }}
           >
             <div

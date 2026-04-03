@@ -9,7 +9,7 @@
 - React 컴포넌트 형태로 차트를 바로 렌더링할 수 있습니다.
 - 내부 렌더링은 D3를 사용해 축, 스케일, 인터랙션을 구성합니다.
 - tooltip render prop 패턴을 사용해 원하는 UI로 툴팁을 커스터마이즈할 수 있습니다.
-- tooltip 기준 위치를 `cursor` 또는 `point`로 선택할 수 있습니다.
+- tooltip 기준 위치를 `auto`, `cursor`, `point`로 선택할 수 있습니다.
 - `ResizeObserver` 기반으로 부모 컨테이너 크기 변화를 따라갑니다.
 - `ExportImage` 컴포넌트로 차트 영역을 이미지로 저장할 수 있습니다.
 
@@ -125,6 +125,33 @@ export default function Example() {
 />
 ```
 
+## 차트별 props 차이
+
+차트마다 자주 다르게 쓰는 옵션은 아래 정도로 보시면 됩니다.
+
+- `LineChart`, `AreaChart`, `GroupLineChart`, `StackLineChart`
+  - `showActiveMarker?`
+  - `showCrosshair?`
+  - `tooltipPosition?: 'auto' | 'cursor' | 'point'`
+- `BarChart`, `GroupBarChart`, `StackBarChart`
+  - `padding?`
+  - `tooltipPosition?: 'auto' | 'cursor' | 'point'`
+- `ScatterChart`
+  - `minSize?`
+  - `maxSize?`
+  - `tooltipPosition?: 'auto' | 'cursor' | 'point'`
+- `PieChart`
+  - `centerNode?`
+  - `colorList?`
+  - `showLegend?`
+  - `tooltipPosition?: 'auto' | 'cursor' | 'point'`
+- `RadarChart`
+  - `colorList`
+  - `margin?: number`
+  - `tooltipPosition?: 'auto' | 'cursor' | 'point'`
+- `NetworkChart`, `BubbleChart`, `Wordcloud`
+  - 좌표축 기반 차트가 아니라서 props 구조가 따로 분리되어 있습니다.
+
 ## 툴팁 사용 방식
 
 tooltip은 `children` render prop으로 전달합니다.
@@ -141,8 +168,9 @@ tooltip은 `children` render prop으로 전달합니다.
 
 `tooltipPosition` 옵션을 지원하는 차트에서는 툴팁 기준 위치를 선택할 수 있습니다.
 
+- `auto`: 기본 모드입니다. 마우스에서는 `cursor`, touch/pen에서는 `point`로 동작합니다.
 - `cursor`: 마우스 포인터를 따라갑니다.
-- `point`: 가장 가까운 데이터 포인트에 붙습니다.
+- `point`: 가장 가까운 데이터 포인트나 활성 마크에 붙습니다.
 
 현재 지원 차트:
 
@@ -160,13 +188,36 @@ tooltip은 `children` render prop으로 전달합니다.
 예시:
 
 ```tsx
-<LineChart data={data} height={320} tooltipPosition="point">
+<LineChart data={data} height={320} tooltipPosition="auto" showActiveMarker showCrosshair>
   {({ tooltipData }) => (
     <div>
       {tooltipData.x}: {tooltipData.y}
     </div>
   )}
 </LineChart>
+```
+
+`PieChart`, `RadarChart`도 같은 방식으로 tooltip을 받을 수 있습니다. `PieChart`는 `showLegend`를 켜면 범례 hover와 slice 강조가 함께 동작합니다.
+
+```tsx
+<PieChart data={data} height={320} showLegend tooltipPosition="auto">
+  {({ tooltipData }) => (
+    <div>
+      {tooltipData.x}: {tooltipData.y}
+    </div>
+  )}
+</PieChart>
+```
+
+타입도 패키지 루트에서 바로 가져올 수 있습니다.
+
+```tsx
+import type {
+  LineChartProps,
+  TooltipPositionMode,
+  TooltipRenderer,
+  XYDatum,
+} from 'sowoon-chart';
 ```
 
 ## 차트별 데이터 형태

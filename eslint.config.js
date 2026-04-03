@@ -9,7 +9,7 @@ import unusedImports from 'eslint-plugin-unused-imports';
 import tseslint from 'typescript-eslint';
 
 export default defineConfig([
-  globalIgnores(['dist/**', 'coverage/**']),
+  globalIgnores(['dist/**', 'preview-dist/**', 'storybook-static/**', 'coverage/**']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [

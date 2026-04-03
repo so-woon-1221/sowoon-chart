@@ -1,5 +1,7 @@
 import { useCallback, useState } from 'react';
 
+import type { TooltipAnchorMode } from '../util/types';
+
 type TooltipPosition = {
   left: number;
   top: number;
@@ -8,6 +10,7 @@ type TooltipPosition = {
 type TooltipState<T> = TooltipPosition & {
   data: T | null;
   isOpen: boolean;
+  positionMode: TooltipAnchorMode;
 };
 
 const defaultTooltipState = {
@@ -15,6 +18,7 @@ const defaultTooltipState = {
   top: 0,
   data: null,
   isOpen: false,
+  positionMode: 'cursor' as const,
 };
 
 export const useChartTooltip = <T>() => {
@@ -25,14 +29,17 @@ export const useChartTooltip = <T>() => {
       left,
       top,
       data,
+      positionMode = 'cursor',
     }: TooltipPosition & {
       data: T;
+      positionMode?: TooltipAnchorMode;
     }) => {
       setTooltip({
         left,
         top,
         data,
         isOpen: true,
+        positionMode,
       });
     },
     [],

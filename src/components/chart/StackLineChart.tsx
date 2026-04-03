@@ -15,6 +15,7 @@ import { type PointerEventHandler, useCallback, useEffect, useMemo, useRef, useS
 
 import { useChartTooltip } from '../../hooks/useChartTooltip';
 import { useParentSize } from '../../hooks/useParentSize';
+import { getEventPointerType, getTooltipAlign, resolveTooltipPositionMode } from '../../util/tooltip';
 import type {
   CartesianChartProps,
   ColorListProps,
@@ -179,6 +180,10 @@ const StackLineChart = ({
       const yIndex = Math.max(0, Math.min(yDomain.length - 1, bisectCenter(yDomain, yData)));
       const pointLeft = xPositions[index];
       const pointTop = y(series[yIndex][index][1] as number);
+      const resolvedTooltipPosition = resolveTooltipPositionMode(
+        tooltipPosition,
+        getEventPointerType(e),
+      );
       setActivePoint({
         left: pointLeft,
         top: pointTop,
@@ -186,7 +191,7 @@ const StackLineChart = ({
       });
 
       if (children) {
-        const isPointTooltip = tooltipPosition === 'point';
+        const isPointTooltip = resolvedTooltipPosition === 'point';
         showTooltip({
           left: isPointTooltip ? pointLeft : xPoint,
           top: isPointTooltip ? pointTop : yPoint,
@@ -194,6 +199,7 @@ const StackLineChart = ({
             x: point.x,
             y: series[yIndex][index][1] - series[yIndex][index][0],
           },
+          positionMode: resolvedTooltipPosition,
         });
       }
     },
@@ -307,6 +313,8 @@ const StackLineChart = ({
       showGridHorizontal={showGridHorizontal}
       onPointerMove={onMouseMove}
       onPointerLeave={onMouseLeave}
+      onPointerUp={onMouseLeave}
+      onPointerCancel={onMouseLeave}
       chart={
         <>
           <g className="chart" />
@@ -320,7 +328,7 @@ const StackLineChart = ({
           <ChartTooltip
             left={tooltip.left}
             top={tooltip.top}
-            align={tooltipPosition === 'point' ? 'center' : 'cursor'}
+            align={getTooltipAlign(tooltip.positionMode)}
             offsetX={tooltipOffset.x}
             offsetY={tooltipOffset.y}
           >

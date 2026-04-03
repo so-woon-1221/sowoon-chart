@@ -21,6 +21,8 @@ type Props = {
   showGridHorizontal?: boolean;
   onPointerMove?: PointerEventHandler<SVGSVGElement>;
   onPointerLeave?: PointerEventHandler<SVGSVGElement>;
+  onPointerUp?: PointerEventHandler<SVGSVGElement>;
+  onPointerCancel?: PointerEventHandler<SVGSVGElement>;
   chart: ReactNode;
   defs?: ReactNode;
   tooltip?: ReactNode;
@@ -42,6 +44,8 @@ const CartesianFrame = ({
   showGridHorizontal = true,
   onPointerMove,
   onPointerLeave,
+  onPointerUp,
+  onPointerCancel,
   chart,
   defs,
   tooltip,
@@ -64,6 +68,8 @@ const CartesianFrame = ({
         ref={svgRef}
         onPointerMove={onPointerMove}
         onPointerLeave={onPointerLeave}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerCancel}
       >
         {showGridVertical && (
           <GridVertical

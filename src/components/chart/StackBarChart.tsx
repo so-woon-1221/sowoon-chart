@@ -13,6 +13,7 @@ import { useCallback, useEffect, useMemo, useRef } from 'react';
 
 import { useChartTooltip } from '../../hooks/useChartTooltip';
 import { useParentSize } from '../../hooks/useParentSize';
+import { getEventPointerType, getTooltipAlign, resolveTooltipPositionMode } from '../../util/tooltip';
 import type {
   CartesianChartProps,
   ColorListProps,
@@ -137,7 +138,7 @@ const StackBarChart = ({
       .attr('y', (d) => y(d[1]))
       .attr('height', (d) => y(d[0]) - y(d[1]))
       .attr('width', x.bandwidth())
-      .on('mousemove', (e, d) => {
+      .on('pointermove', (e, d) => {
         const [pointerX, pointerY] = pointer(e, ref.current);
         const xPoint = pointerX - x.bandwidth() / 2;
         const xDomain = data.map((d) => x(d.x) as number);
@@ -145,15 +146,22 @@ const StackBarChart = ({
 
         const point = data[index];
         if (point) {
-          const isPointTooltip = tooltipPosition === 'point';
+          const resolvedTooltipPosition = resolveTooltipPositionMode(
+            tooltipPosition,
+            getEventPointerType(e),
+          );
+          const isPointTooltip = resolvedTooltipPosition === 'point';
           showTooltip({
             left: isPointTooltip ? x(point.x)! + x.bandwidth() / 2 : pointerX,
             top: isPointTooltip ? y(d[1]) : pointerY,
             data: { x: d.data.x, y: d[1] - d[0] },
+            positionMode: resolvedTooltipPosition,
           });
         }
       })
-      .on('mouseout', hideTooltip);
+      .on('pointerleave', hideTooltip)
+      .on('pointerup', hideTooltip)
+      .on('pointercancel', hideTooltip);
   }, [colorScale, data, hideTooltip, series, showTooltip, tooltipPosition, x, y]);
 
   useEffect(() => {
@@ -214,7 +222,7 @@ const StackBarChart = ({
           <ChartTooltip
             left={tooltip.left}
             top={tooltip.top}
-            align={tooltipPosition === 'point' ? 'center' : 'cursor'}
+            align={getTooltipAlign(tooltip.positionMode)}
             offsetX={tooltipOffset.x}
             offsetY={tooltipOffset.y}
           >

@@ -1,8 +1,9 @@
 import { arc, pie, type PieArcDatum, pointer, scaleOrdinal, select } from 'd3';
-import { type ReactNode, useCallback, useEffect, useMemo, useRef } from 'react';
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useChartTooltip } from '../../hooks/useChartTooltip';
 import { useParentSize } from '../../hooks/useParentSize';
+import { getEventPointerType, getTooltipAlign, resolveTooltipPositionMode } from '../../util/tooltip';
 import type {
   BaseChartProps,
   TooltipOffset,
@@ -43,6 +44,12 @@ type Props = Pick<BaseChartProps, 'width' | 'height'> & {
    * @default "cursor"
    */
   tooltipPosition?: TooltipPositionMode;
+  /**
+   * Show a legend below the chart.
+   * Hovering legend items will highlight the related slice.
+   * @default false
+   */
+  showLegend?: boolean;
 };
 
 const PieChart = ({
@@ -54,8 +61,10 @@ const PieChart = ({
   children,
   tooltipOffset = { x: 10, y: -10 },
   tooltipPosition = 'cursor',
+  showLegend = false,
 }: Props) => {
   const { tooltip, showTooltip, hideTooltip } = useChartTooltip<XYDatum>();
+  const [activeKey, setActiveKey] = useState<string | null>(null);
 
   const { ref: parentRef, width: parentWidth, height: parentHeight } = useParentSize();
 
@@ -67,46 +76,158 @@ const PieChart = ({
       .range(colorList);
   }, [colorList, data]);
 
-  const drawChart = useCallback(() => {
-    const svg = select(ref.current);
-    const chartContainer = svg.select('.chart');
-    const pieWidth = parentWidth;
-    const pieHeight = parentHeight;
-    const radius = Math.min(pieWidth, pieHeight) / 2;
-    const arcValue = arc<PieArcDatum<XYDatum>>()
+  const pieWidth = parentWidth;
+  const pieHeight = parentHeight;
+
+  const radius = useMemo(() => Math.min(pieWidth, pieHeight) / 2, [pieHeight, pieWidth]);
+
+  const arcValue = useMemo(() => {
+    return arc<PieArcDatum<XYDatum>>()
       .innerRadius(radius * 0.5)
       .outerRadius(radius * 0.85);
+  }, [radius]);
 
+  const chartData = useMemo(() => {
     const pieGenerator = pie<XYDatum>()
       .sort(null)
       .value((d) => d.y);
 
-    const chartData = pieGenerator(data);
+    return pieGenerator(data);
+  }, [data]);
+
+  const drawChart = useCallback(() => {
+    const svg = select(ref.current);
+    const chartContainer = svg.select('.chart');
 
     const pies = chartContainer.selectAll('path').data(chartData);
     pies
       .join('path')
       .attr('transform', `translate(${pieWidth / 2}, ${pieHeight! / 2})`)
       .attr('fill', (d) => colorScale(d.data.x) as string)
-      .attr('d', arcValue);
+      .attr('d', arcValue)
+      .attr('opacity', (d) => (!activeKey || d.data.x === activeKey ? 1 : 0.35))
+      .attr('stroke', (d) => (activeKey === d.data.x ? '#ffffff' : 'none'))
+      .attr('stroke-width', (d) => (activeKey === d.data.x ? 2 : 0));
 
     pies
-      .on('mousemove', (e, d) => {
+      .on('pointermove', (e, d) => {
         const [xPoint, yPoint] = pointer(e, ref.current);
         const [arcX, arcY] = arcValue.centroid(d);
-        const isPointTooltip = tooltipPosition === 'point';
+        const resolvedTooltipPosition = resolveTooltipPositionMode(
+          tooltipPosition,
+          getEventPointerType(e),
+        );
+        const isPointTooltip = resolvedTooltipPosition === 'point';
+        setActiveKey(d.data.x);
         showTooltip({
           left: isPointTooltip ? pieWidth / 2 + arcX : xPoint,
           top: isPointTooltip ? pieHeight / 2 + arcY : yPoint,
           data: d.data,
+          positionMode: resolvedTooltipPosition,
         });
       })
-      .on('mouseout', hideTooltip);
-  }, [colorScale, data, hideTooltip, parentHeight, parentWidth, showTooltip, tooltipPosition]);
+      .on('pointerleave', () => {
+        setActiveKey(null);
+        hideTooltip();
+      })
+      .on('pointerup', () => {
+        setActiveKey(null);
+        hideTooltip();
+      })
+      .on('pointercancel', () => {
+        setActiveKey(null);
+        hideTooltip();
+      });
+  }, [
+    activeKey,
+    arcValue,
+    chartData,
+    colorScale,
+    hideTooltip,
+    pieHeight,
+    pieWidth,
+    showTooltip,
+    tooltipPosition,
+  ]);
 
   useEffect(() => {
     drawChart();
   }, [drawChart]);
+
+  const handleLegendEnter = useCallback(
+    (datum: XYDatum) => {
+      setActiveKey(datum.x);
+
+      if (!children) {
+        return;
+      }
+
+      const activeArc = chartData.find((entry) => entry.data.x === datum.x);
+      if (!activeArc) {
+        return;
+      }
+
+      const [arcX, arcY] = arcValue.centroid(activeArc);
+      showTooltip({
+        left: pieWidth / 2 + arcX,
+        top: pieHeight / 2 + arcY,
+        data: datum,
+        positionMode: 'point',
+      });
+    },
+    [arcValue, chartData, children, pieHeight, pieWidth, showTooltip],
+  );
+
+  const handleLegendLeave = useCallback(() => {
+    setActiveKey(null);
+    hideTooltip();
+  }, [hideTooltip]);
+
+  const legend = showLegend ? (
+    <div
+      style={{
+        position: 'absolute',
+        bottom: 0,
+        display: 'flex',
+        gap: '8px',
+        fontSize: '14px',
+        padding: '4px',
+        flexWrap: 'wrap',
+        justifyContent: 'center',
+      }}
+    >
+      {data.map((datum) => (
+        <button
+          key={`legend-${datum.x}`}
+          type="button"
+          onPointerEnter={() => handleLegendEnter(datum)}
+          onPointerLeave={handleLegendLeave}
+          onFocus={() => handleLegendEnter(datum)}
+          onBlur={handleLegendLeave}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+            background: 'transparent',
+            border: 0,
+            padding: 0,
+            cursor: 'pointer',
+            opacity: !activeKey || activeKey === datum.x ? 1 : 0.45,
+          }}
+        >
+          <span
+            style={{
+              width: '14px',
+              height: '14px',
+              background: colorScale(datum.x) as string,
+              display: 'inline-block',
+            }}
+          />
+          <span>{datum.x}</span>
+        </button>
+      ))}
+    </div>
+  ) : null;
 
   return (
     <div
@@ -136,13 +257,14 @@ const PieChart = ({
         <ChartTooltip
           left={tooltip.left}
           top={tooltip.top}
-          align={tooltipPosition === 'point' ? 'center' : 'cursor'}
+          align={getTooltipAlign(tooltip.positionMode)}
           offsetX={tooltipOffset.x}
           offsetY={tooltipOffset.y}
         >
           {children({ tooltipData: tooltip.data })}
         </ChartTooltip>
       )}
+      {legend}
     </div>
   );
 };

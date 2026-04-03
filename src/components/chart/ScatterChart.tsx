@@ -11,6 +11,7 @@ import { useCallback, useEffect, useMemo, useRef } from 'react';
 
 import { useChartTooltip } from '../../hooks/useChartTooltip';
 import { useParentSize } from '../../hooks/useParentSize';
+import { getEventPointerType, getTooltipAlign, resolveTooltipPositionMode } from '../../util/tooltip';
 import type {
   CartesianChartProps,
   Margin,
@@ -134,14 +135,21 @@ const ScatterChart = ({
     circles
       .on('pointermove', (e, d) => {
         const [xPoint, yPoint] = pointer(e, ref.current);
-        const isPointTooltip = tooltipPosition === 'point';
+        const resolvedTooltipPosition = resolveTooltipPositionMode(
+          tooltipPosition,
+          getEventPointerType(e),
+        );
+        const isPointTooltip = resolvedTooltipPosition === 'point';
         showTooltip({
           left: isPointTooltip ? x(d.x)! + x.bandwidth() / 2 : xPoint,
           top: isPointTooltip ? y(d.y) : yPoint,
           data: { x: d.x, y: d.y, value: d.value },
+          positionMode: resolvedTooltipPosition,
         });
       })
-      .on('pointerleave', hideTooltip);
+      .on('pointerleave', hideTooltip)
+      .on('pointerup', hideTooltip)
+      .on('pointercancel', hideTooltip);
   }, [color, data, hideTooltip, showTooltip, sizeScale, tooltipPosition, x, y]);
 
   useEffect(() => {
@@ -169,7 +177,7 @@ const ScatterChart = ({
           <ChartTooltip
             left={tooltip.left}
             top={tooltip.top}
-            align={tooltipPosition === 'point' ? 'center' : 'cursor'}
+            align={getTooltipAlign(tooltip.positionMode)}
             offsetX={tooltipOffset.x}
             offsetY={tooltipOffset.y}
           >

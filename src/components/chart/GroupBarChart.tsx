@@ -11,6 +11,7 @@ import { type PointerEventHandler, useCallback, useEffect, useMemo, useRef } fro
 
 import { useChartTooltip } from '../../hooks/useChartTooltip';
 import { useParentSize } from '../../hooks/useParentSize';
+import { getEventPointerType, getTooltipAlign, resolveTooltipPositionMode } from '../../util/tooltip';
 import type {
   CartesianChartProps,
   ColorListProps,
@@ -182,12 +183,17 @@ const GroupBarChart = ({
           return;
         }
 
-        const isPointTooltip = tooltipPosition === 'point';
+        const resolvedTooltipPosition = resolveTooltipPositionMode(
+          tooltipPosition,
+          getEventPointerType(e),
+        );
+        const isPointTooltip = resolvedTooltipPosition === 'point';
 
         showTooltip({
           left: isPointTooltip ? groupStart + barPositions[barIndex] : xPoint,
           top: isPointTooltip ? y(value) : yPoint,
           data: { x: point.x, y: value },
+          positionMode: resolvedTooltipPosition,
         });
       }
     },
@@ -213,6 +219,8 @@ const GroupBarChart = ({
       showGridHorizontal={showGridHorizontal}
       onPointerMove={onMouseMove}
       onPointerLeave={onMouseLeave}
+      onPointerUp={onMouseLeave}
+      onPointerCancel={onMouseLeave}
       chart={<g className="chart" />}
       tooltip={
         children &&
@@ -221,7 +229,7 @@ const GroupBarChart = ({
           <ChartTooltip
             left={tooltip.left}
             top={tooltip.top}
-            align={tooltipPosition === 'point' ? 'center' : 'cursor'}
+            align={getTooltipAlign(tooltip.positionMode)}
             offsetX={tooltipOffset.x}
             offsetY={tooltipOffset.y}
           >

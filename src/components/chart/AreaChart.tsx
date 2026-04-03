@@ -12,6 +12,7 @@ import { type PointerEventHandler, useCallback, useEffect, useMemo, useRef, useS
 
 import { useChartTooltip } from '../../hooks/useChartTooltip';
 import { useParentSize } from '../../hooks/useParentSize';
+import { getEventPointerType, getTooltipAlign, resolveTooltipPositionMode } from '../../util/tooltip';
 import type {
   ChartProps,
   TooltipInteractionProps,
@@ -136,6 +137,10 @@ const AreaChart = ({
 
       const pointLeft = xPositions[index];
       const pointTop = y(point.y);
+      const resolvedTooltipPosition = resolveTooltipPositionMode(
+        tooltipPosition,
+        getEventPointerType(e),
+      );
       setActivePoint({
         left: pointLeft,
         top: pointTop,
@@ -143,11 +148,12 @@ const AreaChart = ({
       });
 
       if (children) {
-        const isPointTooltip = tooltipPosition === 'point';
+        const isPointTooltip = resolvedTooltipPosition === 'point';
         showTooltip({
           left: isPointTooltip ? pointLeft : xPoint,
           top: isPointTooltip ? pointTop : yPoint,
           data: point,
+          positionMode: resolvedTooltipPosition,
         });
       }
     },
@@ -221,6 +227,8 @@ const AreaChart = ({
       showGridHorizontal={showGridHorizontal}
       onPointerMove={onMouseMove}
       onPointerLeave={onMouseLeave}
+      onPointerUp={onMouseLeave}
+      onPointerCancel={onMouseLeave}
       chart={
         <>
           <g className="chart" />
@@ -235,7 +243,7 @@ const AreaChart = ({
           <ChartTooltip
             left={tooltip.left}
             top={tooltip.top}
-            align={tooltipPosition === 'point' ? 'center' : 'cursor'}
+            align={getTooltipAlign(tooltip.positionMode)}
           >
             {children({ tooltipData: tooltip.data })}
           </ChartTooltip>

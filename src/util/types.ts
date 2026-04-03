@@ -12,7 +12,9 @@ export type TooltipOffset = {
   y: number;
 };
 
-export type TooltipPositionMode = 'cursor' | 'point';
+export type TooltipAnchorMode = 'cursor' | 'point';
+
+export type TooltipPositionMode = TooltipAnchorMode | 'auto';
 
 export type XYDatum = {
   x: string;
@@ -42,7 +44,8 @@ export type TooltipRenderer<TData> = (props: TooltipRenderProps<TData>) => React
 export interface TooltipInteractionProps {
   /**
    * Tooltip anchor position.
-   * `cursor` follows the pointer and `point` sticks to the matched chart point.
+   * `cursor` follows the pointer, `point` sticks to the matched chart point,
+   * and `auto` uses cursor for mouse but switches to point on touch and pen input.
    */
   tooltipPosition?: TooltipPositionMode;
   /**

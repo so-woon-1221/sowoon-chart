@@ -42,6 +42,7 @@ export type {
   Margin,
   RadarSeriesDatum,
   ScatterDatum,
+  TooltipAnchorMode,
   TooltipData,
   TooltipInteractionProps,
   TooltipOffset,

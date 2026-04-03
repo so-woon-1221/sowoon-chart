@@ -58,3 +58,14 @@ export const 단일데이터: Story = {
     children: renderTooltip,
   },
 };
+
+export const 자동툴팁범례: Story = {
+  args: {
+    data,
+    height: 400,
+    centerNode: <div>Auto</div>,
+    showLegend: true,
+    tooltipPosition: 'auto',
+    children: renderTooltip,
+  },
+};
