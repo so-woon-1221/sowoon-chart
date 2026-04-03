@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local review docs
+CHANGE_REVIEW.md
+REFACTORING_PLAN.md
