@@ -21,8 +21,12 @@
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
     "build-rollup": "rimraf dist && rollup -c",
+    "clean:publish-maps": "node -e \"const fs=require('node:fs');const path=require('node:path');if(!fs.existsSync('dist'))process.exit(0);for(const file of fs.readdirSync('dist')){if(file.endsWith('.map'))fs.rmSync(path.join('dist',file),{force:true});}\"",
+    "build:package": "npm run build-rollup && npm run clean:publish-maps",
+    "pack:dry-run": "npm run build:package && npm pack --dry-run",
     "prepare": "husky install",
-    "publish": "rimraf dist && rollup -c && npm publish"
+    "prepublishOnly": "npm run build:package",
+    "publish:package": "npm publish"
   },
   "dependencies": {
     "d3-cloud": "^1.2.7",
