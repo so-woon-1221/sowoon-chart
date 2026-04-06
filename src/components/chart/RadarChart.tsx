@@ -3,7 +3,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useChartTooltip } from '../../hooks/useChartTooltip';
 import { useParentSize } from '../../hooks/useParentSize';
-import { getEventPointerType, getTooltipAlign, resolveTooltipPositionMode } from '../../util/tooltip';
+import {
+  getEventPointerType,
+  getTooltipAlign,
+  resolveTooltipPositionMode,
+} from '../../util/tooltip';
 import type {
   BaseChartProps,
   TooltipOffset,
@@ -95,15 +99,15 @@ const RadarChart = ({
 
   const backLineList = useMemo(() => {
     const list = [];
-    for (let i = 0; i < 4; i += 1) {
+    for (const step of [1, 2, 3, 4]) {
       const line = [];
-      for (let j = 0; j < axisList.length; j += 1) {
-        line.push(maxY! * ((i + 1) / 4));
+      for (const _ of axisList) {
+        line.push(maxY! * (step / 4));
       }
       list.push(line);
     }
     return list;
-  }, [axisList.length, maxY]);
+  }, [axisList, maxY]);
 
   const rScale = useMemo(
     () =>
@@ -298,30 +302,36 @@ const RadarChart = ({
         }}
       >
         {keyList.map((key) => (
-          <div
+          <button
             key={`legend-${key}`}
+            type="button"
             onPointerEnter={() => setActiveKey(key)}
             onPointerLeave={() => setActiveKey(null)}
             onFocus={() => setActiveKey(key)}
             onBlur={() => setActiveKey(null)}
-            tabIndex={0}
             style={{
               display: 'flex',
               alignItems: 'center',
               gap: '4px',
               cursor: 'pointer',
+              background: 'transparent',
+              border: 0,
+              padding: 0,
+              color: 'inherit',
+              font: 'inherit',
               opacity: !activeKey || activeKey === key ? 1 : 0.45,
             }}
           >
-            <div
+            <span
               style={{
                 width: '14px',
                 height: '14px',
-                background: color(key) as string,
+                background: color(key),
+                display: 'inline-block',
               }}
             />
             <span>{key}</span>
-          </div>
+          </button>
         ))}
       </div>
     </div>
