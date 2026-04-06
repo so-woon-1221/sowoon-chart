@@ -9,6 +9,24 @@ export function getClosestIndex(positions: number[], point: number) {
   return Math.max(0, Math.min(positions.length - 1, bisectCenter(positions, point)));
 }
 
+export function isSameActivePoint<
+  T extends {
+    left: number;
+    top: number;
+    color: string;
+  },
+>(prev: T | null, next: T | null) {
+  if (prev === next) {
+    return true;
+  }
+
+  if (!prev || !next) {
+    return false;
+  }
+
+  return prev.left === next.left && prev.top === next.top && prev.color === next.color;
+}
+
 export function mergeRefs<T>(...refs: ForwardedRef<T>[]) {
   return (node: T) => {
     refs.forEach((ref) => {

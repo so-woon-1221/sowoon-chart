@@ -10,7 +10,7 @@ import type {
   TooltipRenderer,
   XYDatum,
 } from '../../util/types';
-import { getClosestIndex } from '../../util/utils';
+import { getClosestIndex, isSameActivePoint } from '../../util/utils';
 import CartesianFrame from '../common/CartesianFrame';
 import ChartTooltip from '../common/ChartTooltip';
 
@@ -90,7 +90,7 @@ const LineChart = ({
       const point = data[index];
 
       if (!point) {
-        setActivePoint(null);
+        setActivePoint((prev) => (prev ? null : prev));
         return;
       }
 
@@ -100,10 +100,13 @@ const LineChart = ({
         tooltipPosition,
         getEventPointerType(e),
       );
-      setActivePoint({
+      const nextActivePoint = {
         left: pointLeft,
         top: pointTop,
         color,
+      };
+      setActivePoint((prev) => {
+        return isSameActivePoint(prev, nextActivePoint) ? prev : nextActivePoint;
       });
 
       if (children) {
@@ -120,7 +123,7 @@ const LineChart = ({
   );
 
   const onMouseLeave = useCallback(() => {
-    setActivePoint(null);
+    setActivePoint((prev) => (prev ? null : prev));
     hideTooltip();
   }, [hideTooltip]);
 
