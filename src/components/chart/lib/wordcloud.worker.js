@@ -1,11 +1,23 @@
 import cloud from 'd3-cloud';
 
+let currentLayout = null;
+
 self.onmessage = (e) => {
-  const { data, width, height, padding } = e.data;
+  const { type = 'layout' } = e.data;
 
-  self.postMessage({ type: 'start' });
+  if (type === 'cancel') {
+    currentLayout?.stop();
+    currentLayout = null;
+    return;
+  }
 
-  const wordcloud = cloud()
+  const { data, width, height, padding, requestId } = e.data;
+
+  currentLayout?.stop();
+
+  self.postMessage({ type: 'start', requestId });
+
+  currentLayout = cloud()
     .size([width, height])
     .words(data)
     .padding(padding)
@@ -16,8 +28,9 @@ self.onmessage = (e) => {
     .rotate(() => 0)
     .canvas(() => new OffscreenCanvas(width, height))
     .on('end', (words) => {
-      self.postMessage({ type: 'end', data: words });
+      self.postMessage({ type: 'end', requestId, data: words });
+      currentLayout = null;
     });
 
-  wordcloud.start();
+  currentLayout.start();
 };
