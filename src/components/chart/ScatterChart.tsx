@@ -11,7 +11,11 @@ import { useCallback, useEffect, useMemo, useRef } from 'react';
 
 import { useChartTooltip } from '../../hooks/useChartTooltip';
 import { useParentSize } from '../../hooks/useParentSize';
-import { getEventPointerType, getTooltipAlign, resolveTooltipPositionMode } from '../../util/tooltip';
+import {
+  getEventPointerType,
+  getTooltipAlign,
+  resolveTooltipPositionMode,
+} from '../../util/tooltip';
 import type {
   CartesianChartProps,
   Margin,
@@ -128,16 +132,31 @@ const ScatterChart = ({
     const svg = select(ref.current);
     const chartContainer = svg.select('g.bar');
 
-    const updateSelection = chartContainer.selectAll('circle').data(data);
+    const circles = chartContainer
+      .selectAll<SVGCircleElement, ScatterDatum>('circle')
+      .data(data, (datum) => `${datum.x}-${datum.y}-${datum.value}`)
+      .join(
+        (enter) =>
+          enter
+            .append('circle')
+            .attr('cx', (d) => x(d.x)! + x.bandwidth() / 2)
+            .attr('cy', (d) => y(d.y))
+            .attr('r', 0)
+            .attr('fill', color)
+            .call((selection) => {
+              selection.transition().attr('r', (d) => sizeScale(d.value));
+            }),
+        (update) =>
+          update
+            .attr('cx', (d) => x(d.x)! + x.bandwidth() / 2)
+            .attr('cy', (d) => y(d.y))
+            .attr('fill', color)
+            .call((selection) => {
+              selection.transition().attr('r', (d) => sizeScale(d.value));
+            }),
+        (exit) => exit.interrupt().transition().attr('r', 0).remove(),
+      );
 
-    const circles = updateSelection.join('circle');
-    circles
-      .attr('cx', (d) => x(d.x)! + x.bandwidth() / 2)
-      .attr('cy', (d) => y(d.y))
-      .attr('r', 0)
-      .transition()
-      .attr('r', (d) => sizeScale(d.value))
-      .attr('fill', color);
     circles
       .on('pointermove', (e, d) => {
         const [xPoint, yPoint] = pointer(e, ref.current);
