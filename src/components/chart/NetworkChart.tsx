@@ -255,6 +255,8 @@ const NetworkChart = ({
       );
     };
 
+    let highlightedNodeId: string | null = null;
+
     const link = chartArea
       .select('g.link')
       .selectAll('line')
@@ -285,10 +287,15 @@ const NetworkChart = ({
       .join('circle')
       .attr('r', (currentNode) => circleScale(+currentNode.value))
       .attr('fill', color)
-      .on('mouseover', (_, hoveredNode) => {
+      .on('pointerenter', (_, hoveredNode) => {
+        if (highlightedNodeId === hoveredNode.id) {
+          return;
+        }
+
+        highlightedNodeId = hoveredNode.id;
+
         node
           .interrupt()
-          .transition()
           .attr('r', (candidate) => {
             if (isConnected(hoveredNode, candidate)) {
               return 30;
@@ -300,40 +307,38 @@ const NetworkChart = ({
             return isConnected(hoveredNode, candidate) ? 1 : 0.1;
           });
 
-        link
-          .interrupt()
-          .transition()
-          .style('opacity', (currentLink) => {
-            if (hoveredNode === currentLink.source || hoveredNode === currentLink.target) {
-              return 1;
-            }
+        link.interrupt().style('opacity', (currentLink) => {
+          if (hoveredNode === currentLink.source || hoveredNode === currentLink.target) {
+            return 1;
+          }
 
-            return 0.1;
-          });
+          return 0.1;
+        });
 
-        text
-          .interrupt()
-          .transition()
-          .attr('font-size', (candidate) => {
-            if (isConnected(hoveredNode, candidate)) {
-              return '20px';
-            }
+        text.interrupt().attr('font-size', (candidate) => {
+          if (isConnected(hoveredNode, candidate)) {
+            return '20px';
+          }
 
-            return `${circleScale(candidate.value) / 1.5}px`;
-          });
+          return `${circleScale(candidate.value) / 1.5}px`;
+        });
       })
-      .on('mouseleave', () => {
+      .on('pointerleave', () => {
+        if (highlightedNodeId === null) {
+          return;
+        }
+
+        highlightedNodeId = null;
+
         node
           .interrupt()
-          .transition()
           .attr('r', (currentNode) => circleScale(currentNode.value))
           .style('opacity', 1);
 
-        link.interrupt().transition().style('opacity', 1);
+        link.interrupt().style('opacity', 1);
 
         text
           .interrupt()
-          .transition()
           .attr('font-size', (currentNode) => `${circleScale(currentNode.value) / 1.5}px`);
       })
       .call(nodeDrag(simulation) as never);

@@ -155,8 +155,8 @@ const RadarChart = ({
       .text((d) => d);
 
     chartContainer
-      .selectAll('path.data')
-      .data(data)
+      .selectAll<SVGPathElement, RadarSeriesDatum>('path.data')
+      .data(data, (datum) => datum.key)
       .join('path')
       .attr('class', 'data')
       .attr('d', (d) => radarLine(d.data.map(() => 0)))
@@ -165,27 +165,27 @@ const RadarChart = ({
         return radarLine(d.data.map((a) => a.y));
       })
       .attr('fill', (d) => color(d.key))
-      .attr('fill-opacity', (d) => (activeKey && d.key !== activeKey ? 0.04 : 0.1))
       .attr('stroke', (d) => color(d.key))
       .attr('stroke-dasharray', (_, i) => (i % 2 === 1 ? '5,5' : '0,0'))
-      .attr('stroke-opacity', (d) => (activeKey && d.key !== activeKey ? 0.3 : 1))
-      .attr('stroke-width', (d) => (activeKey === d.key ? 3 : 2))
       .attr('pointer-events', 'none');
 
-    chartContainer
-      .selectAll('g.series')
-      .data(data)
+    const seriesGroups = chartContainer
+      .selectAll<SVGGElement, RadarSeriesDatum>('g.series')
+      .data(data, (datum) => datum.key)
       .join('g')
       .attr('class', 'series')
       .attr('stroke', (d) => color(d.key))
-      .attr('fill', (d) => color(d.key))
-      .attr('opacity', (d) => (activeKey && d.key !== activeKey ? 0.35 : 1))
-      .selectAll('circle')
+      .attr('fill', (d) => color(d.key));
+
+    const seriesPoints = seriesGroups
+      .selectAll<SVGCircleElement, XYDatum & { index: number; seriesKey: string }>('circle')
       .data((d) => d.data.map((point, index) => ({ ...point, index, seriesKey: d.key })))
       .join('circle')
       .attr('r', 4)
       .attr('cx', (d) => rScale(d.y) * Math.cos(angleSlice * d.index - Math.PI / 2))
-      .attr('cy', (d) => rScale(d.y) * Math.sin(angleSlice * d.index - Math.PI / 2))
+      .attr('cy', (d) => rScale(d.y) * Math.sin(angleSlice * d.index - Math.PI / 2));
+
+    seriesPoints
       .on('pointermove', (e, d) => {
         const [xPoint, yPoint] = pointer(e, ref.current);
         const pointX = parentWidth / 2 + rScale(d.y) * Math.cos(angleSlice * d.index - Math.PI / 2);
@@ -217,7 +217,6 @@ const RadarChart = ({
         hideTooltip();
       });
   }, [
-    activeKey,
     angleSlice,
     axisList,
     backLineList,
@@ -236,6 +235,21 @@ const RadarChart = ({
   useEffect(() => {
     drawChart();
   }, [drawChart]);
+
+  useEffect(() => {
+    const svg = select(ref.current);
+    const chartContainer = svg.select('.chart');
+
+    chartContainer
+      .selectAll<SVGPathElement, RadarSeriesDatum>('path.data')
+      .attr('fill-opacity', (d) => (activeKey && d.key !== activeKey ? 0.04 : 0.1))
+      .attr('stroke-opacity', (d) => (activeKey && d.key !== activeKey ? 0.3 : 1))
+      .attr('stroke-width', (d) => (activeKey === d.key ? 3 : 2));
+
+    chartContainer
+      .selectAll<SVGGElement, RadarSeriesDatum>('g.series')
+      .attr('opacity', (d) => (activeKey && d.key !== activeKey ? 0.35 : 1));
+  }, [activeKey, data]);
 
   const keyList = useMemo(() => data.map((d) => d.key), [data]);
 

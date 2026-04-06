@@ -3,7 +3,11 @@ import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } fro
 
 import { useChartTooltip } from '../../hooks/useChartTooltip';
 import { useParentSize } from '../../hooks/useParentSize';
-import { getEventPointerType, getTooltipAlign, resolveTooltipPositionMode } from '../../util/tooltip';
+import {
+  getEventPointerType,
+  getTooltipAlign,
+  resolveTooltipPositionMode,
+} from '../../util/tooltip';
 import type {
   BaseChartProps,
   TooltipOffset,
@@ -105,17 +109,17 @@ const PieChart = ({
     const svg = select(ref.current);
     const chartContainer = svg.select('.chart');
 
-    const pies = chartContainer.selectAll('path').data(chartData);
-    pies
-      .join('path')
-      .attr('transform', `translate(${pieWidth / 2}, ${pieHeight! / 2})`)
-      .attr('fill', (d) => colorScale(d.data.x) as string)
-      .attr('d', arcValue)
-      .attr('opacity', (d) => (!activeKey || d.data.x === activeKey ? 1 : 0.35))
-      .attr('stroke', (d) => (activeKey === d.data.x ? '#ffffff' : 'none'))
-      .attr('stroke-width', (d) => (activeKey === d.data.x ? 2 : 0));
+    const pies = chartContainer
+      .selectAll<SVGPathElement, PieArcDatum<XYDatum>>('path')
+      .data(chartData, (datum) => datum.data.x);
 
-    pies
+    const pieSelection = pies
+      .join('path')
+      .attr('transform', `translate(${pieWidth / 2}, ${pieHeight / 2})`)
+      .attr('fill', (d) => colorScale(d.data.x) as string)
+      .attr('d', arcValue);
+
+    pieSelection
       .on('pointermove', (e, d) => {
         const [xPoint, yPoint] = pointer(e, ref.current);
         const [arcX, arcY] = arcValue.centroid(d);
@@ -145,7 +149,6 @@ const PieChart = ({
         hideTooltip();
       });
   }, [
-    activeKey,
     arcValue,
     chartData,
     colorScale,
@@ -159,6 +162,17 @@ const PieChart = ({
   useEffect(() => {
     drawChart();
   }, [drawChart]);
+
+  useEffect(() => {
+    const svg = select(ref.current);
+
+    svg
+      .select('.chart')
+      .selectAll<SVGPathElement, PieArcDatum<XYDatum>>('path')
+      .attr('opacity', (d) => (!activeKey || d.data.x === activeKey ? 1 : 0.35))
+      .attr('stroke', (d) => (activeKey === d.data.x ? '#ffffff' : 'none'))
+      .attr('stroke-width', (d) => (activeKey === d.data.x ? 2 : 0));
+  }, [activeKey, chartData]);
 
   const handleLegendEnter = useCallback(
     (datum: XYDatum) => {
