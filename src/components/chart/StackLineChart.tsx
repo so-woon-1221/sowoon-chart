@@ -19,7 +19,6 @@ import { getEventPointerType, getTooltipAlign, resolveTooltipPositionMode } from
 import type {
   CartesianChartProps,
   ColorListProps,
-  GroupedDatum,
   TooltipInteractionProps,
   TooltipOffset,
   TooltipRenderer,
@@ -28,6 +27,7 @@ import type {
 import { getClosestIndex, isSameActivePoint } from '../../util/utils';
 import CartesianFrame from '../common/CartesianFrame';
 import ChartTooltip from '../common/ChartTooltip';
+import type { GroupedDatum } from './GroupedChart.types';
 
 type ActivePoint = {
   left: number;

@@ -37,29 +37,6 @@ export type XYDatum = {
 };
 
 /**
- * Data shape used by scatter charts.
- */
-export type ScatterDatum = XYDatum & {
-  value: number;
-};
-
-/**
- * One radar series with a label and value list.
- */
-export type RadarSeriesDatum = {
-  key: string;
-  data: XYDatum[];
-};
-
-/**
- * Flexible grouped or stacked row shape keyed by `x`.
- */
-export type GroupedDatum = {
-  x: string;
-  [key: string]: number | string;
-};
-
-/**
  * Props passed into a tooltip render function.
  */
 export type TooltipRenderProps<TData> = {

@@ -16,8 +16,6 @@ import { getEventPointerType, getTooltipAlign, resolveTooltipPositionMode } from
 import type {
   CartesianChartProps,
   ColorListProps,
-  GroupedDatum,
-  ScatterDatum,
   TooltipInteractionProps,
   TooltipOffset,
   TooltipRenderer,
@@ -26,11 +24,16 @@ import type {
 import { getClosestIndex, isSameActivePoint } from '../../util/utils';
 import CartesianFrame from '../common/CartesianFrame';
 import ChartTooltip from '../common/ChartTooltip';
+import type { GroupedDatum } from './GroupedChart.types';
 
 type ActivePoint = {
   left: number;
   top: number;
   color: string;
+};
+
+export type GroupLineTooltipDatum = XYDatum & {
+  value: number;
 };
 
 /**
@@ -41,7 +44,7 @@ export type GroupLineChartProps = CartesianChartProps<GroupedDatum> &
     /**
      * Custom tooltip renderer shown while hovering.
      */
-    children?: TooltipRenderer<ScatterDatum>;
+    children?: TooltipRenderer<GroupLineTooltipDatum>;
     /**
      * Pixel offset applied to the tooltip.
      * @default { x: 10, y: -10 }
@@ -76,7 +79,7 @@ const GroupLineChart = ({
   showGridHorizontal = true,
   showGridVertical = true,
 }: GroupLineChartProps) => {
-  const { tooltip, showTooltip, hideTooltip } = useChartTooltip<ScatterDatum>();
+  const { tooltip, showTooltip, hideTooltip } = useChartTooltip<GroupLineTooltipDatum>();
   const [activePoint, setActivePoint] = useState<ActivePoint | null>(null);
 
   const { ref: parentRef, width: parentWidth, height: parentHeight } = useParentSize();

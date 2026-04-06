@@ -19,13 +19,20 @@ import {
 import type {
   CartesianChartProps,
   Margin,
-  ScatterDatum,
   TooltipOffset,
   TooltipPositionMode,
   TooltipRenderer,
+  XYDatum,
 } from '../../util/types';
 import CartesianFrame from '../common/CartesianFrame';
 import ChartTooltip from '../common/ChartTooltip';
+
+/**
+ * Data shape used by scatter charts.
+ */
+export type ScatterDatum = XYDatum & {
+  value: number;
+};
 
 /**
  * Props for {@link ScatterChart}.

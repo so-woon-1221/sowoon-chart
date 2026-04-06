@@ -1,0 +1,272 @@
+import {
+  type AxisDomain,
+  type AxisScale,
+  extent,
+  pointer,
+  scaleBand,
+  scaleLinear,
+  select,
+} from 'd3';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
+
+import { useChartTooltip } from '../../hooks/useChartTooltip';
+import { useParentSize } from '../../hooks/useParentSize';
+import { getEventPointerType, getTooltipAlign, resolveTooltipPositionMode } from '../../util/tooltip';
+import type {
+  BaseChartProps,
+  TooltipOffset,
+  TooltipPositionMode,
+  TooltipRenderer,
+} from '../../util/types';
+import CartesianFrame from '../common/CartesianFrame';
+import ChartTooltip from '../common/ChartTooltip';
+
+const defaultMargin = {
+  top: 20,
+  right: 20,
+  bottom: 50,
+  left: 50,
+};
+
+/**
+ * One heatmap cell identified by x/y categories and a numeric intensity.
+ */
+export type HeatmapDatum = {
+  x: string;
+  y: string;
+  value: number;
+};
+
+const getValueDomain = (values: number[], minValue?: number, maxValue?: number) => {
+  const [dataMin, dataMax] = extent(values);
+  const resolvedMin = minValue ?? dataMin ?? 0;
+  const resolvedMax = maxValue ?? dataMax ?? resolvedMin;
+
+  if (resolvedMin === resolvedMax) {
+    if (resolvedMin === 0) {
+      return [0, 1] as [number, number];
+    }
+
+    return [0, resolvedMax] as [number, number];
+  }
+
+  return [resolvedMin, resolvedMax] as [number, number];
+};
+
+const getColorDomain = (min: number, max: number, stopCount: number) => {
+  if (stopCount <= 1) {
+    return [min, max];
+  }
+
+  const step = (max - min) / (stopCount - 1);
+
+  return Array.from({ length: stopCount }, (_, index) => min + step * index);
+};
+
+/**
+ * Props for {@link HeatmapChart}.
+ */
+export type HeatmapChartProps = Pick<BaseChartProps, 'height' | 'margin' | 'width'> & {
+  /**
+   * Heatmap cell data.
+   */
+  data: HeatmapDatum[];
+  /**
+   * Tooltip children.
+   */
+  children?: TooltipRenderer<HeatmapDatum>;
+  /**
+   * Colors used across the value scale.
+   * The list is interpolated from low to high values.
+   */
+  colorList?: string[];
+  /**
+   * Explicit minimum value for the color scale.
+   */
+  minValue?: number;
+  /**
+   * Explicit maximum value for the color scale.
+   */
+  maxValue?: number;
+  /**
+   * Padding between cells.
+   * @default 0.08
+   */
+  cellPadding?: number;
+  /**
+   * Offset of tooltip.
+   * @default { x: 10, y: -10 }
+   */
+  tooltipOffset?: TooltipOffset;
+  /**
+   * Tooltip anchor position.
+   * `cursor` follows the mouse and `point` sticks to the matched cell center.
+   * @default "point"
+   */
+  tooltipPosition?: TooltipPositionMode;
+  /**
+   * Display grid lines along the x-axis.
+   * @default false
+   */
+  showGridVertical?: boolean;
+  /**
+   * Display grid lines along the y-axis.
+   * @default false
+   */
+  showGridHorizontal?: boolean;
+};
+
+/**
+ * Renders a category-by-category heatmap where each cell color represents its numeric value.
+ */
+const HeatmapChart = ({
+  width,
+  height,
+  margin = defaultMargin,
+  data,
+  children,
+  colorList = ['#f3f4f6', '#0f766e'],
+  minValue,
+  maxValue,
+  cellPadding = 0.08,
+  tooltipOffset = { x: 10, y: -10 },
+  tooltipPosition = 'point',
+  showGridVertical = false,
+  showGridHorizontal = false,
+}: HeatmapChartProps) => {
+  const { tooltip, showTooltip, hideTooltip } = useChartTooltip<HeatmapDatum>();
+  const { ref: parentRef, width: parentWidth, height: parentHeight } = useParentSize();
+
+  const ref = useRef<SVGSVGElement>(null);
+
+  const xDomain = useMemo(() => {
+    return Array.from(new Set(data.map((datum) => datum.x)));
+  }, [data]);
+
+  const yDomain = useMemo(() => {
+    return Array.from(new Set(data.map((datum) => datum.y)));
+  }, [data]);
+
+  const x = useMemo(() => {
+    return scaleBand()
+      .domain(xDomain)
+      .range([margin.left, (parentWidth ?? 0) - margin.right])
+      .padding(cellPadding);
+  }, [cellPadding, margin.left, margin.right, parentWidth, xDomain]);
+
+  const y = useMemo(() => {
+    return scaleBand()
+      .domain(yDomain)
+      .range([margin.top, (parentHeight ?? 0) - margin.bottom])
+      .padding(cellPadding);
+  }, [cellPadding, margin.bottom, margin.top, parentHeight, yDomain]);
+
+  const valueDomain = useMemo(() => {
+    return getValueDomain(
+      data.map((datum) => datum.value),
+      minValue,
+      maxValue,
+    );
+  }, [data, maxValue, minValue]);
+
+  const resolvedColorList = useMemo(() => {
+    if (colorList.length >= 2) {
+      return colorList;
+    }
+
+    const fallbackColor = colorList[0] ?? '#0f766e';
+    return [fallbackColor, fallbackColor];
+  }, [colorList]);
+
+  const colorScale = useMemo(() => {
+    return scaleLinear<string>()
+      .domain(getColorDomain(valueDomain[0], valueDomain[1], resolvedColorList.length))
+      .range(resolvedColorList);
+  }, [resolvedColorList, valueDomain]);
+
+  const drawChart = useCallback(() => {
+    const svg = select(ref.current);
+    const chartContainer = svg.select('g.chart');
+
+    const cells = chartContainer
+      .selectAll<SVGRectElement, HeatmapDatum>('rect')
+      .data(data, (datum) => `${datum.x}-${datum.y}`);
+
+    cells
+      .join('rect')
+      .attr('x', (datum) => x(datum.x) ?? 0)
+      .attr('y', (datum) => y(datum.y) ?? 0)
+      .attr('width', x.bandwidth())
+      .attr('height', y.bandwidth())
+      .attr('rx', 4)
+      .attr('ry', 4)
+      .attr('fill', (datum) => colorScale(datum.value))
+      .attr('stroke', '#ffffff')
+      .attr('stroke-width', 1)
+      .attr('cursor', children ? 'pointer' : 'default')
+      .on('pointermove', (event, datum) => {
+        if (!children) {
+          return;
+        }
+
+        const [xPoint, yPoint] = pointer(event, ref.current);
+        const resolvedTooltipPosition = resolveTooltipPositionMode(
+          tooltipPosition,
+          getEventPointerType(event),
+        );
+        const isPointTooltip = resolvedTooltipPosition === 'point';
+        const cellLeft = (x(datum.x) ?? 0) + x.bandwidth() / 2;
+        const cellTop = (y(datum.y) ?? 0) + y.bandwidth() / 2;
+
+        showTooltip({
+          left: isPointTooltip ? cellLeft : xPoint,
+          top: isPointTooltip ? cellTop : yPoint,
+          data: datum,
+          positionMode: resolvedTooltipPosition,
+        });
+      })
+      .on('pointerleave', hideTooltip)
+      .on('pointerup', hideTooltip)
+      .on('pointercancel', hideTooltip);
+  }, [children, colorScale, data, hideTooltip, showTooltip, tooltipPosition, x, y]);
+
+  useEffect(() => {
+    drawChart();
+  }, [drawChart]);
+
+  return (
+    <CartesianFrame
+      containerRef={parentRef}
+      svgRef={ref}
+      width={width}
+      height={height}
+      parentWidth={parentWidth}
+      parentHeight={parentHeight}
+      margin={margin}
+      xScale={x as AxisScale<AxisDomain>}
+      yScale={y as AxisScale<AxisDomain>}
+      showGridVertical={showGridVertical}
+      showGridHorizontal={showGridHorizontal}
+      chart={<g className="chart" />}
+      tooltip={
+        children &&
+        tooltip.isOpen &&
+        tooltip.data && (
+          <ChartTooltip
+            left={tooltip.left}
+            top={tooltip.top}
+            align={getTooltipAlign(tooltip.positionMode)}
+            offsetX={tooltipOffset.x}
+            offsetY={tooltipOffset.y}
+          >
+            {children({
+              tooltipData: tooltip.data,
+            })}
+          </ChartTooltip>
+        )
+      }
+    />
+  );
+};
+
+export default HeatmapChart;

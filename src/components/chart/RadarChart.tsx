@@ -6,13 +6,20 @@ import { useParentSize } from '../../hooks/useParentSize';
 import { getEventPointerType, getTooltipAlign, resolveTooltipPositionMode } from '../../util/tooltip';
 import type {
   BaseChartProps,
-  RadarSeriesDatum,
   TooltipOffset,
   TooltipPositionMode,
   TooltipRenderer,
   XYDatum,
 } from '../../util/types';
 import ChartTooltip from '../common/ChartTooltip';
+
+/**
+ * One radar series with a label and value list.
+ */
+export type RadarSeriesDatum = {
+  key: string;
+  data: XYDatum[];
+};
 
 /**
  * Props for {@link RadarChart}.

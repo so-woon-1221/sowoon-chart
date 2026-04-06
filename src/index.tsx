@@ -3,6 +3,7 @@ import BarChart from './components/chart/BarChart';
 import BubbleChart from './components/chart/BubbleChart';
 import GroupBarChart from './components/chart/GroupBarChart';
 import GroupLineChart from './components/chart/GroupLineChart';
+import HeatmapChart from './components/chart/HeatmapChart';
 import LineChart from './components/chart/LineChart';
 import NetworkChart from './components/chart/NetworkChart';
 import PieChart from './components/chart/PieChart';
@@ -20,6 +21,7 @@ export {
   ExportImage,
   GroupBarChart,
   GroupLineChart,
+  HeatmapChart,
   LineChart,
   NetworkChart,
   PieChart,
@@ -34,7 +36,9 @@ export type { AreaChartProps } from './components/chart/AreaChart';
 export type { BarChartProps } from './components/chart/BarChart';
 export type { BubbleChartProps } from './components/chart/BubbleChart';
 export type { GroupBarChartProps } from './components/chart/GroupBarChart';
-export type { GroupLineChartProps } from './components/chart/GroupLineChart';
+export type { GroupedDatum } from './components/chart/GroupedChart.types';
+export type { GroupLineChartProps, GroupLineTooltipDatum } from './components/chart/GroupLineChart';
+export type { HeatmapChartProps, HeatmapDatum } from './components/chart/HeatmapChart';
 export type { LineChartProps } from './components/chart/LineChart';
 export type {
   NetworkChartData,
@@ -43,8 +47,8 @@ export type {
   NetworkNodeDatum,
 } from './components/chart/NetworkChart';
 export type { PieChartProps } from './components/chart/PieChart';
-export type { RadarChartProps } from './components/chart/RadarChart';
-export type { ScatterChartProps } from './components/chart/ScatterChart';
+export type { RadarChartProps, RadarSeriesDatum } from './components/chart/RadarChart';
+export type { ScatterChartProps, ScatterDatum } from './components/chart/ScatterChart';
 export type { StackBarChartProps } from './components/chart/StackBarChart';
 export type { StackLineChartProps } from './components/chart/StackLineChart';
 export type { WordcloudProps } from './components/chart/Wordcloud';
@@ -54,10 +58,7 @@ export type {
   CartesianChartProps,
   ChartProps,
   ColorListProps,
-  GroupedDatum,
   Margin,
-  RadarSeriesDatum,
-  ScatterDatum,
   TooltipAnchorMode,
   TooltipData,
   TooltipInteractionProps,

@@ -17,7 +17,6 @@ import { getEventPointerType, getTooltipAlign, resolveTooltipPositionMode } from
 import type {
   CartesianChartProps,
   ColorListProps,
-  GroupedDatum,
   TooltipOffset,
   TooltipPositionMode,
   TooltipRenderer,
@@ -25,6 +24,7 @@ import type {
 } from '../../util/types';
 import CartesianFrame from '../common/CartesianFrame';
 import ChartTooltip from '../common/ChartTooltip';
+import type { GroupedDatum } from './GroupedChart.types';
 
 /**
  * Props for {@link StackBarChart}.
