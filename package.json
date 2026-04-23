@@ -32,9 +32,13 @@
     "clean:publish-maps": "node -e \"const fs=require('node:fs');const path=require('node:path');if(!fs.existsSync('dist'))process.exit(0);for(const file of fs.readdirSync('dist')){if(file.endsWith('.map'))fs.rmSync(path.join('dist',file),{force:true});}\"",
     "build:package": "npm run build-rollup && npm run clean:publish-maps",
     "pack:dry-run": "npm run build:package && npm pack --dry-run",
+    "release:check": "npm run lint && npx tsc --noEmit -p tsconfig.app.json && npm run pack:dry-run",
     "prepare": "husky install",
     "prepublishOnly": "npm run build:package",
-    "publish:package": "npm publish"
+    "publish:package": "npm publish --access public"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "dependencies": {
     "d3-cloud": "^1.2.7",
