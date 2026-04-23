@@ -1,5 +1,5 @@
-import { arc, pie, type PieArcDatum, pointer, scaleOrdinal, select } from 'd3';
-import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { arc, pie, type PieArcDatum, pointer, scaleOrdinal } from 'd3';
+import { type PointerEvent, type ReactNode, useCallback, useMemo, useRef, useState } from 'react';
 
 import { useChartTooltip } from '../../hooks/useChartTooltip';
 import { useParentSize } from '../../hooks/useParentSize';
@@ -131,74 +131,31 @@ const PieChart = ({
     }));
   }, [colorScale, data, legendItems, showLegend]);
 
-  const drawChart = useCallback(() => {
-    const svg = select(ref.current);
-    const chartContainer = svg.select('.chart');
+  const handleSlicePointerMove = useCallback(
+    (event: PointerEvent<SVGPathElement>, datum: PieArcDatum<XYDatum>) => {
+      const [xPoint, yPoint] = pointer(event, ref.current ?? event.currentTarget);
+      const [arcX, arcY] = arcValue.centroid(datum);
+      const resolvedTooltipPosition = resolveTooltipPositionMode(
+        tooltipPosition,
+        getEventPointerType(event),
+      );
+      const isPointTooltip = resolvedTooltipPosition === 'point';
 
-    const pies = chartContainer
-      .selectAll<SVGPathElement, PieArcDatum<XYDatum>>('path')
-      .data(chartData, (datum) => datum.data.x);
-
-    const pieSelection = pies
-      .join('path')
-      .attr('transform', `translate(${pieWidth / 2}, ${pieHeight / 2})`)
-      .attr('fill', (d) => colorScale(d.data.x) as string)
-      .attr('d', arcValue);
-
-    pieSelection
-      .on('pointermove', (e, d) => {
-        const [xPoint, yPoint] = pointer(e, ref.current);
-        const [arcX, arcY] = arcValue.centroid(d);
-        const resolvedTooltipPosition = resolveTooltipPositionMode(
-          tooltipPosition,
-          getEventPointerType(e),
-        );
-        const isPointTooltip = resolvedTooltipPosition === 'point';
-        setActiveKey(d.data.x);
-        showTooltip({
-          left: isPointTooltip ? pieWidth / 2 + arcX : xPoint,
-          top: isPointTooltip ? pieHeight / 2 + arcY : yPoint,
-          data: d.data,
-          positionMode: resolvedTooltipPosition,
-        });
-      })
-      .on('pointerleave', () => {
-        setActiveKey(null);
-        hideTooltip();
-      })
-      .on('pointerup', () => {
-        setActiveKey(null);
-        hideTooltip();
-      })
-      .on('pointercancel', () => {
-        setActiveKey(null);
-        hideTooltip();
+      setActiveKey(datum.data.x);
+      showTooltip({
+        left: isPointTooltip ? pieWidth / 2 + arcX : xPoint,
+        top: isPointTooltip ? pieHeight / 2 + arcY : yPoint,
+        data: datum.data,
+        positionMode: resolvedTooltipPosition,
       });
-  }, [
-    arcValue,
-    chartData,
-    colorScale,
-    hideTooltip,
-    pieHeight,
-    pieWidth,
-    showTooltip,
-    tooltipPosition,
-  ]);
+    },
+    [arcValue, pieHeight, pieWidth, showTooltip, tooltipPosition],
+  );
 
-  useEffect(() => {
-    drawChart();
-  }, [drawChart]);
-
-  useEffect(() => {
-    const svg = select(ref.current);
-
-    svg
-      .select('.chart')
-      .selectAll<SVGPathElement, PieArcDatum<XYDatum>>('path')
-      .attr('opacity', (d) => (!activeKey || d.data.x === activeKey ? 1 : 0.35))
-      .attr('stroke', (d) => (activeKey === d.data.x ? '#ffffff' : 'none'))
-      .attr('stroke-width', (d) => (activeKey === d.data.x ? 2 : 0));
-  }, [activeKey, chartData]);
+  const handleSlicePointerEnd = useCallback(() => {
+    setActiveKey(null);
+    hideTooltip();
+  }, [hideTooltip]);
 
   const handleLegendEnter = useCallback(
     (item: LegendItem) => {
@@ -240,7 +197,22 @@ const PieChart = ({
       }}
     >
       <svg width={'100%'} height={'100%'} ref={ref}>
-        <g className={'chart'} />
+        <g className={'chart'} transform={`translate(${pieWidth / 2}, ${pieHeight / 2})`}>
+          {chartData.map((datum) => (
+            <path
+              key={datum.data.x}
+              d={arcValue(datum) ?? undefined}
+              fill={colorScale(datum.data.x) as string}
+              opacity={!activeKey || datum.data.x === activeKey ? 1 : 0.35}
+              stroke={activeKey === datum.data.x ? '#ffffff' : 'none'}
+              strokeWidth={activeKey === datum.data.x ? 2 : 0}
+              onPointerMove={(event) => handleSlicePointerMove(event, datum)}
+              onPointerLeave={handleSlicePointerEnd}
+              onPointerUp={handleSlicePointerEnd}
+              onPointerCancel={handleSlicePointerEnd}
+            />
+          ))}
+        </g>
       </svg>
       {centerNode && (
         <div

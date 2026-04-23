@@ -1,13 +1,5 @@
-import {
-  type AxisDomain,
-  type AxisScale,
-  extent,
-  pointer,
-  scaleBand,
-  scaleLinear,
-  select,
-} from 'd3';
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { type AxisDomain, type AxisScale, extent, pointer, scaleBand, scaleLinear } from 'd3';
+import { type PointerEvent, useCallback, useMemo, useRef } from 'react';
 
 import { useChartTooltip } from '../../hooks/useChartTooltip';
 import { useParentSize } from '../../hooks/useParentSize';
@@ -169,58 +161,28 @@ const ScatterChart = ({
     ];
   }, [color, legendItems, seriesName, showLegend]);
 
-  const drawChart = useCallback(() => {
-    const svg = select(ref.current);
-    const chartContainer = svg.select('g.bar');
-
-    const circles = chartContainer
-      .selectAll<SVGCircleElement, ScatterDatum>('circle')
-      .data(data, (datum) => `${datum.x}-${datum.y}-${datum.value}`)
-      .join(
-        (enter) =>
-          enter
-            .append('circle')
-            .attr('cx', (d) => x(d.x)! + x.bandwidth() / 2)
-            .attr('cy', (d) => y(d.y))
-            .attr('r', 0)
-            .attr('fill', color)
-            .call((selection) => {
-              selection.transition().attr('r', (d) => sizeScale(d.value));
-            }),
-        (update) =>
-          update
-            .attr('cx', (d) => x(d.x)! + x.bandwidth() / 2)
-            .attr('cy', (d) => y(d.y))
-            .attr('fill', color)
-            .call((selection) => {
-              selection.transition().attr('r', (d) => sizeScale(d.value));
-            }),
-        (exit) => exit.interrupt().transition().attr('r', 0).remove(),
+  const onPointPointerMove = useCallback(
+    (event: PointerEvent<SVGCircleElement>, datum: ScatterDatum) => {
+      const [xPoint, yPoint] = pointer(event, ref.current ?? event.currentTarget);
+      const resolvedTooltipPosition = resolveTooltipPositionMode(
+        tooltipPosition,
+        getEventPointerType(event),
       );
+      const isPointTooltip = resolvedTooltipPosition === 'point';
 
-    circles
-      .on('pointermove', (e, d) => {
-        const [xPoint, yPoint] = pointer(e, ref.current);
-        const resolvedTooltipPosition = resolveTooltipPositionMode(
-          tooltipPosition,
-          getEventPointerType(e),
-        );
-        const isPointTooltip = resolvedTooltipPosition === 'point';
-        showTooltip({
-          left: isPointTooltip ? x(d.x)! + x.bandwidth() / 2 : xPoint,
-          top: isPointTooltip ? y(d.y) : yPoint,
-          data: { x: d.x, y: d.y, value: d.value },
-          positionMode: resolvedTooltipPosition,
-        });
-      })
-      .on('pointerleave', hideTooltip)
-      .on('pointerup', hideTooltip)
-      .on('pointercancel', hideTooltip);
-  }, [color, data, hideTooltip, showTooltip, sizeScale, tooltipPosition, x, y]);
+      showTooltip({
+        left: isPointTooltip ? x(datum.x)! + x.bandwidth() / 2 : xPoint,
+        top: isPointTooltip ? y(datum.y) : yPoint,
+        data: { x: datum.x, y: datum.y, value: datum.value },
+        positionMode: resolvedTooltipPosition,
+      });
+    },
+    [showTooltip, tooltipPosition, x, y],
+  );
 
-  useEffect(() => {
-    drawChart();
-  }, [drawChart]);
+  const onPointPointerEnd = useCallback(() => {
+    hideTooltip();
+  }, [hideTooltip]);
 
   return (
     <CartesianFrame
@@ -235,7 +197,23 @@ const ScatterChart = ({
       yScale={y as AxisScale<AxisDomain>}
       showGridVertical={showGridVertical}
       showGridHorizontal={showGridHorizontal}
-      chart={<g className="bar" />}
+      chart={
+        <g className="bar">
+          {data.map((datum) => (
+            <circle
+              key={`${datum.x}-${datum.y}-${datum.value}`}
+              cx={x(datum.x)! + x.bandwidth() / 2}
+              cy={y(datum.y)}
+              r={sizeScale(datum.value)}
+              fill={color}
+              onPointerMove={(event) => onPointPointerMove(event, datum)}
+              onPointerLeave={onPointPointerEnd}
+              onPointerUp={onPointPointerEnd}
+              onPointerCancel={onPointPointerEnd}
+            />
+          ))}
+        </g>
+      }
       tooltip={
         children &&
         tooltip.isOpen &&

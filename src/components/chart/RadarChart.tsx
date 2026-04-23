@@ -1,5 +1,5 @@
-import { curveLinearClosed, lineRadial, max, pointer, scaleLinear, scaleOrdinal, select } from 'd3';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { curveLinearClosed, lineRadial, max, pointer, scaleLinear, scaleOrdinal } from 'd3';
+import { type PointerEvent, useCallback, useMemo, useRef, useState } from 'react';
 
 import { useChartTooltip } from '../../hooks/useChartTooltip';
 import { useParentSize } from '../../hooks/useParentSize';
@@ -137,141 +137,37 @@ const RadarChart = ({
     [angleSlice, rScale],
   );
 
-  const drawChart = useCallback(() => {
-    const svg = select(ref.current);
-    const chartContainer = svg.select('.chart');
-    chartContainer.attr('transform', `translate(${chartWidth / 2}, ${parentHeight / 2})`);
+  const handlePointPointerMove = useCallback(
+    (
+      event: PointerEvent<SVGCircleElement>,
+      point: XYDatum & { index: number; seriesKey: string },
+    ) => {
+      const [xPoint, yPoint] = pointer(event, ref.current ?? event.currentTarget);
+      const pointX =
+        chartWidth / 2 + rScale(point.y) * Math.cos(angleSlice * point.index - Math.PI / 2);
+      const pointY =
+        parentHeight / 2 + rScale(point.y) * Math.sin(angleSlice * point.index - Math.PI / 2);
+      const resolvedTooltipPosition = resolveTooltipPositionMode(
+        tooltipPosition,
+        getEventPointerType(event),
+      );
+      const isPointTooltip = resolvedTooltipPosition === 'point';
 
-    chartContainer
-      .selectAll('path.axis')
-      .data(backLineList)
-      .join('path')
-      .attr('class', 'axis')
-      .attr('d', (d) => radarLine(d))
-      .style('fill', '#CDCDCD')
-      .style('stroke', '#CDCDCD')
-      .style('fill-opacity', 0.1);
-
-    chartContainer
-      .selectAll('line')
-      .data(axisList)
-      .join('line')
-      .attr('x1', 0)
-      .attr('y1', 0)
-      .attr('x2', (_, i) => rScale(maxY! * 1.1) * Math.cos(angleSlice * i - Math.PI / 2))
-      .attr('y2', (_, i) => rScale(maxY! * 1.1) * Math.sin(angleSlice * i - Math.PI / 2))
-      .attr('class', 'line')
-      .style('stroke', 'white')
-      .style('stroke-width', '2px');
-
-    chartContainer
-      .selectAll('text')
-      .data(axisList)
-      .join('text')
-      .style('font-size', '12px')
-      .attr('text-anchor', 'middle')
-      .attr('font-family', 'monospace')
-      .attr('dy', '0.35em')
-      .attr('x', (_, i) => rScale(maxY! * 1.1) * Math.cos(angleSlice * i - Math.PI / 2))
-      .attr('y', (_, i) => rScale(maxY! * 1.1) * Math.sin(angleSlice * i - Math.PI / 2))
-      .text((d) => d);
-
-    chartContainer
-      .selectAll<SVGPathElement, RadarSeriesDatum>('path.data')
-      .data(data, (datum) => datum.key)
-      .join('path')
-      .attr('class', 'data')
-      .attr('d', (d) => radarLine(d.data.map(() => 0)))
-      .transition()
-      .attr('d', (d) => {
-        return radarLine(d.data.map((a) => a.y));
-      })
-      .attr('fill', (d) => color(d.key))
-      .attr('stroke', (d) => color(d.key))
-      .attr('stroke-dasharray', (_, i) => (i % 2 === 1 ? '5,5' : '0,0'))
-      .attr('pointer-events', 'none');
-
-    const seriesGroups = chartContainer
-      .selectAll<SVGGElement, RadarSeriesDatum>('g.series')
-      .data(data, (datum) => datum.key)
-      .join('g')
-      .attr('class', 'series')
-      .attr('stroke', (d) => color(d.key))
-      .attr('fill', (d) => color(d.key));
-
-    const seriesPoints = seriesGroups
-      .selectAll<SVGCircleElement, XYDatum & { index: number; seriesKey: string }>('circle')
-      .data((d) => d.data.map((point, index) => ({ ...point, index, seriesKey: d.key })))
-      .join('circle')
-      .attr('r', 4)
-      .attr('cx', (d) => rScale(d.y) * Math.cos(angleSlice * d.index - Math.PI / 2))
-      .attr('cy', (d) => rScale(d.y) * Math.sin(angleSlice * d.index - Math.PI / 2));
-
-    seriesPoints
-      .on('pointermove', (e, d) => {
-        const [xPoint, yPoint] = pointer(e, ref.current);
-        const pointX = chartWidth / 2 + rScale(d.y) * Math.cos(angleSlice * d.index - Math.PI / 2);
-        const pointY =
-          parentHeight / 2 + rScale(d.y) * Math.sin(angleSlice * d.index - Math.PI / 2);
-        const resolvedTooltipPosition = resolveTooltipPositionMode(
-          tooltipPosition,
-          getEventPointerType(e),
-        );
-        const isPointTooltip = resolvedTooltipPosition === 'point';
-        setActiveKey(d.seriesKey);
-        showTooltip({
-          left: isPointTooltip ? pointX : xPoint,
-          top: isPointTooltip ? pointY : yPoint,
-          data: { x: d.x, y: d.y },
-          positionMode: resolvedTooltipPosition,
-        });
-      })
-      .on('pointerleave', () => {
-        setActiveKey(null);
-        hideTooltip();
-      })
-      .on('pointerup', () => {
-        setActiveKey(null);
-        hideTooltip();
-      })
-      .on('pointercancel', () => {
-        setActiveKey(null);
-        hideTooltip();
+      setActiveKey(point.seriesKey);
+      showTooltip({
+        left: isPointTooltip ? pointX : xPoint,
+        top: isPointTooltip ? pointY : yPoint,
+        data: { x: point.x, y: point.y },
+        positionMode: resolvedTooltipPosition,
       });
-  }, [
-    angleSlice,
-    axisList,
-    backLineList,
-    color,
-    data,
-    hideTooltip,
-    maxY,
-    chartWidth,
-    parentHeight,
-    rScale,
-    radarLine,
-    showTooltip,
-    tooltipPosition,
-  ]);
+    },
+    [angleSlice, chartWidth, parentHeight, rScale, showTooltip, tooltipPosition],
+  );
 
-  useEffect(() => {
-    drawChart();
-  }, [drawChart]);
-
-  useEffect(() => {
-    const svg = select(ref.current);
-    const chartContainer = svg.select('.chart');
-
-    chartContainer
-      .selectAll<SVGPathElement, RadarSeriesDatum>('path.data')
-      .attr('fill-opacity', (d) => (activeKey && d.key !== activeKey ? 0.04 : 0.1))
-      .attr('stroke-opacity', (d) => (activeKey && d.key !== activeKey ? 0.3 : 1))
-      .attr('stroke-width', (d) => (activeKey === d.key ? 3 : 2));
-
-    chartContainer
-      .selectAll<SVGGElement, RadarSeriesDatum>('g.series')
-      .attr('opacity', (d) => (activeKey && d.key !== activeKey ? 0.35 : 1));
-  }, [activeKey, data]);
+  const handlePointPointerEnd = useCallback(() => {
+    setActiveKey(null);
+    hideTooltip();
+  }, [hideTooltip]);
 
   const keyList = useMemo(() => data.map((d) => d.key), [data]);
 
@@ -303,7 +199,99 @@ const RadarChart = ({
       }}
     >
       <svg width={'100%'} height={'100%'} ref={ref}>
-        <g className={'chart'} />
+        <g className={'chart'} transform={`translate(${chartWidth / 2}, ${parentHeight / 2})`}>
+          {backLineList.map((backLine, index) => (
+            <path
+              key={`axis-${index}`}
+              className="axis"
+              d={radarLine(backLine) ?? undefined}
+              fill="#CDCDCD"
+              stroke="#CDCDCD"
+              fillOpacity={0.1}
+            />
+          ))}
+          {axisList.map((axis, index) => {
+            const axisX = rScale(maxY! * 1.1) * Math.cos(angleSlice * index - Math.PI / 2);
+            const axisY = rScale(maxY! * 1.1) * Math.sin(angleSlice * index - Math.PI / 2);
+
+            return (
+              <g key={`${axis}-${index}`}>
+                <line
+                  x1={0}
+                  y1={0}
+                  x2={axisX}
+                  y2={axisY}
+                  className="line"
+                  stroke="white"
+                  strokeWidth={2}
+                />
+                <text
+                  x={axisX}
+                  y={axisY}
+                  fontSize={12}
+                  textAnchor="middle"
+                  fontFamily="monospace"
+                  dy="0.35em"
+                >
+                  {axis}
+                </text>
+              </g>
+            );
+          })}
+          {data.map((series, index) => {
+            const isInactive = activeKey !== null && series.key !== activeKey;
+            const isActive = activeKey === series.key;
+
+            return (
+              <path
+                key={series.key}
+                className="data"
+                d={radarLine(series.data.map((point) => point.y)) ?? undefined}
+                fill={color(series.key)}
+                stroke={color(series.key)}
+                strokeDasharray={index % 2 === 1 ? '5,5' : '0,0'}
+                pointerEvents="none"
+                fillOpacity={isInactive ? 0.04 : 0.1}
+                strokeOpacity={isInactive ? 0.3 : 1}
+                strokeWidth={isActive ? 3 : 2}
+              />
+            );
+          })}
+          {data.map((series) => {
+            const isInactive = activeKey !== null && series.key !== activeKey;
+
+            return (
+              <g
+                key={series.key}
+                className="series"
+                stroke={color(series.key)}
+                fill={color(series.key)}
+                opacity={isInactive ? 0.35 : 1}
+              >
+                {series.data.map((point, index) => {
+                  const pointWithMeta = {
+                    ...point,
+                    index,
+                    seriesKey: series.key,
+                  };
+
+                  return (
+                    <circle
+                      key={`${series.key}-${point.x}-${index}`}
+                      r={4}
+                      cx={rScale(point.y) * Math.cos(angleSlice * index - Math.PI / 2)}
+                      cy={rScale(point.y) * Math.sin(angleSlice * index - Math.PI / 2)}
+                      onPointerMove={(event) => handlePointPointerMove(event, pointWithMeta)}
+                      onPointerLeave={handlePointPointerEnd}
+                      onPointerUp={handlePointPointerEnd}
+                      onPointerCancel={handlePointPointerEnd}
+                    />
+                  );
+                })}
+              </g>
+            );
+          })}
+        </g>
       </svg>
       {children && tooltip.isOpen && tooltip.data && (
         <ChartTooltip

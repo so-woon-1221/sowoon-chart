@@ -1,5 +1,5 @@
-import { extent, scaleLinear, select } from 'd3';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { extent, scaleLinear } from 'd3';
+import { useEffect, useMemo, useRef, useState } from 'react';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-expect-error
 import WordCloudWorker from 'web-worker:./lib/wordcloud.worker.js';
@@ -42,9 +42,9 @@ const Wordcloud = ({
 }: WordcloudProps) => {
   const { ref: parentRef, width: parentWidth, height: parentHeight } = useParentSize();
 
-  const ref = useRef<SVGSVGElement>(null);
   const workerRef = useRef<Worker | null>(null);
   const requestIdRef = useRef(0);
+  const [activeWord, setActiveWord] = useState<string | null>(null);
 
   const layoutWidth = useMemo(() => {
     return Math.max(parentWidth - getLegendRightInset(showLegend, legendPosition), 0);
@@ -70,7 +70,7 @@ const Wordcloud = ({
   );
 
   const colorMap = useMemo(() => {
-    const map = new Map();
+    const map = new Map<string, string>();
     data.forEach((d, i) => {
       map.set(d.x, colorList[i % colorList.length]);
     });
@@ -154,41 +154,7 @@ const Wordcloud = ({
     });
   }, [layoutWidth, padding, parentHeight, shouldRenderWords, wordData]);
 
-  const drawChart = useCallback(() => {
-    const svg = select(ref.current);
-    const chartContainer = svg.select('.word-container');
-    const renderedWords = shouldRenderWords ? (words ?? []) : [];
-
-    chartContainer.attr(
-      'transform',
-      `translate(${(layoutWidth ?? 0) / 2}, ${(parentHeight ?? 0) / 2})`,
-    );
-    const wordEl = chartContainer.selectAll('text').data(renderedWords);
-
-    const wordGroup = wordEl.join('text');
-    wordGroup
-      .style('font-size', () => `0px`)
-      .transition()
-      .style('font-size', (d) => `${d.size}px`)
-      .style('font-family', 'Impact')
-      .attr('text-anchor', 'middle')
-      .attr('cursor', 'pointer')
-      .attr('transform', (d) => `translate(${d.x}, ${d.y}) rotate(${d.rotate})`)
-      .text((d) => d.text as string)
-      .attr('fill', (d) => colorMap.get(d.text));
-    wordGroup
-      .on('mouseover', (e) => {
-        chartContainer.selectAll('text').attr('opacity', 0.5);
-        select(e.target).attr('opacity', 1);
-      })
-      .on('mouseout', () => {
-        chartContainer.selectAll('text').attr('opacity', 1);
-      });
-  }, [colorMap, layoutWidth, parentHeight, shouldRenderWords, words]);
-
-  useEffect(() => {
-    drawChart();
-  }, [drawChart]);
+  const renderedWords = shouldRenderWords ? (words ?? []) : [];
 
   return (
     <div
@@ -199,8 +165,28 @@ const Wordcloud = ({
         position: 'relative',
       }}
     >
-      <svg width={'100%'} height={'100%'} ref={ref}>
-        <g className={'word-container'} />
+      <svg width={'100%'} height={'100%'}>
+        <g
+          className={'word-container'}
+          transform={`translate(${(layoutWidth ?? 0) / 2}, ${(parentHeight ?? 0) / 2})`}
+        >
+          {renderedWords.map((word) => (
+            <text
+              key={word.text}
+              fontSize={word.size}
+              fontFamily="Impact"
+              textAnchor="middle"
+              cursor="pointer"
+              transform={`translate(${word.x}, ${word.y}) rotate(${word.rotate})`}
+              fill={colorMap.get(word.text)}
+              opacity={!activeWord || activeWord === word.text ? 1 : 0.5}
+              onPointerEnter={() => setActiveWord(word.text)}
+              onPointerLeave={() => setActiveWord(null)}
+            >
+              {word.text}
+            </text>
+          ))}
+        </g>
       </svg>
       {resolvedLegendItems.length > 0 && (
         <ChartLegend items={resolvedLegendItems} position={legendPosition} title={legendTitle} />

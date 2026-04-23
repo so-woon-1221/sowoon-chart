@@ -1,5 +1,7 @@
-import { axisBottom, type AxisDomain, type AxisScale, select, type Selection } from 'd3';
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import type { AxisDomain, AxisScale } from 'd3';
+import { useMemo } from 'react';
+
+import { getAxisTickItems, getScaleRange } from './axis.utils';
 
 interface Props {
   scale: AxisScale<AxisDomain>;
@@ -9,32 +11,28 @@ interface Props {
 }
 
 const GridVertical = ({ scale, size, count = 4, top }: Props) => {
-  const ref = useRef<SVGGElement>(null);
+  const ticks = useMemo(() => getAxisTickItems(scale, count), [scale, count]);
+  const range = useMemo(() => getScaleRange(scale), [scale]);
 
-  const gridScale = useMemo(() => {
-    return axisBottom(scale)
-      .ticks(count)
-      .tickSize(-size)
-      .tickFormat(() => '');
-  }, [scale, count, size]);
-
-  const drawGrid = useCallback(() => {
-    const container = select(ref.current) as Selection<SVGGElement, unknown, null, undefined>;
-
-    // Draw grid lines
-    container
-      .attr('transform', `translate(0, ${top})`)
-      .attr('stroke', '#e0e0e044')
-      .attr('stroke-width', 0.5)
-      .attr('stroke-dasharray', '2,2')
-      .call(gridScale);
-  }, [gridScale, top]);
-
-  useEffect(() => {
-    drawGrid();
-  }, [drawGrid]);
-
-  return <g ref={ref} />;
+  return (
+    <g
+      transform={`translate(0, ${top ?? 0})`}
+      stroke="#e0e0e044"
+      strokeWidth={0.5}
+      strokeDasharray="2,2"
+    >
+      <path className="domain" fill="none" d={`M${range.start},0H${range.end}`} />
+      {ticks.map((tick) => (
+        <line
+          key={`${String(tick.value)}-${tick.offset}`}
+          x1={tick.offset}
+          x2={tick.offset}
+          y1={0}
+          y2={-size}
+        />
+      ))}
+    </g>
+  );
 };
 
 export default GridVertical;

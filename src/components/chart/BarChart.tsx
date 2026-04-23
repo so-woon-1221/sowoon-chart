@@ -1,9 +1,13 @@
-import { type AxisDomain, type AxisScale, pointer, scaleBand, scaleLinear, select } from 'd3';
-import { type PointerEventHandler, useCallback, useEffect, useMemo, useRef } from 'react';
+import { type AxisDomain, type AxisScale, pointer, scaleBand, scaleLinear } from 'd3';
+import { type PointerEventHandler, useCallback, useMemo, useRef } from 'react';
 
 import { useChartTooltip } from '../../hooks/useChartTooltip';
 import { useParentSize } from '../../hooks/useParentSize';
-import { getEventPointerType, getTooltipAlign, resolveTooltipPositionMode } from '../../util/tooltip';
+import {
+  getEventPointerType,
+  getTooltipAlign,
+  resolveTooltipPositionMode,
+} from '../../util/tooltip';
 import type {
   ChartProps,
   LegendProps,
@@ -22,21 +26,21 @@ import ChartTooltip from '../common/ChartTooltip';
  */
 export type BarChartProps = ChartProps &
   LegendProps & {
-  /**
-   * Padding between bars.
-   * @default 0.1
-   */
-  padding?: number;
-  /**
-   * Custom tooltip renderer shown while hovering.
-   */
-  children?: TooltipRenderer<XYDatum>;
-  /**
-   * Tooltip anchor position.
-   * `cursor` follows the mouse and `point` sticks to the matched data point.
-   * @default "point"
-   */
-  tooltipPosition?: TooltipPositionMode;
+    /**
+     * Padding between bars.
+     * @default 0.1
+     */
+    padding?: number;
+    /**
+     * Custom tooltip renderer shown while hovering.
+     */
+    children?: TooltipRenderer<XYDatum>;
+    /**
+     * Tooltip anchor position.
+     * `cursor` follows the mouse and `point` sticks to the matched data point.
+     * @default "point"
+     */
+    tooltipPosition?: TooltipPositionMode;
   };
 
 const defaultMargin = {
@@ -116,25 +120,6 @@ const BarChart = ({
     ];
   }, [color, legendItems, seriesName, showLegend]);
 
-  const drawChart = useCallback(() => {
-    const svg = select(ref.current);
-
-    const barArea = svg.select('.bar');
-
-    const bars = barArea.selectAll('rect').data(data);
-    bars
-      .join('rect')
-      .attr('x', (d) => x(d.x) ?? 0)
-      .attr('y', (d) => y(d.y) ?? 0)
-      .attr('fill', color)
-      .attr('width', x.bandwidth())
-      .attr('height', (d) => (parentHeight ?? 0) - y(d.y) - chartMargin.bottom);
-  }, [chartMargin.bottom, color, data, parentHeight, x, y]);
-
-  useEffect(() => {
-    drawChart();
-  }, [drawChart]);
-
   const onMouseMove: PointerEventHandler = useCallback(
     (e) => {
       if (children) {
@@ -184,7 +169,20 @@ const BarChart = ({
       onPointerLeave={onMouseLeave}
       onPointerUp={onMouseLeave}
       onPointerCancel={onMouseLeave}
-      chart={<g className="bar" />}
+      chart={
+        <g className="bar">
+          {data.map((datum, index) => (
+            <rect
+              key={`${datum.x}-${index}`}
+              x={x(datum.x) ?? 0}
+              y={y(datum.y) ?? 0}
+              fill={color}
+              width={x.bandwidth()}
+              height={(parentHeight ?? 0) - y(datum.y) - chartMargin.bottom}
+            />
+          ))}
+        </g>
+      }
       tooltip={
         children &&
         tooltip.isOpen &&
@@ -200,11 +198,7 @@ const BarChart = ({
       }
       overlay={
         resolvedLegendItems.length > 0 ? (
-          <ChartLegend
-            items={resolvedLegendItems}
-            position={legendPosition}
-            title={legendTitle}
-          />
+          <ChartLegend items={resolvedLegendItems} position={legendPosition} title={legendTitle} />
         ) : null
       }
     />

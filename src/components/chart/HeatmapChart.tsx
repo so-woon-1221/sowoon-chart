@@ -1,17 +1,13 @@
-import {
-  type AxisDomain,
-  type AxisScale,
-  extent,
-  pointer,
-  scaleBand,
-  scaleLinear,
-  select,
-} from 'd3';
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { type AxisDomain, type AxisScale, extent, pointer, scaleBand, scaleLinear } from 'd3';
+import { type PointerEvent, useCallback, useMemo, useRef } from 'react';
 
 import { useChartTooltip } from '../../hooks/useChartTooltip';
 import { useParentSize } from '../../hooks/useParentSize';
-import { getEventPointerType, getTooltipAlign, resolveTooltipPositionMode } from '../../util/tooltip';
+import {
+  getEventPointerType,
+  getTooltipAlign,
+  resolveTooltipPositionMode,
+} from '../../util/tooltip';
 import type {
   BaseChartProps,
   LegendProps,
@@ -225,55 +221,34 @@ const HeatmapChart = ({
     }));
   }, [colorScale, legendItems, showLegend, valueDomain]);
 
-  const drawChart = useCallback(() => {
-    const svg = select(ref.current);
-    const chartContainer = svg.select('g.chart');
+  const onCellPointerMove = useCallback(
+    (event: PointerEvent<SVGRectElement>, datum: HeatmapDatum) => {
+      if (!children) {
+        return;
+      }
 
-    const cells = chartContainer
-      .selectAll<SVGRectElement, HeatmapDatum>('rect')
-      .data(data, (datum) => `${datum.x}-${datum.y}`);
+      const [xPoint, yPoint] = pointer(event, ref.current ?? event.currentTarget);
+      const resolvedTooltipPosition = resolveTooltipPositionMode(
+        tooltipPosition,
+        getEventPointerType(event),
+      );
+      const isPointTooltip = resolvedTooltipPosition === 'point';
+      const cellLeft = (x(datum.x) ?? 0) + x.bandwidth() / 2;
+      const cellTop = (y(datum.y) ?? 0) + y.bandwidth() / 2;
 
-    cells
-      .join('rect')
-      .attr('x', (datum) => x(datum.x) ?? 0)
-      .attr('y', (datum) => y(datum.y) ?? 0)
-      .attr('width', x.bandwidth())
-      .attr('height', y.bandwidth())
-      .attr('rx', 4)
-      .attr('ry', 4)
-      .attr('fill', (datum) => colorScale(datum.value))
-      .attr('stroke', '#ffffff')
-      .attr('stroke-width', 1)
-      .attr('cursor', children ? 'pointer' : 'default')
-      .on('pointermove', (event, datum) => {
-        if (!children) {
-          return;
-        }
+      showTooltip({
+        left: isPointTooltip ? cellLeft : xPoint,
+        top: isPointTooltip ? cellTop : yPoint,
+        data: datum,
+        positionMode: resolvedTooltipPosition,
+      });
+    },
+    [children, showTooltip, tooltipPosition, x, y],
+  );
 
-        const [xPoint, yPoint] = pointer(event, ref.current);
-        const resolvedTooltipPosition = resolveTooltipPositionMode(
-          tooltipPosition,
-          getEventPointerType(event),
-        );
-        const isPointTooltip = resolvedTooltipPosition === 'point';
-        const cellLeft = (x(datum.x) ?? 0) + x.bandwidth() / 2;
-        const cellTop = (y(datum.y) ?? 0) + y.bandwidth() / 2;
-
-        showTooltip({
-          left: isPointTooltip ? cellLeft : xPoint,
-          top: isPointTooltip ? cellTop : yPoint,
-          data: datum,
-          positionMode: resolvedTooltipPosition,
-        });
-      })
-      .on('pointerleave', hideTooltip)
-      .on('pointerup', hideTooltip)
-      .on('pointercancel', hideTooltip);
-  }, [children, colorScale, data, hideTooltip, showTooltip, tooltipPosition, x, y]);
-
-  useEffect(() => {
-    drawChart();
-  }, [drawChart]);
+  const onCellPointerEnd = useCallback(() => {
+    hideTooltip();
+  }, [hideTooltip]);
 
   return (
     <CartesianFrame
@@ -288,7 +263,29 @@ const HeatmapChart = ({
       yScale={y as AxisScale<AxisDomain>}
       showGridVertical={showGridVertical}
       showGridHorizontal={showGridHorizontal}
-      chart={<g className="chart" />}
+      chart={
+        <g className="chart">
+          {data.map((datum) => (
+            <rect
+              key={`${datum.x}-${datum.y}`}
+              x={x(datum.x) ?? 0}
+              y={y(datum.y) ?? 0}
+              width={x.bandwidth()}
+              height={y.bandwidth()}
+              rx={4}
+              ry={4}
+              fill={colorScale(datum.value)}
+              stroke="#ffffff"
+              strokeWidth={1}
+              cursor={children ? 'pointer' : 'default'}
+              onPointerMove={(event) => onCellPointerMove(event, datum)}
+              onPointerLeave={onCellPointerEnd}
+              onPointerUp={onCellPointerEnd}
+              onPointerCancel={onCellPointerEnd}
+            />
+          ))}
+        </g>
+      }
       tooltip={
         children &&
         tooltip.isOpen &&
@@ -308,11 +305,7 @@ const HeatmapChart = ({
       }
       overlay={
         resolvedLegendItems.length > 0 ? (
-          <ChartLegend
-            items={resolvedLegendItems}
-            position={legendPosition}
-            title={legendTitle}
-          />
+          <ChartLegend items={resolvedLegendItems} position={legendPosition} title={legendTitle} />
         ) : null
       }
     />

@@ -1,7 +1,4 @@
 import {
-  type D3DragEvent,
-  drag,
-  type DragBehavior,
   extent,
   forceCenter,
   forceCollide,
@@ -12,14 +9,19 @@ import {
   forceY,
   hsl,
   scaleLinear,
-  select,
   type Simulation,
   type SimulationLinkDatum,
   type SimulationNodeDatum,
-  type SubjectPosition,
-  zoom,
 } from 'd3';
-import { useEffect, useMemo, useRef } from 'react';
+import {
+  type PointerEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type WheelEvent,
+} from 'react';
 
 import { useParentSize } from '../../hooks/useParentSize';
 import type { LegendProps } from '../../util/types';
@@ -107,6 +109,36 @@ interface Link extends SimulationLinkDatum<Node> {
   value: number;
 }
 
+type GraphState = {
+  nodes: Node[];
+  links: Link[];
+};
+
+type ZoomTransformState = {
+  x: number;
+  y: number;
+  k: number;
+};
+
+type PanState = {
+  pointerId: number;
+  clientX: number;
+  clientY: number;
+  x: number;
+  y: number;
+};
+
+const initialGraphState: GraphState = {
+  nodes: [],
+  links: [],
+};
+
+const initialTransformState: ZoomTransformState = {
+  x: 0,
+  y: 0,
+  k: 1,
+};
+
 const getScaleDomain = (values: number[], fallback: [number, number]) => {
   const [min, max] = extent(values);
 
@@ -123,6 +155,14 @@ const getScaleDomain = (values: number[], fallback: [number, number]) => {
   }
 
   return [min, max] as [number, number];
+};
+
+const getLinkEndpointId = (endpoint: Node | string) => {
+  return typeof endpoint === 'string' ? endpoint : endpoint.id;
+};
+
+const getLinkEndpointNode = (endpoint: Node | string, nodesById: Map<string, Node>) => {
+  return typeof endpoint === 'string' ? nodesById.get(endpoint) : endpoint;
 };
 
 /**
@@ -145,6 +185,12 @@ const NetworkChart = ({
 }: NetworkChartProps) => {
   const { ref: parentRef, width: parentWidth, height: parentHeight } = useParentSize();
   const ref = useRef<SVGSVGElement>(null);
+  const simulationRef = useRef<Simulation<Node, Link> | null>(null);
+  const draggedNodeIdRef = useRef<string | null>(null);
+  const panStateRef = useRef<PanState | null>(null);
+  const [graph, setGraph] = useState<GraphState>(initialGraphState);
+  const [activeNodeId, setActiveNodeId] = useState<string | null>(null);
+  const [transform, setTransform] = useState<ZoomTransformState>(initialTransformState);
 
   const layoutWidth = useMemo(() => {
     return Math.max(parentWidth - getLegendRightInset(showLegend, legendPosition), 0);
@@ -194,39 +240,53 @@ const NetworkChart = ({
     ];
   }, [color, legendItems, seriesName, showLegend]);
 
-  const nodeDrag = (
-    simulation: Simulation<Node, Link>,
-  ): DragBehavior<Element, Node, SubjectPosition | Node> => {
-    const dragStarted = (event: D3DragEvent<Element, Node, Node>) => {
-      if (!event.active) {
-        simulation.alphaTarget(0.3).restart();
+  const textFill = useMemo(() => {
+    const hslColor = hsl(color);
+    return hslColor.l > 0.5 ? '#000' : '#fff';
+  }, [color]);
+
+  const nodesById = useMemo(() => {
+    return new Map(graph.nodes.map((node) => [node.id, node]));
+  }, [graph.nodes]);
+
+  const connectedNodeIds = useMemo(() => {
+    if (!activeNodeId) {
+      return new Set<string>();
+    }
+
+    const nextConnectedNodeIds = new Set<string>([activeNodeId]);
+
+    graph.links.forEach((link) => {
+      const sourceId = getLinkEndpointId(link.source);
+      const targetId = getLinkEndpointId(link.target);
+
+      if (sourceId === activeNodeId) {
+        nextConnectedNodeIds.add(targetId);
       }
 
-      event.subject.fx = event.subject.x;
-      event.subject.fy = event.subject.y;
-    };
-
-    const dragged = (event: D3DragEvent<Element, Node, Node>) => {
-      event.subject.fx = event.x;
-      event.subject.fy = event.y;
-    };
-
-    const dragEnded = (event: D3DragEvent<Element, Node, Node>) => {
-      if (!event.active) {
-        simulation.alphaTarget(0);
+      if (targetId === activeNodeId) {
+        nextConnectedNodeIds.add(sourceId);
       }
+    });
 
-      event.subject.fx = null;
-      event.subject.fy = null;
-    };
-
-    return drag<Element, Node>().on('start', dragStarted).on('drag', dragged).on('end', dragEnded);
-  };
+    return nextConnectedNodeIds;
+  }, [activeNodeId, graph.links]);
 
   useEffect(() => {
-    const svgElement = ref.current;
-    if (!svgElement || layoutWidth <= 0 || parentHeight <= 0) {
-      return;
+    const resetFrameId = window.requestAnimationFrame(() => {
+      setTransform(initialTransformState);
+      setActiveNodeId(null);
+    });
+
+    if (layoutWidth <= 0 || parentHeight <= 0) {
+      const emptyFrameId = window.requestAnimationFrame(() => {
+        setGraph(initialGraphState);
+      });
+
+      return () => {
+        window.cancelAnimationFrame(resetFrameId);
+        window.cancelAnimationFrame(emptyFrameId);
+      };
     }
 
     const nodes: Node[] = data.nodes.map((node) => ({ ...node }));
@@ -236,17 +296,15 @@ const NetworkChart = ({
       target: link.target,
     }));
 
-    const svg = select(svgElement);
-    const chartArea = svg.select<SVGGElement>('g.chart');
-
-    chartArea.attr('transform', null);
-    svg.on('.zoom', null);
-
     if (nodes.length === 0) {
-      chartArea.select('g.link').selectAll('*').remove();
-      chartArea.select('g.node').selectAll('*').remove();
-      chartArea.select('g.text').selectAll('*').remove();
-      return;
+      const emptyFrameId = window.requestAnimationFrame(() => {
+        setGraph(initialGraphState);
+      });
+
+      return () => {
+        window.cancelAnimationFrame(resetFrameId);
+        window.cancelAnimationFrame(emptyFrameId);
+      };
     }
 
     const simulation = forceSimulation<Node>(nodes)
@@ -267,159 +325,202 @@ const NetworkChart = ({
       .force('x', forceX(layoutWidth))
       .force('y', forceY(parentHeight));
 
-    const nodeLinkStatus: Record<string, boolean> = {};
-    links.forEach((link) => {
-      if (typeof link.source !== 'string' && typeof link.target !== 'string') {
-        if (link.source.index !== undefined && link.target.index !== undefined) {
-          nodeLinkStatus[`${link.source.index},${link.target.index}`] = true;
-          nodeLinkStatus[`${link.target.index},${link.source.index}`] = true;
-        }
-      }
-    });
+    simulationRef.current = simulation;
 
-    const isConnected = (sourceNode: Node, targetNode: Node) => {
-      return (
-        Boolean(nodeLinkStatus[`${sourceNode.index},${targetNode.index}`]) ||
-        sourceNode.index === targetNode.index ||
-        Boolean(nodeLinkStatus[`${targetNode.index},${sourceNode.index}`])
-      );
+    let frameId: number | null = null;
+    const flushGraph = () => {
+      frameId = null;
+      setGraph({
+        nodes: [...nodes],
+        links: [...links],
+      });
     };
 
-    let highlightedNodeId: string | null = null;
-
-    const link = chartArea
-      .select('g.link')
-      .selectAll('line')
-      .data(links)
-      .join('line')
-      .style('stroke-width', (currentLink) => strokeScale(+currentLink.value))
-      .attr('stroke', '#aaa');
-
-    const text = chartArea
-      .select('g.text')
-      .selectAll('text')
-      .data(nodes)
-      .join('text')
-      .text((node) => node.id)
-      .attr('fill', () => {
-        const hslColor = hsl(color);
-        return hslColor.l > 0.5 ? '#000' : '#fff';
-      })
-      .attr('text-anchor', 'middle')
-      .attr('alignment-baseline', 'middle')
-      .attr('font-size', (node) => `${circleScale(node.value) / 1.5}px`)
-      .attr('pointer-events', 'none');
-
-    const node = chartArea
-      .select('g.node')
-      .selectAll('circle')
-      .data(nodes)
-      .join('circle')
-      .attr('r', (currentNode) => circleScale(+currentNode.value))
-      .attr('fill', color)
-      .on('pointerenter', (_, hoveredNode) => {
-        if (highlightedNodeId === hoveredNode.id) {
-          return;
-        }
-
-        highlightedNodeId = hoveredNode.id;
-
-        node
-          .interrupt()
-          .attr('r', (candidate) => {
-            if (isConnected(hoveredNode, candidate)) {
-              return 30;
-            }
-
-            return circleScale(candidate.value);
-          })
-          .style('opacity', (candidate) => {
-            return isConnected(hoveredNode, candidate) ? 1 : 0.1;
-          });
-
-        link.interrupt().style('opacity', (currentLink) => {
-          if (hoveredNode === currentLink.source || hoveredNode === currentLink.target) {
-            return 1;
-          }
-
-          return 0.1;
-        });
-
-        text.interrupt().attr('font-size', (candidate) => {
-          if (isConnected(hoveredNode, candidate)) {
-            return '20px';
-          }
-
-          return `${circleScale(candidate.value) / 1.5}px`;
-        });
-      })
-      .on('pointerleave', () => {
-        if (highlightedNodeId === null) {
-          return;
-        }
-
-        highlightedNodeId = null;
-
-        node
-          .interrupt()
-          .attr('r', (currentNode) => circleScale(currentNode.value))
-          .style('opacity', 1);
-
-        link.interrupt().style('opacity', 1);
-
-        text
-          .interrupt()
-          .attr('font-size', (currentNode) => `${circleScale(currentNode.value) / 1.5}px`);
-      })
-      .call(nodeDrag(simulation) as never);
-
     const ticked = () => {
-      link
-        .attr('x1', (currentLink) =>
-          typeof currentLink.source === 'string' ? 0 : (currentLink.source.x ?? 0),
-        )
-        .attr('y1', (currentLink) =>
-          typeof currentLink.source === 'string' ? 0 : (currentLink.source.y ?? 0),
-        )
-        .attr('x2', (currentLink) =>
-          typeof currentLink.target === 'string' ? 0 : (currentLink.target.x ?? 0),
-        )
-        .attr('y2', (currentLink) =>
-          typeof currentLink.target === 'string' ? 0 : (currentLink.target.y ?? 0),
-        );
+      if (frameId !== null) {
+        return;
+      }
 
-      node
-        .attr('cx', (currentNode) => currentNode.x ?? 0)
-        .attr('cy', (currentNode) => currentNode.y ?? 0);
-
-      text
-        .attr('x', (currentNode) => currentNode.x ?? 0)
-        .attr('y', (currentNode) => currentNode.y ?? 0);
+      frameId = window.requestAnimationFrame(flushGraph);
     };
 
     ticked();
     simulation.on('tick', ticked);
     simulation.alpha(1).restart();
 
-    const zoomBehavior = zoom<SVGSVGElement, unknown>()
-      .scaleExtent([0.7, 1.5])
-      .extent([
-        [0, 0],
-        [layoutWidth, parentHeight],
-      ])
-      .on('zoom', (event) => {
-        chartArea.attr('transform', event.transform.toString());
-      });
-
-    svg.call(zoomBehavior as never);
-
     return () => {
       simulation.stop();
       simulation.on('tick', null);
-      svg.on('.zoom', null);
-      chartArea.selectAll('*').interrupt();
+      if (simulationRef.current === simulation) {
+        simulationRef.current = null;
+      }
+      window.cancelAnimationFrame(resetFrameId);
+      if (frameId !== null) {
+        window.cancelAnimationFrame(frameId);
+      }
     };
-  }, [circleScale, color, data.links, data.nodes, layoutWidth, parentHeight, strokeScale]);
+  }, [circleScale, data.links, data.nodes, layoutWidth, parentHeight]);
+
+  const getSvgPoint = useCallback((event: { clientX: number; clientY: number }) => {
+    const svg = ref.current;
+
+    if (!svg) {
+      return {
+        x: event.clientX,
+        y: event.clientY,
+      };
+    }
+
+    const point = svg.createSVGPoint();
+    point.x = event.clientX;
+    point.y = event.clientY;
+
+    const screenMatrix = svg.getScreenCTM();
+    if (!screenMatrix) {
+      return {
+        x: event.clientX,
+        y: event.clientY,
+      };
+    }
+
+    const svgPoint = point.matrixTransform(screenMatrix.inverse());
+    return {
+      x: svgPoint.x,
+      y: svgPoint.y,
+    };
+  }, []);
+
+  const getChartPoint = useCallback(
+    (event: { clientX: number; clientY: number }) => {
+      const point = getSvgPoint(event);
+
+      return {
+        x: (point.x - transform.x) / transform.k,
+        y: (point.y - transform.y) / transform.k,
+      };
+    },
+    [getSvgPoint, transform],
+  );
+
+  const handleWheel = useCallback(
+    (event: WheelEvent<SVGSVGElement>) => {
+      event.preventDefault();
+
+      const point = getSvgPoint(event);
+      const zoomStep = event.deltaY < 0 ? 1.1 : 0.9;
+
+      setTransform((prev) => {
+        const nextScale = Math.min(1.5, Math.max(0.7, prev.k * zoomStep));
+
+        return {
+          k: nextScale,
+          x: point.x - ((point.x - prev.x) / prev.k) * nextScale,
+          y: point.y - ((point.y - prev.y) / prev.k) * nextScale,
+        };
+      });
+    },
+    [getSvgPoint],
+  );
+
+  const handleSvgPointerDown = useCallback(
+    (event: PointerEvent<SVGSVGElement>) => {
+      if (event.button !== 0) {
+        return;
+      }
+
+      panStateRef.current = {
+        pointerId: event.pointerId,
+        clientX: event.clientX,
+        clientY: event.clientY,
+        x: transform.x,
+        y: transform.y,
+      };
+      event.currentTarget.setPointerCapture(event.pointerId);
+    },
+    [transform.x, transform.y],
+  );
+
+  const handleSvgPointerMove = useCallback((event: PointerEvent<SVGSVGElement>) => {
+    const panState = panStateRef.current;
+
+    if (!panState || panState.pointerId !== event.pointerId) {
+      return;
+    }
+
+    setTransform((prev) => ({
+      ...prev,
+      x: panState.x + event.clientX - panState.clientX,
+      y: panState.y + event.clientY - panState.clientY,
+    }));
+  }, []);
+
+  const handleSvgPointerEnd = useCallback((event: PointerEvent<SVGSVGElement>) => {
+    if (panStateRef.current?.pointerId !== event.pointerId) {
+      return;
+    }
+
+    panStateRef.current = null;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+  }, []);
+
+  const handleNodePointerDown = useCallback(
+    (event: PointerEvent<SVGCircleElement>, node: Node) => {
+      event.stopPropagation();
+      draggedNodeIdRef.current = node.id;
+      event.currentTarget.setPointerCapture(event.pointerId);
+
+      const chartPoint = getChartPoint(event);
+      node.fx = chartPoint.x;
+      node.fy = chartPoint.y;
+
+      const simulation = simulationRef.current;
+      if (simulation) {
+        simulation.alphaTarget(0.3).restart();
+      }
+    },
+    [getChartPoint],
+  );
+
+  const handleNodePointerMove = useCallback(
+    (event: PointerEvent<SVGCircleElement>, node: Node) => {
+      if (draggedNodeIdRef.current !== node.id) {
+        return;
+      }
+
+      event.stopPropagation();
+      const chartPoint = getChartPoint(event);
+      node.fx = chartPoint.x;
+      node.fy = chartPoint.y;
+
+      setGraph((prev) => ({
+        nodes: [...prev.nodes],
+        links: [...prev.links],
+      }));
+    },
+    [getChartPoint],
+  );
+
+  const handleNodePointerEnd = useCallback((event: PointerEvent<SVGCircleElement>, node: Node) => {
+    if (draggedNodeIdRef.current !== node.id) {
+      return;
+    }
+
+    event.stopPropagation();
+    draggedNodeIdRef.current = null;
+    node.fx = null;
+    node.fy = null;
+
+    const simulation = simulationRef.current;
+    if (simulation) {
+      simulation.alphaTarget(0);
+    }
+
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+  }, []);
 
   return (
     <div
@@ -430,11 +531,88 @@ const NetworkChart = ({
         position: 'relative',
       }}
     >
-      <svg width={'100%'} height={'100%'} ref={ref} className="z-[-1]">
-        <g className="chart">
-          <g className="link" />
-          <g className="node" />
-          <g className="text" />
+      <svg
+        width={'100%'}
+        height={'100%'}
+        ref={ref}
+        className="z-[-1]"
+        style={{ touchAction: 'none' }}
+        onWheel={handleWheel}
+        onPointerDown={handleSvgPointerDown}
+        onPointerMove={handleSvgPointerMove}
+        onPointerUp={handleSvgPointerEnd}
+        onPointerCancel={handleSvgPointerEnd}
+        onPointerLeave={handleSvgPointerEnd}
+      >
+        <g
+          className="chart"
+          transform={`translate(${transform.x}, ${transform.y}) scale(${transform.k})`}
+        >
+          <g className="link">
+            {graph.links.map((link, index) => {
+              const source = getLinkEndpointNode(link.source, nodesById);
+              const target = getLinkEndpointNode(link.target, nodesById);
+              const sourceId = getLinkEndpointId(link.source);
+              const targetId = getLinkEndpointId(link.target);
+              const isActiveLink =
+                !activeNodeId || sourceId === activeNodeId || targetId === activeNodeId;
+
+              return (
+                <line
+                  key={`${sourceId}-${targetId}-${index}`}
+                  x1={source?.x ?? 0}
+                  y1={source?.y ?? 0}
+                  x2={target?.x ?? 0}
+                  y2={target?.y ?? 0}
+                  stroke="#aaa"
+                  strokeWidth={strokeScale(+link.value)}
+                  opacity={isActiveLink ? 1 : 0.1}
+                />
+              );
+            })}
+          </g>
+          <g className="node">
+            {graph.nodes.map((node) => {
+              const isConnected = !activeNodeId || connectedNodeIds.has(node.id);
+
+              return (
+                <circle
+                  key={node.id}
+                  r={activeNodeId && isConnected ? 30 : circleScale(+node.value)}
+                  cx={node.x ?? 0}
+                  cy={node.y ?? 0}
+                  fill={color}
+                  opacity={isConnected ? 1 : 0.1}
+                  onPointerEnter={() => setActiveNodeId(node.id)}
+                  onPointerLeave={() => setActiveNodeId(null)}
+                  onPointerDown={(event) => handleNodePointerDown(event, node)}
+                  onPointerMove={(event) => handleNodePointerMove(event, node)}
+                  onPointerUp={(event) => handleNodePointerEnd(event, node)}
+                  onPointerCancel={(event) => handleNodePointerEnd(event, node)}
+                />
+              );
+            })}
+          </g>
+          <g className="text">
+            {graph.nodes.map((node) => {
+              const isConnected = !activeNodeId || connectedNodeIds.has(node.id);
+
+              return (
+                <text
+                  key={node.id}
+                  x={node.x ?? 0}
+                  y={node.y ?? 0}
+                  fill={textFill}
+                  textAnchor="middle"
+                  alignmentBaseline="middle"
+                  fontSize={activeNodeId && isConnected ? 20 : circleScale(node.value) / 1.5}
+                  pointerEvents="none"
+                >
+                  {node.id}
+                </text>
+              );
+            })}
+          </g>
         </g>
       </svg>
       {resolvedLegendItems.length > 0 && (

@@ -8,14 +8,17 @@ import {
   scaleBand,
   scaleLinear,
   scaleOrdinal,
-  select,
   stack,
 } from 'd3';
-import { type PointerEventHandler, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { type PointerEventHandler, useCallback, useMemo, useRef, useState } from 'react';
 
 import { useChartTooltip } from '../../hooks/useChartTooltip';
 import { useParentSize } from '../../hooks/useParentSize';
-import { getEventPointerType, getTooltipAlign, resolveTooltipPositionMode } from '../../util/tooltip';
+import {
+  getEventPointerType,
+  getTooltipAlign,
+  resolveTooltipPositionMode,
+} from '../../util/tooltip';
 import type {
   CartesianChartProps,
   ColorListProps,
@@ -61,8 +64,7 @@ export type StackLineChartProps = CartesianChartProps<GroupedDatum> &
      * @default { x: 10, y: -10 }
      */
     tooltipOffset?: TooltipOffset;
-  } &
-  LegendProps &
+  } & LegendProps &
   TooltipInteractionProps;
 
 const defaultMargin = {
@@ -180,21 +182,12 @@ const StackLineChart = ({
     }));
   }, [colorScale, keyList, legendItems, showLegend]);
 
-  const drawChart = useCallback(() => {
-    const svg = select(ref.current);
-    const chartContainer = svg.select('g.chart');
-
-    const lineArea = chartContainer.selectAll('.line').data(series);
-    lineArea
-      .join('g')
-      .attr('class', 'line')
-      .attr('fill', 'none')
-      .attr('stroke', (d) => colorScale(d.key) as string)
-      .attr('stroke-width', 1.5)
-      .selectAll('path')
-      .data((d) => [d])
-      .join('path')
-      .attr('d', (d) => lineGenerator(d as [number, number][]));
+  const lineSeries = useMemo(() => {
+    return series.map((stackedSeries) => ({
+      key: stackedSeries.key,
+      color: colorScale(stackedSeries.key) as string,
+      path: lineGenerator(stackedSeries as [number, number][]),
+    }));
   }, [colorScale, lineGenerator, series]);
 
   const onMouseMove: PointerEventHandler = useCallback(
@@ -263,10 +256,6 @@ const StackLineChart = ({
     hideTooltip();
   }, [hideTooltip]);
 
-  useEffect(() => {
-    drawChart();
-  }, [drawChart]);
-
   const activeOverlay =
     activePoint && (showCrosshair || showActiveMarker) ? (
       <g className="active-overlay" pointerEvents="none">
@@ -324,7 +313,17 @@ const StackLineChart = ({
       onPointerCancel={onMouseLeave}
       chart={
         <>
-          <g className="chart" />
+          <g className="chart">
+            {lineSeries.map((stackedSeries) => (
+              <path
+                key={stackedSeries.key}
+                d={stackedSeries.path ?? undefined}
+                fill="none"
+                stroke={stackedSeries.color}
+                strokeWidth={1.5}
+              />
+            ))}
+          </g>
           {activeOverlay}
         </>
       }
@@ -345,11 +344,7 @@ const StackLineChart = ({
       }
       overlay={
         resolvedLegendItems.length > 0 ? (
-          <ChartLegend
-            items={resolvedLegendItems}
-            position={legendPosition}
-            title={legendTitle}
-          />
+          <ChartLegend items={resolvedLegendItems} position={legendPosition} title={legendTitle} />
         ) : null
       }
     />

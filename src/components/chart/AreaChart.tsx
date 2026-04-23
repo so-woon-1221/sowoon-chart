@@ -1,18 +1,13 @@
-import {
-  area,
-  type AxisDomain,
-  type AxisScale,
-  line,
-  pointer,
-  scaleBand,
-  scaleLinear,
-  select,
-} from 'd3';
-import { type PointerEventHandler, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { area, type AxisDomain, type AxisScale, line, pointer, scaleBand, scaleLinear } from 'd3';
+import { type PointerEventHandler, useCallback, useMemo, useRef, useState } from 'react';
 
 import { useChartTooltip } from '../../hooks/useChartTooltip';
 import { useParentSize } from '../../hooks/useParentSize';
-import { getEventPointerType, getTooltipAlign, resolveTooltipPositionMode } from '../../util/tooltip';
+import {
+  getEventPointerType,
+  getTooltipAlign,
+  resolveTooltipPositionMode,
+} from '../../util/tooltip';
 import type {
   ChartProps,
   LegendProps,
@@ -38,21 +33,21 @@ type ActivePoint = {
 export type AreaChartProps = ChartProps &
   LegendProps &
   TooltipInteractionProps & {
-  /**
-   * Custom tooltip renderer shown while hovering.
-   */
-  children?: TooltipRenderer<XYDatum>;
-  /**
-   * Fill the area using a vertical gradient based on `color`.
-   * @default false
-   */
-  fillGradient?: boolean;
-  /**
-   * Draw a line stroke over the filled area.
-   * @default true
-   */
-  drawStroke?: boolean;
-};
+    /**
+     * Custom tooltip renderer shown while hovering.
+     */
+    children?: TooltipRenderer<XYDatum>;
+    /**
+     * Fill the area using a vertical gradient based on `color`.
+     * @default false
+     */
+    fillGradient?: boolean;
+    /**
+     * Draw a line stroke over the filled area.
+     * @default true
+     */
+    drawStroke?: boolean;
+  };
 
 const defaultMargin = {
   top: 20,
@@ -147,29 +142,9 @@ const AreaChart = ({
       .y((d) => y(d.y));
   }, [x, y]);
 
-  const drawChart = useCallback(() => {
-    const svg = select(ref.current);
-    const chartContainer = svg.select('.chart');
-
-    const fillColor = fillGradient ? `url(#${color})` : color;
-
-    const chartArea = chartContainer.selectAll('path.area').data([data]);
-    chartArea.join('path').attr('class', 'area').attr('d', areaGenerator).attr('fill', fillColor);
-
-    if (drawStroke) {
-      const line = chartContainer.selectAll('path.line').data([data]);
-      line
-        .join('path')
-        .attr('class', 'line')
-        .attr('d', lineGenerator)
-        .attr('fill', 'none')
-        .attr('stroke', color);
-    }
-  }, [areaGenerator, color, data, drawStroke, fillGradient, lineGenerator]);
-
-  useEffect(() => {
-    drawChart();
-  }, [drawChart]);
+  const areaPath = useMemo(() => areaGenerator(data), [areaGenerator, data]);
+  const linePath = useMemo(() => lineGenerator(data), [data, lineGenerator]);
+  const fillColor = fillGradient ? `url(#${color})` : color;
 
   const onMouseMove: PointerEventHandler = useCallback(
     (e) => {
@@ -211,7 +186,17 @@ const AreaChart = ({
         });
       }
     },
-    [children, color, data, showActiveMarker, showCrosshair, showTooltip, tooltipPosition, xPositions, y],
+    [
+      children,
+      color,
+      data,
+      showActiveMarker,
+      showCrosshair,
+      showTooltip,
+      tooltipPosition,
+      xPositions,
+      y,
+    ],
   );
 
   const onMouseLeave = useCallback(() => {
@@ -285,7 +270,12 @@ const AreaChart = ({
       onPointerCancel={onMouseLeave}
       chart={
         <>
-          <g className="chart" />
+          <g className="chart">
+            <path className="area" d={areaPath ?? undefined} fill={fillColor} />
+            {drawStroke && (
+              <path className="line" d={linePath ?? undefined} fill="none" stroke={color} />
+            )}
+          </g>
           {activeOverlay}
         </>
       }
@@ -305,11 +295,7 @@ const AreaChart = ({
       }
       overlay={
         resolvedLegendItems.length > 0 ? (
-          <ChartLegend
-            items={resolvedLegendItems}
-            position={legendPosition}
-            title={legendTitle}
-          />
+          <ChartLegend items={resolvedLegendItems} position={legendPosition} title={legendTitle} />
         ) : null
       }
     />

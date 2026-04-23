@@ -1,5 +1,5 @@
-import { type AxisDomain, type AxisScale, line, pointer, scaleBand, scaleLinear, select } from 'd3';
-import { type PointerEventHandler, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { type AxisDomain, type AxisScale, line, pointer, scaleBand, scaleLinear } from 'd3';
+import { type PointerEventHandler, useCallback, useMemo, useRef, useState } from 'react';
 
 import { useChartTooltip } from '../../hooks/useChartTooltip';
 import { useParentSize } from '../../hooks/useParentSize';
@@ -117,6 +117,14 @@ const LineChart = ({
     ];
   }, [color, legendItems, seriesName, showLegend]);
 
+  const linePath = useMemo(() => {
+    const lineGenerator = line<XYDatum>()
+      .x((d) => x(d.x)! + x.bandwidth() / 2)
+      .y((d) => y(d.y));
+
+    return lineGenerator(data);
+  }, [data, x, y]);
+
   const onMouseMove: PointerEventHandler = useCallback(
     (e) => {
       if (!children && !showActiveMarker && !showCrosshair) {
@@ -175,28 +183,6 @@ const LineChart = ({
     hideTooltip();
   }, [hideTooltip]);
 
-  const drawChart = useCallback(() => {
-    const svg = select(ref.current);
-
-    const lineArea = svg.select('.line');
-    const lineGenerator = line<XYDatum>()
-      .x((d) => x(d.x)! + x.bandwidth() / 2)
-      .y((d) => y(d.y));
-
-    lineArea
-      .selectAll('path')
-      .data([data])
-      .join('path')
-      .attr('d', lineGenerator)
-      .attr('fill', 'none')
-      .attr('stroke', color)
-      .attr('stroke-width', 1.5);
-  }, [color, data, x, y]);
-
-  useEffect(() => {
-    drawChart();
-  }, [drawChart]);
-
   const activeOverlay =
     activePoint && (showCrosshair || showActiveMarker) ? (
       <g className="active-overlay" pointerEvents="none">
@@ -254,7 +240,7 @@ const LineChart = ({
       onPointerCancel={onMouseLeave}
       chart={
         <>
-          <g className="line" />
+          <path d={linePath ?? undefined} fill="none" stroke={color} strokeWidth={1.5} />
           {activeOverlay}
         </>
       }

@@ -6,13 +6,16 @@ import {
   scaleBand,
   scaleLinear,
   scaleOrdinal,
-  select,
 } from 'd3';
-import { type PointerEventHandler, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { type PointerEventHandler, useCallback, useMemo, useRef, useState } from 'react';
 
 import { useChartTooltip } from '../../hooks/useChartTooltip';
 import { useParentSize } from '../../hooks/useParentSize';
-import { getEventPointerType, getTooltipAlign, resolveTooltipPositionMode } from '../../util/tooltip';
+import {
+  getEventPointerType,
+  getTooltipAlign,
+  resolveTooltipPositionMode,
+} from '../../util/tooltip';
 import type {
   CartesianChartProps,
   ColorListProps,
@@ -53,8 +56,7 @@ export type GroupLineChartProps = CartesianChartProps<GroupedDatum> &
      * @default { x: 10, y: -10 }
      */
     tooltipOffset?: TooltipOffset;
-  } &
-  LegendProps &
+  } & LegendProps &
   TooltipInteractionProps;
 
 const defaultMargin = {
@@ -152,28 +154,13 @@ const GroupLineChart = ({
     }));
   }, [colorScale, keyList, legendItems, showLegend]);
 
-  const drawChart = useCallback(() => {
-    const svg = select(ref.current);
-    const chartContainer = svg.select('.chart');
-
-    const lines = chartContainer.selectAll('g').data(keyList);
-
-    lines
-      .join('g')
-      .attr('stroke', (key) => colorScale(key) as string)
-      .selectAll('path')
-      .data((key) => {
-        return [data.map((d) => ({ x: d.x, y: d[key] as number }))];
-      })
-      .join('path')
-      .attr('fill', 'none')
-      .attr('stroke-width', 1.5)
-      .attr('d', lineGenerator);
+  const lineSeries = useMemo(() => {
+    return keyList.map((key) => ({
+      key,
+      color: colorScale(key) as string,
+      path: lineGenerator(data.map((d) => ({ x: d.x, y: d[key] as number }))),
+    }));
   }, [colorScale, data, keyList, lineGenerator]);
-
-  useEffect(() => {
-    drawChart();
-  }, [drawChart]);
 
   const onMouseMove: PointerEventHandler = useCallback(
     (e) => {
@@ -316,7 +303,17 @@ const GroupLineChart = ({
       onPointerCancel={onMouseLeave}
       chart={
         <>
-          <g className="chart" />
+          <g className="chart">
+            {lineSeries.map((series) => (
+              <path
+                key={series.key}
+                d={series.path ?? undefined}
+                fill="none"
+                stroke={series.color}
+                strokeWidth={1.5}
+              />
+            ))}
+          </g>
           {activeOverlay}
         </>
       }
@@ -339,11 +336,7 @@ const GroupLineChart = ({
       }
       overlay={
         resolvedLegendItems.length > 0 ? (
-          <ChartLegend
-            items={resolvedLegendItems}
-            position={legendPosition}
-            title={legendTitle}
-          />
+          <ChartLegend items={resolvedLegendItems} position={legendPosition} title={legendTitle} />
         ) : null
       }
     />

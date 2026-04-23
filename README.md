@@ -212,12 +212,7 @@ tooltip은 `children` render prop으로 전달합니다.
 타입도 패키지 루트에서 바로 가져올 수 있습니다.
 
 ```tsx
-import type {
-  LineChartProps,
-  TooltipPositionMode,
-  TooltipRenderer,
-  XYDatum,
-} from 'sowoon-chart';
+import type { LineChartProps, TooltipPositionMode, TooltipRenderer, XYDatum } from 'sowoon-chart';
 ```
 
 ## 차트별 데이터 형태
@@ -289,7 +284,15 @@ export default function ExportExample() {
 
   return (
     <div ref={ref}>
-      <ExportImage ref={ref} fileName="sales-chart" fileFormat="png" />
+      <ExportImage
+        ref={ref}
+        fileName="sales-chart"
+        fileFormat="png"
+        loadingIcon="저장 중..."
+        onError={(error) => {
+          console.error(error);
+        }}
+      />
       <BarChart
         data={[
           { x: 'A', y: 10 },

@@ -1,5 +1,5 @@
 import { toPng, toSvg } from 'html-to-image';
-import { type ForwardedRef, forwardRef, type ReactNode, useCallback } from 'react';
+import { type ForwardedRef, forwardRef, type ReactNode, useCallback, useState } from 'react';
 
 type ExportTarget = HTMLElement | SVGSVGElement;
 
@@ -12,6 +12,11 @@ export interface ExportImageProps {
    */
   icon?: ReactNode;
   /**
+   * Content rendered while the image export is in progress.
+   * @default "exporting..."
+   */
+  loadingIcon?: ReactNode;
+  /**
    * File name used for the downloaded asset.
    * @default "download"
    */
@@ -21,6 +26,16 @@ export interface ExportImageProps {
    * @default "svg"
    */
   fileFormat?: 'svg' | 'png';
+  /**
+   * Disable the export button.
+   * The button is also disabled while an export is already in progress.
+   * @default false
+   */
+  disabled?: boolean;
+  /**
+   * Called when image export fails.
+   */
+  onError?: (error: unknown) => void;
 }
 
 const hasCurrentTarget = (
@@ -33,34 +48,58 @@ const hasCurrentTarget = (
  * Renders a lightweight button that exports the attached chart element as an image.
  */
 const ExportImage = (
-  { icon = 'svg', fileName = 'download', fileFormat = 'svg' }: ExportImageProps,
+  {
+    icon = 'svg',
+    loadingIcon = 'exporting...',
+    fileName = 'download',
+    fileFormat = 'svg',
+    disabled = false,
+    onError,
+  }: ExportImageProps,
   ref: ForwardedRef<ExportTarget>,
 ) => {
+  const [isExporting, setIsExporting] = useState(false);
   const toImage = fileFormat === 'png' ? toPng : toSvg;
+  const isDisabled = disabled || isExporting;
 
   const onClick = useCallback(async () => {
-    if (!hasCurrentTarget(ref) || !ref.current) {
+    if (isDisabled) {
       return;
     }
 
-    const image = await toImage(ref.current as unknown as HTMLElement);
-    const link = document.createElement('a');
-    link.download = `${fileName}.${fileFormat}`;
-    link.href = image;
-    link.click();
-  }, [fileFormat, fileName, ref, toImage]);
+    try {
+      setIsExporting(true);
+
+      if (!hasCurrentTarget(ref) || !ref.current) {
+        throw new Error('Export target is not available.');
+      }
+
+      const image = await toImage(ref.current as unknown as HTMLElement);
+      const link = document.createElement('a');
+      link.download = `${fileName}.${fileFormat}`;
+      link.href = image;
+      link.click();
+    } catch (error) {
+      onError?.(error);
+    } finally {
+      setIsExporting(false);
+    }
+  }, [fileFormat, fileName, isDisabled, onError, ref, toImage]);
 
   return (
     <button
       onClick={onClick}
-      title={`Export as ${fileFormat.toUpperCase()}`}
+      disabled={isDisabled}
+      aria-busy={isExporting}
+      title={isExporting ? 'Exporting image...' : `Export as ${fileFormat.toUpperCase()}`}
       style={{
         background: 'none',
         border: 'none',
-        cursor: 'pointer',
+        cursor: isDisabled ? 'not-allowed' : 'pointer',
+        opacity: isDisabled ? 0.6 : 1,
       }}
     >
-      {icon}
+      {isExporting ? loadingIcon : icon}
     </button>
   );
 };

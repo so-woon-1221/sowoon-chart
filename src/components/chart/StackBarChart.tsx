@@ -1,19 +1,22 @@
 import {
   type AxisDomain,
   type AxisScale,
-  bisectCenter,
   pointer,
   scaleBand,
   scaleLinear,
   scaleOrdinal,
-  select,
+  type SeriesPoint,
   stack,
 } from 'd3';
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { type PointerEvent, useCallback, useMemo, useRef } from 'react';
 
 import { useChartTooltip } from '../../hooks/useChartTooltip';
 import { useParentSize } from '../../hooks/useParentSize';
-import { getEventPointerType, getTooltipAlign, resolveTooltipPositionMode } from '../../util/tooltip';
+import {
+  getEventPointerType,
+  getTooltipAlign,
+  resolveTooltipPositionMode,
+} from '../../util/tooltip';
 import type {
   CartesianChartProps,
   ColorListProps,
@@ -34,27 +37,27 @@ import type { GroupedDatum } from './GroupedChart.types';
  */
 export type StackBarChartProps = CartesianChartProps<GroupedDatum> &
   ColorListProps & {
-  /**
-   * Data to display in the chart.
-   */
-  data: GroupedDatum[];
-  /**
-   * Gap between the bars.
-   */
-  padding?: number;
-  /**
-   * Children to render in the
-   * tooltip when it is open.
-   * It will receive the tooltipData
-   * as a prop.
-   * @param tooltipData - The data of the tooltip.
-   * @returns The children to render.
-   */
-  children?: TooltipRenderer<XYDatum>;
-  /**
-   * Offset of the tooltip from the mouse pointer.
-   * @default { x: 10, y: -10 }
-   */
+    /**
+     * Data to display in the chart.
+     */
+    data: GroupedDatum[];
+    /**
+     * Gap between the bars.
+     */
+    padding?: number;
+    /**
+     * Children to render in the
+     * tooltip when it is open.
+     * It will receive the tooltipData
+     * as a prop.
+     * @param tooltipData - The data of the tooltip.
+     * @returns The children to render.
+     */
+    children?: TooltipRenderer<XYDatum>;
+    /**
+     * Offset of the tooltip from the mouse pointer.
+     * @default { x: 10, y: -10 }
+     */
     tooltipOffset?: TooltipOffset;
     /**
      * Tooltip anchor position.
@@ -62,8 +65,7 @@ export type StackBarChartProps = CartesianChartProps<GroupedDatum> &
      * @default "point"
      */
     tooltipPosition?: TooltipPositionMode;
-  } &
-  LegendProps;
+  } & LegendProps;
 
 const defaultMargin = {
   top: 20,
@@ -158,52 +160,32 @@ const StackBarChart = ({
     [chartMargin.bottom, chartMargin.top, max, parentHeight],
   );
 
-  const drawChart = useCallback(() => {
-    const svg = select(ref.current);
-    const chartContainer = svg.select('.chart');
+  const onSegmentPointerMove = useCallback(
+    (event: PointerEvent<SVGRectElement>, segment: SeriesPoint<GroupedDatum>) => {
+      if (!children) {
+        return;
+      }
 
-    const barGroup = chartContainer
-      .selectAll('g')
-      .data(series)
-      .join('g')
-      .attr('fill', (d) => colorScale(d.key) as string);
-    barGroup
-      .selectAll('rect')
-      .data((d) => d)
-      .join('rect')
-      .attr('x', (d) => x(d.data.x)!)
-      .attr('y', (d) => y(d[1]))
-      .attr('height', (d) => y(d[0]) - y(d[1]))
-      .attr('width', x.bandwidth())
-      .on('pointermove', (e, d) => {
-        const [pointerX, pointerY] = pointer(e, ref.current);
-        const xPoint = pointerX - x.bandwidth() / 2;
-        const xDomain = data.map((d) => x(d.x) as number);
-        const index = Math.max(0, Math.min(xDomain.length - 1, bisectCenter(xDomain, xPoint)));
+      const [pointerX, pointerY] = pointer(event, ref.current ?? event.currentTarget);
+      const resolvedTooltipPosition = resolveTooltipPositionMode(
+        tooltipPosition,
+        getEventPointerType(event),
+      );
+      const isPointTooltip = resolvedTooltipPosition === 'point';
 
-        const point = data[index];
-        if (point) {
-          const resolvedTooltipPosition = resolveTooltipPositionMode(
-            tooltipPosition,
-            getEventPointerType(e),
-          );
-          const isPointTooltip = resolvedTooltipPosition === 'point';
-          showTooltip({
-            left: isPointTooltip ? x(point.x)! + x.bandwidth() / 2 : pointerX,
-            top: isPointTooltip ? y(d[1]) : pointerY,
-            data: { x: d.data.x, y: d[1] - d[0] },
-            positionMode: resolvedTooltipPosition,
-          });
-        }
-      })
-      .on('pointerleave', hideTooltip)
-      .on('pointerup', hideTooltip)
-      .on('pointercancel', hideTooltip);
-  }, [colorScale, data, hideTooltip, series, showTooltip, tooltipPosition, x, y]);
+      showTooltip({
+        left: isPointTooltip ? x(segment.data.x)! + x.bandwidth() / 2 : pointerX,
+        top: isPointTooltip ? y(segment[1]) : pointerY,
+        data: { x: segment.data.x, y: segment[1] - segment[0] },
+        positionMode: resolvedTooltipPosition,
+      });
+    },
+    [children, showTooltip, tooltipPosition, x, y],
+  );
 
-  useEffect(() => {
-    drawChart();
-  }, [drawChart]);
+  const onSegmentPointerEnd = useCallback(() => {
+    hideTooltip();
+  }, [hideTooltip]);
 
   return (
     <CartesianFrame
@@ -218,7 +200,27 @@ const StackBarChart = ({
       yScale={y as AxisScale<AxisDomain>}
       showGridVertical={showGridVertical}
       showGridHorizontal={showGridHorizontal}
-      chart={<g className="chart" />}
+      chart={
+        <g className="chart">
+          {series.map((stackedSeries) => (
+            <g key={stackedSeries.key} fill={colorScale(stackedSeries.key) as string}>
+              {stackedSeries.map((segment) => (
+                <rect
+                  key={`${stackedSeries.key}-${segment.data.x}`}
+                  x={x(segment.data.x)!}
+                  y={y(segment[1])}
+                  height={y(segment[0]) - y(segment[1])}
+                  width={x.bandwidth()}
+                  onPointerMove={(event) => onSegmentPointerMove(event, segment)}
+                  onPointerLeave={onSegmentPointerEnd}
+                  onPointerUp={onSegmentPointerEnd}
+                  onPointerCancel={onSegmentPointerEnd}
+                />
+              ))}
+            </g>
+          ))}
+        </g>
+      }
       tooltip={
         children &&
         tooltip.isOpen &&
@@ -238,11 +240,7 @@ const StackBarChart = ({
       }
       overlay={
         resolvedLegendItems.length > 0 ? (
-          <ChartLegend
-            items={resolvedLegendItems}
-            position={legendPosition}
-            title={legendTitle}
-          />
+          <ChartLegend items={resolvedLegendItems} position={legendPosition} title={legendTitle} />
         ) : null
       }
     />

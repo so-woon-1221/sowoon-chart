@@ -1,5 +1,5 @@
-import { hierarchy, hsl, pack, select } from 'd3';
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { hierarchy, hsl, pack } from 'd3';
+import { useMemo } from 'react';
 
 import { useParentSize } from '../../hooks/useParentSize';
 import type { ChartProps, LegendProps } from '../../util/types';
@@ -38,7 +38,6 @@ const BubbleChart = ({
   children,
 }: BubbleChartProps) => {
   const { ref: parentRef, height: parentHeight, width: parentWidth } = useParentSize();
-  const ref = useRef<SVGSVGElement>(null);
 
   const layoutWidth = useMemo(() => {
     return Math.max(parentWidth - getLegendRightInset(showLegend, legendPosition), 0);
@@ -81,44 +80,9 @@ const BubbleChart = ({
     ];
   }, [colorList, legendItems, seriesName, showLegend]);
 
-  const drawChart = useCallback(() => {
-    const svg = select(ref.current);
-    const chartContainer = svg.select('.chart');
-
-    const packData = packGenerator(root).descendants().slice(1);
-
-    chartContainer
-      .selectAll('circle')
-      .data(packData)
-      .join('circle')
-      .attr('r', (d) => d.r)
-      .attr('cx', (d) => d.x)
-      .attr('cy', (d) => d.y)
-      .attr('fill', (_, i) => colorList[i % colorList.length]);
-
-    chartContainer
-      .selectAll('text')
-      .data(packData)
-      .join('text')
-      .attr('x', (d) => d.x)
-      .attr('y', (d) => d.y)
-      .attr('text-anchor', 'middle')
-      .attr('dominant-baseline', 'middle')
-      .attr('font-size', 15)
-      .attr('font-weight', 700)
-      .attr('font-family', 'Noto Sans KR')
-      .attr('fill', (_, i) => {
-        const backgroundColor = colorList[i % colorList.length];
-        const colorObj = hsl(backgroundColor);
-
-        return colorObj.l > 0.5 ? 'black' : 'white';
-      })
-      .text((d) => d.data.key);
-  }, [colorList, packGenerator, root]);
-
-  useEffect(() => {
-    drawChart();
-  }, [drawChart]);
+  const bubbleNodes = useMemo(() => {
+    return packGenerator(root).descendants().slice(1);
+  }, [packGenerator, root]);
 
   return (
     <div
@@ -129,8 +93,34 @@ const BubbleChart = ({
         position: 'relative',
       }}
     >
-      <svg width={'100%'} height={'100%'} ref={ref}>
-        <g className={'chart'} />
+      <svg width={'100%'} height={'100%'}>
+        <g className={'chart'}>
+          {bubbleNodes.map((node, index) => {
+            const fill = colorList[index % colorList.length];
+
+            return <circle key={node.data.key} r={node.r} cx={node.x} cy={node.y} fill={fill} />;
+          })}
+          {bubbleNodes.map((node, index) => {
+            const backgroundColor = colorList[index % colorList.length];
+            const colorObj = hsl(backgroundColor);
+
+            return (
+              <text
+                key={node.data.key}
+                x={node.x}
+                y={node.y}
+                textAnchor="middle"
+                dominantBaseline="middle"
+                fontSize={15}
+                fontWeight={700}
+                fontFamily="Noto Sans KR"
+                fill={colorObj.l > 0.5 ? 'black' : 'white'}
+              >
+                {node.data.key}
+              </text>
+            );
+          })}
+        </g>
       </svg>
       {children}
       {resolvedLegendItems.length > 0 && (

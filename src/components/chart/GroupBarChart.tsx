@@ -1,17 +1,13 @@
-import {
-  type AxisDomain,
-  type AxisScale,
-  pointer,
-  scaleBand,
-  scaleLinear,
-  scaleOrdinal,
-  select,
-} from 'd3';
-import { type PointerEventHandler, useCallback, useEffect, useMemo, useRef } from 'react';
+import { type AxisDomain, type AxisScale, pointer, scaleBand, scaleLinear, scaleOrdinal } from 'd3';
+import { type PointerEventHandler, useCallback, useMemo, useRef } from 'react';
 
 import { useChartTooltip } from '../../hooks/useChartTooltip';
 import { useParentSize } from '../../hooks/useParentSize';
-import { getEventPointerType, getTooltipAlign, resolveTooltipPositionMode } from '../../util/tooltip';
+import {
+  getEventPointerType,
+  getTooltipAlign,
+  resolveTooltipPositionMode,
+} from '../../util/tooltip';
 import type {
   CartesianChartProps,
   ColorListProps,
@@ -33,31 +29,30 @@ import type { GroupedDatum } from './GroupedChart.types';
  */
 export type GroupBarChartProps = CartesianChartProps<GroupedDatum> &
   ColorListProps & {
-  /**
-   * Data to display in the chart.
-   */
-  data: GroupedDatum[];
-  /**
-   * Tooltip children.
-   * @param tooltipData
-   */
-  children?: TooltipRenderer<XYDatum>;
-  /**
-   * Offset of the tooltip from the mouse pointer.
-   */
-  tooltipOffset?: TooltipOffset;
-  /**
-   * Gap between bars.
-   */
-  padding?: number;
-  /**
-   * Tooltip anchor position.
-   * `cursor` follows the mouse and `point` sticks to the matched data point.
-   * @default "point"
-   */
+    /**
+     * Data to display in the chart.
+     */
+    data: GroupedDatum[];
+    /**
+     * Tooltip children.
+     * @param tooltipData
+     */
+    children?: TooltipRenderer<XYDatum>;
+    /**
+     * Offset of the tooltip from the mouse pointer.
+     */
+    tooltipOffset?: TooltipOffset;
+    /**
+     * Gap between bars.
+     */
+    padding?: number;
+    /**
+     * Tooltip anchor position.
+     * `cursor` follows the mouse and `point` sticks to the matched data point.
+     * @default "point"
+     */
     tooltipPosition?: TooltipPositionMode;
-  } &
-  LegendProps;
+  } & LegendProps;
 
 const defaultMargin = {
   top: 20,
@@ -166,32 +161,6 @@ const GroupBarChart = ({
     }));
   }, [colorScale, keyList, legendItems, showLegend]);
 
-  const drawChart = useCallback(() => {
-    const svg = select(ref.current);
-    const chartContainer = svg.select('.chart');
-
-    const bars = chartContainer
-      .selectAll('.bar-group')
-      .data(data)
-      .join('g')
-      .attr('class', 'bar-group')
-      .attr('transform', (d) => `translate(${x(d.x)}, 0)`);
-
-    bars
-      .selectAll('rect')
-      .data((d) => keyList.map((key) => ({ key, value: d[key] as number })))
-      .join('rect')
-      .attr('x', (d) => barScale(d.key)!)
-      .attr('y', (d) => y(d.value))
-      .attr('width', barScale.bandwidth())
-      .attr('height', (d) => y(0) - y(d.value))
-      .attr('fill', (d) => colorScale(d.key) as string);
-  }, [barScale, colorScale, data, keyList, x, y]);
-
-  useEffect(() => {
-    drawChart();
-  }, [drawChart]);
-
   const onMouseMove: PointerEventHandler = useCallback(
     (e) => {
       if (children) {
@@ -258,7 +227,32 @@ const GroupBarChart = ({
       onPointerLeave={onMouseLeave}
       onPointerUp={onMouseLeave}
       onPointerCancel={onMouseLeave}
-      chart={<g className="chart" />}
+      chart={
+        <g className="chart">
+          {data.map((datum, groupIndex) => (
+            <g
+              key={`${datum.x}-${groupIndex}`}
+              className="bar-group"
+              transform={`translate(${x(datum.x) ?? 0}, 0)`}
+            >
+              {keyList.map((key) => {
+                const value = datum[key] as number;
+
+                return (
+                  <rect
+                    key={key}
+                    x={barScale(key) ?? 0}
+                    y={y(value)}
+                    width={barScale.bandwidth()}
+                    height={y(0) - y(value)}
+                    fill={colorScale(key) as string}
+                  />
+                );
+              })}
+            </g>
+          ))}
+        </g>
+      }
       tooltip={
         children &&
         tooltip.isOpen &&
@@ -278,11 +272,7 @@ const GroupBarChart = ({
       }
       overlay={
         resolvedLegendItems.length > 0 ? (
-          <ChartLegend
-            items={resolvedLegendItems}
-            position={legendPosition}
-            title={legendTitle}
-          />
+          <ChartLegend items={resolvedLegendItems} position={legendPosition} title={legendTitle} />
         ) : null
       }
     />
