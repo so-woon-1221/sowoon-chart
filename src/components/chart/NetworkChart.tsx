@@ -24,7 +24,7 @@ import {
 } from 'react';
 
 import { useParentSize } from '../../hooks/useParentSize';
-import type { LegendProps } from '../../util/types';
+import type { AccessibilityProps, LegendProps } from '../../util/types';
 import ChartLegend from '../common/ChartLegend';
 import { getLegendRightInset } from '../common/chartLegend.utils';
 
@@ -57,45 +57,46 @@ export interface NetworkChartData {
 /**
  * Props for {@link NetworkChart}.
  */
-export type NetworkChartProps = LegendProps & {
-  /**
-   * Node and link data rendered by the force simulation.
-   */
-  data: NetworkChartData;
-  /**
-   * Fixed outer width. Defaults to the parent width.
-   */
-  width?: number;
-  /**
-   * Fixed outer height. Defaults to the parent height.
-   */
-  height?: number;
-  /**
-   * Maximum node radius.
-   * @default 45
-   */
-  maxRadius?: number;
-  /**
-   * Minimum node radius.
-   * @default 15
-   */
-  minRadius?: number;
-  /**
-   * Maximum link stroke width.
-   * @default 10
-   */
-  maxLinkWidth?: number;
-  /**
-   * Minimum link stroke width.
-   * @default 1
-   */
-  minLinkWidth?: number;
-  /**
-   * Base node color.
-   * @default "#9b5de5"
-   */
-  color?: string;
-};
+export type NetworkChartProps = AccessibilityProps &
+  LegendProps & {
+    /**
+     * Node and link data rendered by the force simulation.
+     */
+    data: NetworkChartData;
+    /**
+     * Fixed outer width. Defaults to the parent width.
+     */
+    width?: number;
+    /**
+     * Fixed outer height. Defaults to the parent height.
+     */
+    height?: number;
+    /**
+     * Maximum node radius.
+     * @default 45
+     */
+    maxRadius?: number;
+    /**
+     * Minimum node radius.
+     * @default 15
+     */
+    minRadius?: number;
+    /**
+     * Maximum link stroke width.
+     * @default 10
+     */
+    maxLinkWidth?: number;
+    /**
+     * Minimum link stroke width.
+     * @default 1
+     */
+    minLinkWidth?: number;
+    /**
+     * Base node color.
+     * @default "#9b5de5"
+     */
+    color?: string;
+  };
 
 interface Node extends SimulationNodeDatum {
   id: string;
@@ -182,6 +183,8 @@ const NetworkChart = ({
   legendPosition = 'bottom',
   legendTitle,
   seriesName,
+  ariaLabel = 'Network chart',
+  ariaDescription,
 }: NetworkChartProps) => {
   const { ref: parentRef, width: parentWidth, height: parentHeight } = useParentSize();
   const ref = useRef<SVGSVGElement>(null);
@@ -536,6 +539,8 @@ const NetworkChart = ({
         height={'100%'}
         ref={ref}
         className="z-[-1]"
+        role="img"
+        aria-label={ariaLabel}
         style={{ touchAction: 'none' }}
         onWheel={handleWheel}
         onPointerDown={handleSvgPointerDown}
@@ -544,6 +549,8 @@ const NetworkChart = ({
         onPointerCancel={handleSvgPointerEnd}
         onPointerLeave={handleSvgPointerEnd}
       >
+        <title>{ariaLabel}</title>
+        {ariaDescription && <desc>{ariaDescription}</desc>}
         <g
           className="chart"
           transform={`translate(${transform.x}, ${transform.y}) scale(${transform.k})`}
@@ -583,8 +590,17 @@ const NetworkChart = ({
                   cy={node.y ?? 0}
                   fill={color}
                   opacity={isConnected ? 1 : 0.1}
+                  tabIndex={0}
+                  aria-label={`${node.id}: ${node.value}`}
                   onPointerEnter={() => setActiveNodeId(node.id)}
                   onPointerLeave={() => setActiveNodeId(null)}
+                  onFocus={() => setActiveNodeId(node.id)}
+                  onBlur={() => setActiveNodeId(null)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Escape') {
+                      setActiveNodeId(null);
+                    }
+                  }}
                   onPointerDown={(event) => handleNodePointerDown(event, node)}
                   onPointerMove={(event) => handleNodePointerMove(event, node)}
                   onPointerUp={(event) => handleNodePointerEnd(event, node)}

@@ -209,6 +209,19 @@ tooltip은 `children` render prop으로 전달합니다.
 </PieChart>
 ```
 
+## 접근성
+
+차트 SVG에는 기본 accessible name이 들어가며, 필요하면 `ariaLabel`과 `ariaDescription`으로 더 구체적인 설명을 전달할 수 있습니다.
+
+```tsx
+<LineChart
+  data={data}
+  height={320}
+  ariaLabel="월별 매출 라인 차트"
+  ariaDescription="A, B, C 월의 매출 추이를 비교합니다."
+/>
+```
+
 타입도 패키지 루트에서 바로 가져올 수 있습니다.
 
 ```tsx
@@ -288,7 +301,8 @@ export default function ExportExample() {
         ref={ref}
         fileName="sales-chart"
         fileFormat="png"
-        loadingIcon="저장 중..."
+        ariaLabel="매출 차트 PNG 저장"
+        loadingIcon="저장 중…"
         onError={(error) => {
           console.error(error);
         }}

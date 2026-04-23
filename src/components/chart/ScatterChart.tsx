@@ -110,6 +110,8 @@ const ScatterChart = ({
   showGridHorizontal = true,
   showGridVertical = true,
   tooltipPosition = 'cursor',
+  ariaLabel = 'Scatter chart',
+  ariaDescription,
 }: ScatterChartProps) => {
   const { tooltip, showTooltip, hideTooltip } = useChartTooltip<ScatterDatum>();
 
@@ -184,6 +186,18 @@ const ScatterChart = ({
     hideTooltip();
   }, [hideTooltip]);
 
+  const onPointFocus = useCallback(
+    (datum: ScatterDatum) => {
+      showTooltip({
+        left: x(datum.x)! + x.bandwidth() / 2,
+        top: y(datum.y),
+        data: { x: datum.x, y: datum.y, value: datum.value },
+        positionMode: 'point',
+      });
+    },
+    [showTooltip, x, y],
+  );
+
   return (
     <CartesianFrame
       containerRef={parentRef}
@@ -197,6 +211,8 @@ const ScatterChart = ({
       yScale={y as AxisScale<AxisDomain>}
       showGridVertical={showGridVertical}
       showGridHorizontal={showGridHorizontal}
+      ariaLabel={ariaLabel}
+      ariaDescription={ariaDescription}
       chart={
         <g className="bar">
           {data.map((datum) => (
@@ -206,10 +222,19 @@ const ScatterChart = ({
               cy={y(datum.y)}
               r={sizeScale(datum.value)}
               fill={color}
+              tabIndex={children ? 0 : undefined}
+              aria-label={children ? `${datum.x}: ${datum.y}, value ${datum.value}` : undefined}
               onPointerMove={(event) => onPointPointerMove(event, datum)}
               onPointerLeave={onPointPointerEnd}
               onPointerUp={onPointPointerEnd}
               onPointerCancel={onPointPointerEnd}
+              onFocus={() => onPointFocus(datum)}
+              onBlur={onPointPointerEnd}
+              onKeyDown={(event) => {
+                if (event.key === 'Escape') {
+                  onPointPointerEnd();
+                }
+              }}
             />
           ))}
         </g>

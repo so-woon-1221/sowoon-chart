@@ -9,7 +9,10 @@ import { getLegendRightInset } from '../common/chartLegend.utils';
 /**
  * Props for {@link BubbleChart}.
  */
-export type BubbleChartProps = Pick<ChartProps, 'width' | 'height' | 'data' | 'margin'> &
+export type BubbleChartProps = Pick<
+  ChartProps,
+  'ariaDescription' | 'ariaLabel' | 'data' | 'height' | 'margin' | 'width'
+> &
   LegendProps & {
     /**
      * Reserved slot for future custom overlays.
@@ -36,6 +39,8 @@ const BubbleChart = ({
   legendTitle,
   seriesName,
   children,
+  ariaLabel = 'Bubble chart',
+  ariaDescription,
 }: BubbleChartProps) => {
   const { ref: parentRef, height: parentHeight, width: parentWidth } = useParentSize();
 
@@ -93,7 +98,9 @@ const BubbleChart = ({
         position: 'relative',
       }}
     >
-      <svg width={'100%'} height={'100%'}>
+      <svg width={'100%'} height={'100%'} role="img" aria-label={ariaLabel}>
+        <title>{ariaLabel}</title>
+        {ariaDescription && <desc>{ariaDescription}</desc>}
         <g className={'chart'}>
           {bubbleNodes.map((node, index) => {
             const fill = colorList[index % colorList.length];

@@ -93,6 +93,8 @@ const GroupBarChart = ({
   minY,
   showGridHorizontal = true,
   showGridVertical = true,
+  ariaLabel = 'Grouped bar chart',
+  ariaDescription,
 }: GroupBarChartProps) => {
   const { tooltip, showTooltip, hideTooltip } = useChartTooltip<XYDatum>();
 
@@ -210,6 +212,31 @@ const GroupBarChart = ({
     hideTooltip();
   }, [hideTooltip]);
 
+  const onBarFocus = useCallback(
+    (datum: GroupedDatum, key: string) => {
+      if (!children) {
+        return;
+      }
+
+      const value = datum[key];
+
+      if (typeof value !== 'number') {
+        return;
+      }
+
+      showTooltip({
+        left: (x(datum.x) ?? 0) + (barScale(key) ?? 0) + barScale.bandwidth() / 2,
+        top: y(value),
+        data: {
+          x: datum.x,
+          y: value,
+        },
+        positionMode: 'point',
+      });
+    },
+    [barScale, children, showTooltip, x, y],
+  );
+
   return (
     <CartesianFrame
       containerRef={parentRef}
@@ -227,6 +254,8 @@ const GroupBarChart = ({
       onPointerLeave={onMouseLeave}
       onPointerUp={onMouseLeave}
       onPointerCancel={onMouseLeave}
+      ariaLabel={ariaLabel}
+      ariaDescription={ariaDescription}
       chart={
         <g className="chart">
           {data.map((datum, groupIndex) => (
@@ -246,6 +275,15 @@ const GroupBarChart = ({
                     width={barScale.bandwidth()}
                     height={y(0) - y(value)}
                     fill={colorScale(key) as string}
+                    tabIndex={children ? 0 : undefined}
+                    aria-label={children ? `${key}, ${datum.x}: ${value}` : undefined}
+                    onFocus={() => onBarFocus(datum, key)}
+                    onBlur={onMouseLeave}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Escape') {
+                        onMouseLeave();
+                      }
+                    }}
                   />
                 );
               })}

@@ -68,6 +68,8 @@ const LineChart = ({
   showCrosshair = false,
   showGridVertical = true,
   showGridHorizontal = true,
+  ariaLabel = 'Line chart',
+  ariaDescription,
 }: LineChartProps) => {
   const { tooltip, showTooltip, hideTooltip } = useChartTooltip<XYDatum>();
   const [activePoint, setActivePoint] = useState<ActivePoint | null>(null);
@@ -183,6 +185,32 @@ const LineChart = ({
     hideTooltip();
   }, [hideTooltip]);
 
+  const onPointFocus = useCallback(
+    (point: XYDatum, index: number) => {
+      const pointLeft = xPositions[index];
+      const pointTop = y(point.y);
+      const nextActivePoint = {
+        left: pointLeft,
+        top: pointTop,
+        color,
+      };
+
+      setActivePoint((prev) => {
+        return isSameActivePoint(prev, nextActivePoint) ? prev : nextActivePoint;
+      });
+
+      if (children) {
+        showTooltip({
+          left: pointLeft,
+          top: pointTop,
+          data: point,
+          positionMode: 'point',
+        });
+      }
+    },
+    [children, color, showTooltip, xPositions, y],
+  );
+
   const activeOverlay =
     activePoint && (showCrosshair || showActiveMarker) ? (
       <g className="active-overlay" pointerEvents="none">
@@ -238,9 +266,34 @@ const LineChart = ({
       onPointerLeave={onMouseLeave}
       onPointerUp={onMouseLeave}
       onPointerCancel={onMouseLeave}
+      ariaLabel={ariaLabel}
+      ariaDescription={ariaDescription}
       chart={
         <>
           <path d={linePath ?? undefined} fill="none" stroke={color} strokeWidth={1.5} />
+          {(children || showActiveMarker || showCrosshair) && (
+            <g className="keyboard-targets">
+              {data.map((datum, index) => (
+                <circle
+                  key={`${datum.x}-${index}-keyboard-target`}
+                  cx={xPositions[index]}
+                  cy={y(datum.y)}
+                  r={8}
+                  fill="transparent"
+                  stroke="transparent"
+                  tabIndex={0}
+                  aria-label={`${datum.x}: ${datum.y}`}
+                  onFocus={() => onPointFocus(datum, index)}
+                  onBlur={onMouseLeave}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Escape') {
+                      onMouseLeave();
+                    }
+                  }}
+                />
+              ))}
+            </g>
+          )}
           {activeOverlay}
         </>
       }

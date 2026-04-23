@@ -25,6 +25,8 @@ const ChartTooltip = ({ left, top, children, offsetX, offsetY, align = 'cursor' 
   return (
     <div
       ref={ref}
+      role="tooltip"
+      aria-live="polite"
       style={{
         position: 'absolute',
         left,

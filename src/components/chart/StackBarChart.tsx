@@ -94,6 +94,8 @@ const StackBarChart = ({
   tooltipPosition = 'point',
   showGridHorizontal = true,
   showGridVertical = true,
+  ariaLabel = 'Stacked bar chart',
+  ariaDescription,
 }: StackBarChartProps) => {
   const { tooltip, showTooltip, hideTooltip } = useChartTooltip<XYDatum>();
 
@@ -187,6 +189,22 @@ const StackBarChart = ({
     hideTooltip();
   }, [hideTooltip]);
 
+  const onSegmentFocus = useCallback(
+    (segment: SeriesPoint<GroupedDatum>) => {
+      if (!children) {
+        return;
+      }
+
+      showTooltip({
+        left: x(segment.data.x)! + x.bandwidth() / 2,
+        top: y(segment[1]),
+        data: { x: segment.data.x, y: segment[1] - segment[0] },
+        positionMode: 'point',
+      });
+    },
+    [children, showTooltip, x, y],
+  );
+
   return (
     <CartesianFrame
       containerRef={parentRef}
@@ -200,6 +218,8 @@ const StackBarChart = ({
       yScale={y as AxisScale<AxisDomain>}
       showGridVertical={showGridVertical}
       showGridHorizontal={showGridHorizontal}
+      ariaLabel={ariaLabel}
+      ariaDescription={ariaDescription}
       chart={
         <g className="chart">
           {series.map((stackedSeries) => (
@@ -211,10 +231,23 @@ const StackBarChart = ({
                   y={y(segment[1])}
                   height={y(segment[0]) - y(segment[1])}
                   width={x.bandwidth()}
+                  tabIndex={children ? 0 : undefined}
+                  aria-label={
+                    children
+                      ? `${stackedSeries.key}, ${segment.data.x}: ${segment[1] - segment[0]}`
+                      : undefined
+                  }
                   onPointerMove={(event) => onSegmentPointerMove(event, segment)}
                   onPointerLeave={onSegmentPointerEnd}
                   onPointerUp={onSegmentPointerEnd}
                   onPointerCancel={onSegmentPointerEnd}
+                  onFocus={() => onSegmentFocus(segment)}
+                  onBlur={onSegmentPointerEnd}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Escape') {
+                      onSegmentPointerEnd();
+                    }
+                  }}
                 />
               ))}
             </g>

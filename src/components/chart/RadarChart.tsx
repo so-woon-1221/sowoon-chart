@@ -31,7 +31,10 @@ export type RadarSeriesDatum = {
 /**
  * Props for {@link RadarChart}.
  */
-export type RadarChartProps = Pick<BaseChartProps, 'width' | 'height'> & {
+export type RadarChartProps = Pick<
+  BaseChartProps,
+  'ariaDescription' | 'ariaLabel' | 'height' | 'width'
+> & {
   /**
    * Data to display in the chart.
    */
@@ -82,6 +85,8 @@ const RadarChart = ({
   legendItems,
   legendPosition = 'bottom',
   legendTitle,
+  ariaLabel = 'Radar chart',
+  ariaDescription,
 }: RadarChartProps) => {
   const { tooltip, showTooltip, hideTooltip } = useChartTooltip<XYDatum>();
   const [activeKey, setActiveKey] = useState<string | null>(null);
@@ -169,6 +174,29 @@ const RadarChart = ({
     hideTooltip();
   }, [hideTooltip]);
 
+  const handlePointFocus = useCallback(
+    (point: XYDatum & { index: number; seriesKey: string }) => {
+      const pointX =
+        chartWidth / 2 + rScale(point.y) * Math.cos(angleSlice * point.index - Math.PI / 2);
+      const pointY =
+        parentHeight / 2 + rScale(point.y) * Math.sin(angleSlice * point.index - Math.PI / 2);
+
+      setActiveKey(point.seriesKey);
+
+      if (!children) {
+        return;
+      }
+
+      showTooltip({
+        left: pointX,
+        top: pointY,
+        data: { x: point.x, y: point.y },
+        positionMode: 'point',
+      });
+    },
+    [angleSlice, chartWidth, children, parentHeight, rScale, showTooltip],
+  );
+
   const keyList = useMemo(() => data.map((d) => d.key), [data]);
 
   const resolvedLegendItems = useMemo(() => {
@@ -198,7 +226,9 @@ const RadarChart = ({
         justifyContent: 'center',
       }}
     >
-      <svg width={'100%'} height={'100%'} ref={ref}>
+      <svg width={'100%'} height={'100%'} ref={ref} role="img" aria-label={ariaLabel}>
+        <title>{ariaLabel}</title>
+        {ariaDescription && <desc>{ariaDescription}</desc>}
         <g className={'chart'} transform={`translate(${chartWidth / 2}, ${parentHeight / 2})`}>
           {backLineList.map((backLine, index) => (
             <path
@@ -281,10 +311,19 @@ const RadarChart = ({
                       r={4}
                       cx={rScale(point.y) * Math.cos(angleSlice * index - Math.PI / 2)}
                       cy={rScale(point.y) * Math.sin(angleSlice * index - Math.PI / 2)}
+                      tabIndex={0}
+                      aria-label={`${series.key}, ${point.x}: ${point.y}`}
                       onPointerMove={(event) => handlePointPointerMove(event, pointWithMeta)}
                       onPointerLeave={handlePointPointerEnd}
                       onPointerUp={handlePointPointerEnd}
                       onPointerCancel={handlePointPointerEnd}
+                      onFocus={() => handlePointFocus(pointWithMeta)}
+                      onBlur={handlePointPointerEnd}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Escape') {
+                          handlePointPointerEnd();
+                        }
+                      }}
                     />
                   );
                 })}

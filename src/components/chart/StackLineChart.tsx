@@ -8,6 +8,7 @@ import {
   scaleBand,
   scaleLinear,
   scaleOrdinal,
+  type SeriesPoint,
   stack,
 } from 'd3';
 import { type PointerEventHandler, useCallback, useMemo, useRef, useState } from 'react';
@@ -96,6 +97,8 @@ const StackLineChart = ({
   showCrosshair = false,
   showGridVertical = true,
   showGridHorizontal = true,
+  ariaLabel = 'Stacked line chart',
+  ariaDescription,
 }: StackLineChartProps) => {
   const { tooltip, showTooltip, hideTooltip } = useChartTooltip<XYDatum>();
   const [activePoint, setActivePoint] = useState<ActivePoint | null>(null);
@@ -256,6 +259,38 @@ const StackLineChart = ({
     hideTooltip();
   }, [hideTooltip]);
 
+  const onPointFocus = useCallback(
+    (segment: SeriesPoint<GroupedDatum>, seriesIndex: number, index: number) => {
+      const point = data[index];
+      const pointValue = segment[1] as number;
+      const baseValue = segment[0] as number;
+      const pointLeft = xPositions[index];
+      const pointTop = y(pointValue);
+      const nextActivePoint = {
+        left: pointLeft,
+        top: pointTop,
+        color: colorScale(keyList[seriesIndex]) as string,
+      };
+
+      setActivePoint((prev) => {
+        return isSameActivePoint(prev, nextActivePoint) ? prev : nextActivePoint;
+      });
+
+      if (children && point) {
+        showTooltip({
+          left: pointLeft,
+          top: pointTop,
+          data: {
+            x: point.x,
+            y: pointValue - baseValue,
+          },
+          positionMode: 'point',
+        });
+      }
+    },
+    [children, colorScale, data, keyList, showTooltip, xPositions, y],
+  );
+
   const activeOverlay =
     activePoint && (showCrosshair || showActiveMarker) ? (
       <g className="active-overlay" pointerEvents="none">
@@ -311,6 +346,8 @@ const StackLineChart = ({
       onPointerLeave={onMouseLeave}
       onPointerUp={onMouseLeave}
       onPointerCancel={onMouseLeave}
+      ariaLabel={ariaLabel}
+      ariaDescription={ariaDescription}
       chart={
         <>
           <g className="chart">
@@ -324,6 +361,33 @@ const StackLineChart = ({
               />
             ))}
           </g>
+          {(children || showActiveMarker || showCrosshair) && (
+            <g className="keyboard-targets">
+              {series.map((stackedSeries, seriesIndex) =>
+                stackedSeries.map((segment, index) => (
+                  <circle
+                    key={`${stackedSeries.key}-${segment.data.x}-${index}-keyboard-target`}
+                    cx={xPositions[index]}
+                    cy={y(segment[1] as number)}
+                    r={8}
+                    fill="transparent"
+                    stroke="transparent"
+                    tabIndex={0}
+                    aria-label={`${stackedSeries.key}, ${segment.data.x}: ${
+                      segment[1] - segment[0]
+                    }`}
+                    onFocus={() => onPointFocus(segment, seriesIndex, index)}
+                    onBlur={onMouseLeave}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Escape') {
+                        onMouseLeave();
+                      }
+                    }}
+                  />
+                )),
+              )}
+            </g>
+          )}
           {activeOverlay}
         </>
       }

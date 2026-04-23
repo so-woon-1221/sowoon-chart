@@ -24,7 +24,10 @@ import ChartTooltip from '../common/ChartTooltip';
 /**
  * Props for {@link PieChart}.
  */
-export type PieChartProps = Pick<BaseChartProps, 'width' | 'height'> & {
+export type PieChartProps = Pick<
+  BaseChartProps,
+  'ariaDescription' | 'ariaLabel' | 'height' | 'width'
+> & {
   data: XYDatum[];
   /**
    * Center node to display in the middle of the pie chart.
@@ -79,6 +82,8 @@ const PieChart = ({
   legendItems,
   legendPosition = 'bottom',
   legendTitle,
+  ariaLabel = 'Pie chart',
+  ariaDescription,
 }: PieChartProps) => {
   const { tooltip, showTooltip, hideTooltip } = useChartTooltip<XYDatum>();
   const [activeKey, setActiveKey] = useState<string | null>(null);
@@ -157,6 +162,26 @@ const PieChart = ({
     hideTooltip();
   }, [hideTooltip]);
 
+  const handleSliceFocus = useCallback(
+    (datum: PieArcDatum<XYDatum>) => {
+      const [arcX, arcY] = arcValue.centroid(datum);
+
+      setActiveKey(datum.data.x);
+
+      if (!children) {
+        return;
+      }
+
+      showTooltip({
+        left: pieWidth / 2 + arcX,
+        top: pieHeight / 2 + arcY,
+        data: datum.data,
+        positionMode: 'point',
+      });
+    },
+    [arcValue, children, pieHeight, pieWidth, showTooltip],
+  );
+
   const handleLegendEnter = useCallback(
     (item: LegendItem) => {
       const datum = data.find((entry) => entry.x === item.key);
@@ -196,7 +221,9 @@ const PieChart = ({
         position: 'relative',
       }}
     >
-      <svg width={'100%'} height={'100%'} ref={ref}>
+      <svg width={'100%'} height={'100%'} ref={ref} role="img" aria-label={ariaLabel}>
+        <title>{ariaLabel}</title>
+        {ariaDescription && <desc>{ariaDescription}</desc>}
         <g className={'chart'} transform={`translate(${pieWidth / 2}, ${pieHeight / 2})`}>
           {chartData.map((datum) => (
             <path
@@ -206,10 +233,19 @@ const PieChart = ({
               opacity={!activeKey || datum.data.x === activeKey ? 1 : 0.35}
               stroke={activeKey === datum.data.x ? '#ffffff' : 'none'}
               strokeWidth={activeKey === datum.data.x ? 2 : 0}
+              tabIndex={0}
+              aria-label={`${datum.data.x}: ${datum.data.y}`}
               onPointerMove={(event) => handleSlicePointerMove(event, datum)}
               onPointerLeave={handleSlicePointerEnd}
               onPointerUp={handleSlicePointerEnd}
               onPointerCancel={handleSlicePointerEnd}
+              onFocus={() => handleSliceFocus(datum)}
+              onBlur={handleSlicePointerEnd}
+              onKeyDown={(event) => {
+                if (event.key === 'Escape') {
+                  handleSlicePointerEnd();
+                }
+              }}
             />
           ))}
         </g>

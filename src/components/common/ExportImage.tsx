@@ -13,7 +13,7 @@ export interface ExportImageProps {
   icon?: ReactNode;
   /**
    * Content rendered while the image export is in progress.
-   * @default "exporting..."
+   * @default "Exporting…"
    */
   loadingIcon?: ReactNode;
   /**
@@ -36,6 +36,10 @@ export interface ExportImageProps {
    * Called when image export fails.
    */
   onError?: (error: unknown) => void;
+  /**
+   * Accessible label for the export button.
+   */
+  ariaLabel?: string;
 }
 
 const hasCurrentTarget = (
@@ -50,17 +54,19 @@ const hasCurrentTarget = (
 const ExportImage = (
   {
     icon = 'svg',
-    loadingIcon = 'exporting...',
+    loadingIcon = 'Exporting…',
     fileName = 'download',
     fileFormat = 'svg',
     disabled = false,
     onError,
+    ariaLabel,
   }: ExportImageProps,
   ref: ForwardedRef<ExportTarget>,
 ) => {
   const [isExporting, setIsExporting] = useState(false);
   const toImage = fileFormat === 'png' ? toPng : toSvg;
   const isDisabled = disabled || isExporting;
+  const buttonLabel = ariaLabel ?? `Export as ${fileFormat.toUpperCase()}`;
 
   const onClick = useCallback(async () => {
     if (isDisabled) {
@@ -91,12 +97,15 @@ const ExportImage = (
       onClick={onClick}
       disabled={isDisabled}
       aria-busy={isExporting}
-      title={isExporting ? 'Exporting image...' : `Export as ${fileFormat.toUpperCase()}`}
+      aria-label={buttonLabel}
+      title={isExporting ? 'Exporting image…' : buttonLabel}
       style={{
         background: 'none',
         border: 'none',
         cursor: isDisabled ? 'not-allowed' : 'pointer',
         opacity: isDisabled ? 0.6 : 1,
+        outlineOffset: '2px',
+        touchAction: 'manipulation',
       }}
     >
       {isExporting ? loadingIcon : icon}

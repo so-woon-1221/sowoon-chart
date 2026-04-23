@@ -65,7 +65,10 @@ const getColorDomain = (min: number, max: number, stopCount: number) => {
 /**
  * Props for {@link HeatmapChart}.
  */
-export type HeatmapChartProps = Pick<BaseChartProps, 'height' | 'margin' | 'width'> & {
+export type HeatmapChartProps = Pick<
+  BaseChartProps,
+  'ariaDescription' | 'ariaLabel' | 'height' | 'margin' | 'width'
+> & {
   /**
    * Heatmap cell data.
    */
@@ -144,6 +147,8 @@ const HeatmapChart = ({
   legendItems,
   legendPosition = 'bottom',
   legendTitle,
+  ariaLabel = 'Heatmap chart',
+  ariaDescription,
 }: HeatmapChartProps) => {
   const { tooltip, showTooltip, hideTooltip } = useChartTooltip<HeatmapDatum>();
   const { ref: parentRef, width: parentWidth, height: parentHeight } = useParentSize();
@@ -250,6 +255,22 @@ const HeatmapChart = ({
     hideTooltip();
   }, [hideTooltip]);
 
+  const onCellFocus = useCallback(
+    (datum: HeatmapDatum) => {
+      if (!children) {
+        return;
+      }
+
+      showTooltip({
+        left: (x(datum.x) ?? 0) + x.bandwidth() / 2,
+        top: (y(datum.y) ?? 0) + y.bandwidth() / 2,
+        data: datum,
+        positionMode: 'point',
+      });
+    },
+    [children, showTooltip, x, y],
+  );
+
   return (
     <CartesianFrame
       containerRef={parentRef}
@@ -263,6 +284,8 @@ const HeatmapChart = ({
       yScale={y as AxisScale<AxisDomain>}
       showGridVertical={showGridVertical}
       showGridHorizontal={showGridHorizontal}
+      ariaLabel={ariaLabel}
+      ariaDescription={ariaDescription}
       chart={
         <g className="chart">
           {data.map((datum) => (
@@ -278,10 +301,19 @@ const HeatmapChart = ({
               stroke="#ffffff"
               strokeWidth={1}
               cursor={children ? 'pointer' : 'default'}
+              tabIndex={children ? 0 : undefined}
+              aria-label={children ? `${datum.x}, ${datum.y}: ${datum.value}` : undefined}
               onPointerMove={(event) => onCellPointerMove(event, datum)}
               onPointerLeave={onCellPointerEnd}
               onPointerUp={onCellPointerEnd}
               onPointerCancel={onCellPointerEnd}
+              onFocus={() => onCellFocus(datum)}
+              onBlur={onCellPointerEnd}
+              onKeyDown={(event) => {
+                if (event.key === 'Escape') {
+                  onCellPointerEnd();
+                }
+              }}
             />
           ))}
         </g>

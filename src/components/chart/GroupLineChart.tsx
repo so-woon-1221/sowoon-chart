@@ -88,6 +88,8 @@ const GroupLineChart = ({
   showCrosshair = false,
   showGridHorizontal = true,
   showGridVertical = true,
+  ariaLabel = 'Grouped line chart',
+  ariaDescription,
 }: GroupLineChartProps) => {
   const { tooltip, showTooltip, hideTooltip } = useChartTooltip<GroupLineTooltipDatum>();
   const [activePoint, setActivePoint] = useState<ActivePoint | null>(null);
@@ -246,6 +248,42 @@ const GroupLineChart = ({
     hideTooltip();
   }, [hideTooltip]);
 
+  const onPointFocus = useCallback(
+    (point: GroupedDatum, key: string, index: number) => {
+      const value = point[key];
+
+      if (typeof value !== 'number') {
+        return;
+      }
+
+      const pointLeft = xPositions[index];
+      const pointTop = y(value);
+      const nextActivePoint = {
+        left: pointLeft,
+        top: pointTop,
+        color: colorScale(key) as string,
+      };
+
+      setActivePoint((prev) => {
+        return isSameActivePoint(prev, nextActivePoint) ? prev : nextActivePoint;
+      });
+
+      if (children) {
+        showTooltip({
+          left: pointLeft,
+          top: pointTop,
+          data: {
+            x: point.x,
+            y: value,
+            value,
+          },
+          positionMode: 'point',
+        });
+      }
+    },
+    [children, colorScale, showTooltip, xPositions, y],
+  );
+
   const activeOverlay =
     activePoint && (showCrosshair || showActiveMarker) ? (
       <g className="active-overlay" pointerEvents="none">
@@ -301,6 +339,8 @@ const GroupLineChart = ({
       onPointerLeave={onMouseLeave}
       onPointerUp={onMouseLeave}
       onPointerCancel={onMouseLeave}
+      ariaLabel={ariaLabel}
+      ariaDescription={ariaDescription}
       chart={
         <>
           <g className="chart">
@@ -314,6 +354,39 @@ const GroupLineChart = ({
               />
             ))}
           </g>
+          {(children || showActiveMarker || showCrosshair) && (
+            <g className="keyboard-targets">
+              {keyList.map((key) =>
+                data.map((datum, index) => {
+                  const value = datum[key];
+
+                  if (typeof value !== 'number') {
+                    return null;
+                  }
+
+                  return (
+                    <circle
+                      key={`${key}-${datum.x}-${index}-keyboard-target`}
+                      cx={xPositions[index]}
+                      cy={y(value)}
+                      r={8}
+                      fill="transparent"
+                      stroke="transparent"
+                      tabIndex={0}
+                      aria-label={`${key}, ${datum.x}: ${value}`}
+                      onFocus={() => onPointFocus(datum, key, index)}
+                      onBlur={onMouseLeave}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Escape') {
+                          onMouseLeave();
+                        }
+                      }}
+                    />
+                  );
+                }),
+              )}
+            </g>
+          )}
           {activeOverlay}
         </>
       }

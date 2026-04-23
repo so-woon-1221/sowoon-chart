@@ -23,6 +23,8 @@ type Props = {
   onPointerLeave?: PointerEventHandler<SVGSVGElement>;
   onPointerUp?: PointerEventHandler<SVGSVGElement>;
   onPointerCancel?: PointerEventHandler<SVGSVGElement>;
+  ariaLabel?: string;
+  ariaDescription?: string;
   chart: ReactNode;
   defs?: ReactNode;
   tooltip?: ReactNode;
@@ -46,6 +48,8 @@ const CartesianFrame = ({
   onPointerLeave,
   onPointerUp,
   onPointerCancel,
+  ariaLabel = 'Chart',
+  ariaDescription,
   chart,
   defs,
   tooltip,
@@ -66,11 +70,15 @@ const CartesianFrame = ({
         width={'100%'}
         height={'100%'}
         ref={svgRef}
+        role="img"
+        aria-label={ariaLabel}
         onPointerMove={onPointerMove}
         onPointerLeave={onPointerLeave}
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerCancel}
       >
+        <title>{ariaLabel}</title>
+        {ariaDescription && <desc>{ariaDescription}</desc>}
         {showGridVertical && (
           <GridVertical
             scale={xScale}

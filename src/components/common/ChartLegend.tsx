@@ -63,6 +63,9 @@ const buttonStyle: CSSProperties = {
   padding: 0,
   color: 'inherit',
   font: 'inherit',
+  outlineOffset: '2px',
+  borderRadius: '2px',
+  touchAction: 'manipulation',
 };
 
 const titleStyle: CSSProperties = {
@@ -96,7 +99,7 @@ const ChartLegend = ({
   const containerStyle = getContainerStyle(position);
 
   return (
-    <div style={containerStyle}>
+    <div style={containerStyle} aria-label={title ?? 'Chart legend'}>
       {title && <div style={titleStyle}>{title}</div>}
       {items.map((item) => {
         const opacity = !activeKey || activeKey === item.key ? 1 : 0.45;
@@ -115,7 +118,7 @@ const ChartLegend = ({
                 opacity,
               }}
             >
-              <span style={swatchStyle(item.color)} />
+              <span aria-hidden="true" style={swatchStyle(item.color)} />
               <span>{item.label}</span>
             </button>
           );
@@ -129,7 +132,7 @@ const ChartLegend = ({
               opacity,
             }}
           >
-            <span style={swatchStyle(item.color)} />
+            <span aria-hidden="true" style={swatchStyle(item.color)} />
             <span>{item.label}</span>
           </div>
         );

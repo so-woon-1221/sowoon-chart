@@ -39,6 +39,8 @@ const Wordcloud = ({
   legendPosition = 'bottom',
   legendTitle,
   seriesName,
+  ariaLabel = 'Word cloud chart',
+  ariaDescription,
 }: WordcloudProps) => {
   const { ref: parentRef, width: parentWidth, height: parentHeight } = useParentSize();
 
@@ -165,7 +167,9 @@ const Wordcloud = ({
         position: 'relative',
       }}
     >
-      <svg width={'100%'} height={'100%'}>
+      <svg width={'100%'} height={'100%'} role="img" aria-label={ariaLabel}>
+        <title>{ariaLabel}</title>
+        {ariaDescription && <desc>{ariaDescription}</desc>}
         <g
           className={'word-container'}
           transform={`translate(${(layoutWidth ?? 0) / 2}, ${(parentHeight ?? 0) / 2})`}
@@ -180,8 +184,17 @@ const Wordcloud = ({
               transform={`translate(${word.x}, ${word.y}) rotate(${word.rotate})`}
               fill={colorMap.get(word.text)}
               opacity={!activeWord || activeWord === word.text ? 1 : 0.5}
+              tabIndex={0}
+              aria-label={word.text}
               onPointerEnter={() => setActiveWord(word.text)}
               onPointerLeave={() => setActiveWord(null)}
+              onFocus={() => setActiveWord(word.text)}
+              onBlur={() => setActiveWord(null)}
+              onKeyDown={(event) => {
+                if (event.key === 'Escape') {
+                  setActiveWord(null);
+                }
+              }}
             >
               {word.text}
             </text>

@@ -43,6 +43,20 @@ export type LegendItem = {
 };
 
 /**
+ * Accessibility text exposed to assistive technologies.
+ */
+export interface AccessibilityProps {
+  /**
+   * Accessible name for the rendered chart.
+   */
+  ariaLabel?: string;
+  /**
+   * Longer accessible description for the rendered chart.
+   */
+  ariaDescription?: string;
+}
+
+/**
  * Shared x/y data shape used by single-series charts.
  */
 export type XYDatum = {
@@ -81,7 +95,7 @@ export interface TooltipInteractionProps {
   showCrosshair?: boolean;
 }
 
-export interface BaseChartProps {
+export interface BaseChartProps extends AccessibilityProps {
   /**
    * Width of the chart.
    */

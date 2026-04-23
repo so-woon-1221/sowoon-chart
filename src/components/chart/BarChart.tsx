@@ -71,6 +71,8 @@ const BarChart = ({
   tooltipPosition = 'point',
   showGridVertical = true,
   showGridHorizontal = true,
+  ariaLabel = 'Bar chart',
+  ariaDescription,
 }: BarChartProps) => {
   const { tooltip, showTooltip, hideTooltip } = useChartTooltip<XYDatum>();
 
@@ -152,6 +154,22 @@ const BarChart = ({
     hideTooltip();
   }, [hideTooltip]);
 
+  const onBarFocus = useCallback(
+    (datum: XYDatum) => {
+      if (!children) {
+        return;
+      }
+
+      showTooltip({
+        left: (x(datum.x) ?? 0) + x.bandwidth() / 2,
+        top: y(datum.y),
+        data: datum,
+        positionMode: 'point',
+      });
+    },
+    [children, showTooltip, x, y],
+  );
+
   return (
     <CartesianFrame
       containerRef={parentRef}
@@ -169,6 +187,8 @@ const BarChart = ({
       onPointerLeave={onMouseLeave}
       onPointerUp={onMouseLeave}
       onPointerCancel={onMouseLeave}
+      ariaLabel={ariaLabel}
+      ariaDescription={ariaDescription}
       chart={
         <g className="bar">
           {data.map((datum, index) => (
@@ -179,6 +199,15 @@ const BarChart = ({
               fill={color}
               width={x.bandwidth()}
               height={(parentHeight ?? 0) - y(datum.y) - chartMargin.bottom}
+              tabIndex={children ? 0 : undefined}
+              aria-label={children ? `${datum.x}: ${datum.y}` : undefined}
+              onFocus={() => onBarFocus(datum)}
+              onBlur={onMouseLeave}
+              onKeyDown={(event) => {
+                if (event.key === 'Escape') {
+                  onMouseLeave();
+                }
+              }}
             />
           ))}
         </g>

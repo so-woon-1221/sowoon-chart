@@ -80,6 +80,8 @@ const AreaChart = ({
   showCrosshair = false,
   showGridVertical = true,
   showGridHorizontal = true,
+  ariaLabel = 'Area chart',
+  ariaDescription,
 }: AreaChartProps) => {
   const { tooltip, showTooltip, hideTooltip } = useChartTooltip<XYDatum>();
   const [activePoint, setActivePoint] = useState<ActivePoint | null>(null);
@@ -204,6 +206,32 @@ const AreaChart = ({
     hideTooltip();
   }, [hideTooltip]);
 
+  const onPointFocus = useCallback(
+    (point: XYDatum, index: number) => {
+      const pointLeft = xPositions[index];
+      const pointTop = y(point.y);
+      const nextActivePoint = {
+        left: pointLeft,
+        top: pointTop,
+        color,
+      };
+
+      setActivePoint((prev) => {
+        return isSameActivePoint(prev, nextActivePoint) ? prev : nextActivePoint;
+      });
+
+      if (children) {
+        showTooltip({
+          left: pointLeft,
+          top: pointTop,
+          data: point,
+          positionMode: 'point',
+        });
+      }
+    },
+    [children, color, showTooltip, xPositions, y],
+  );
+
   const defs = fillGradient ? (
     <defs>
       <linearGradient id={color} x1="0" x2="0" y1="0" y2="1">
@@ -268,12 +296,37 @@ const AreaChart = ({
       onPointerLeave={onMouseLeave}
       onPointerUp={onMouseLeave}
       onPointerCancel={onMouseLeave}
+      ariaLabel={ariaLabel}
+      ariaDescription={ariaDescription}
       chart={
         <>
           <g className="chart">
             <path className="area" d={areaPath ?? undefined} fill={fillColor} />
             {drawStroke && (
               <path className="line" d={linePath ?? undefined} fill="none" stroke={color} />
+            )}
+            {(children || showActiveMarker || showCrosshair) && (
+              <g className="keyboard-targets">
+                {data.map((datum, index) => (
+                  <circle
+                    key={`${datum.x}-${index}-keyboard-target`}
+                    cx={xPositions[index]}
+                    cy={y(datum.y)}
+                    r={8}
+                    fill="transparent"
+                    stroke="transparent"
+                    tabIndex={0}
+                    aria-label={`${datum.x}: ${datum.y}`}
+                    onFocus={() => onPointFocus(datum, index)}
+                    onBlur={onMouseLeave}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Escape') {
+                        onMouseLeave();
+                      }
+                    }}
+                  />
+                ))}
+              </g>
             )}
           </g>
           {activeOverlay}
