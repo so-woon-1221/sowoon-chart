@@ -2,14 +2,14 @@
   "name": "@sowoon1221/sowoon-chart",
   "version": "0.3.0",
   "type": "module",
-  "main": "dist/index.cjs.js",
+  "main": "dist/index.cjs",
   "module": "dist/index.esm.js",
   "types": "dist/types/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/types/index.d.ts",
       "import": "./dist/index.esm.js",
-      "require": "./dist/index.cjs.js"
+      "require": "./dist/index.cjs"
     },
     "./package.json": "./package.json"
   },
@@ -29,8 +29,7 @@
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
     "build-rollup": "rimraf dist && rollup -c",
-    "clean:publish-maps": "node -e \"const fs=require('node:fs');const path=require('node:path');if(!fs.existsSync('dist'))process.exit(0);for(const file of fs.readdirSync('dist')){if(file.endsWith('.map'))fs.rmSync(path.join('dist',file),{force:true});}\"",
-    "build:package": "npm run build-rollup && npm run clean:publish-maps",
+    "build:package": "npm run build-rollup",
     "pack:dry-run": "npm run build:package && npm pack --dry-run",
     "release:check": "npm run lint && npx tsc --noEmit -p tsconfig.app.json && npm run pack:dry-run",
     "prepare": "husky install",

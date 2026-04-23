@@ -10,14 +10,14 @@ export default {
   input: 'src/index.tsx',
   output: [
     {
-      file: 'dist/index.cjs.js',
+      file: 'dist/index.cjs',
       format: 'cjs',
-      sourcemap: true,
+      sourcemap: false,
     },
     {
       file: 'dist/index.esm.js',
       format: 'esm',
-      sourcemap: true,
+      sourcemap: false,
     },
   ],
   plugins: [
