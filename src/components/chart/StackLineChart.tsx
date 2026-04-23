@@ -19,6 +19,7 @@ import { getEventPointerType, getTooltipAlign, resolveTooltipPositionMode } from
 import type {
   CartesianChartProps,
   ColorListProps,
+  LegendProps,
   TooltipInteractionProps,
   TooltipOffset,
   TooltipRenderer,
@@ -26,6 +27,8 @@ import type {
 } from '../../util/types';
 import { getClosestIndex, isSameActivePoint } from '../../util/utils';
 import CartesianFrame from '../common/CartesianFrame';
+import ChartLegend from '../common/ChartLegend';
+import { getLegendRightInset } from '../common/chartLegend.utils';
 import ChartTooltip from '../common/ChartTooltip';
 import type { GroupedDatum } from './GroupedChart.types';
 
@@ -59,6 +62,7 @@ export type StackLineChartProps = CartesianChartProps<GroupedDatum> &
      */
     tooltipOffset?: TooltipOffset;
   } &
+  LegendProps &
   TooltipInteractionProps;
 
 const defaultMargin = {
@@ -81,6 +85,10 @@ const StackLineChart = ({
   minY,
   children,
   tooltipOffset = { x: 20, y: -20 },
+  showLegend = true,
+  legendItems,
+  legendPosition = 'bottom',
+  legendTitle,
   tooltipPosition = 'point',
   showActiveMarker = false,
   showCrosshair = false,
@@ -93,6 +101,13 @@ const StackLineChart = ({
   const { ref: parentRef, height: parentHeight, width: parentWidth } = useParentSize();
 
   const ref = useRef<SVGSVGElement>(null);
+
+  const chartMargin = useMemo(() => {
+    return {
+      ...margin,
+      right: margin.right + getLegendRightInset(showLegend, legendPosition),
+    };
+  }, [legendPosition, margin, showLegend]);
 
   const keyList = useMemo(() => Object.keys(data[0]).filter((key) => key !== 'x'), [data]);
 
@@ -127,8 +142,8 @@ const StackLineChart = ({
     () =>
       scaleBand()
         .domain(data.map((d) => d.x))
-        .range([margin.left, (parentWidth ?? 0) - margin.right]),
-    [data, margin.left, margin.right, parentWidth],
+        .range([chartMargin.left, (parentWidth ?? 0) - chartMargin.right]),
+    [chartMargin.left, chartMargin.right, data, parentWidth],
   );
 
   const xPositions = useMemo(() => {
@@ -139,8 +154,8 @@ const StackLineChart = ({
     () =>
       scaleLinear()
         .domain([min, max])
-        .range([(parentHeight ?? 0) - margin.bottom, margin.top]),
-    [margin.bottom, margin.top, max, min, parentHeight],
+        .range([(parentHeight ?? 0) - chartMargin.bottom, chartMargin.top]),
+    [chartMargin.bottom, chartMargin.top, max, min, parentHeight],
   );
 
   const lineGenerator: Line<[number, number]> = useMemo(() => {
@@ -148,6 +163,22 @@ const StackLineChart = ({
       .x((_, i) => x(data[i].x)! + x.bandwidth() / 2)
       .y((d) => y(d[1] as number));
   }, [data, x, y]);
+
+  const resolvedLegendItems = useMemo(() => {
+    if (!showLegend) {
+      return [];
+    }
+
+    if (legendItems?.length) {
+      return legendItems;
+    }
+
+    return keyList.map((key) => ({
+      key,
+      label: key,
+      color: colorScale(key) as string,
+    }));
+  }, [colorScale, keyList, legendItems, showLegend]);
 
   const drawChart = useCallback(() => {
     const svg = select(ref.current);
@@ -244,15 +275,15 @@ const StackLineChart = ({
             <line
               x1={activePoint.left}
               x2={activePoint.left}
-              y1={margin.top}
-              y2={parentHeight - margin.bottom}
+              y1={chartMargin.top}
+              y2={parentHeight - chartMargin.bottom}
               stroke={activePoint.color}
               strokeDasharray="4 4"
               strokeOpacity={0.35}
             />
             <line
-              x1={margin.left}
-              x2={parentWidth - margin.right}
+              x1={chartMargin.left}
+              x2={parentWidth - chartMargin.right}
               y1={activePoint.top}
               y2={activePoint.top}
               stroke={activePoint.color}
@@ -274,39 +305,6 @@ const StackLineChart = ({
       </g>
     ) : null;
 
-  const legend = (
-    <div
-      style={{
-        position: 'absolute',
-        bottom: 0,
-        display: 'flex',
-        gap: '8px',
-        fontSize: '14px',
-        padding: '4px',
-      }}
-    >
-      {keyList.map((key) => (
-        <div
-          key={`legend-${key}`}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px',
-          }}
-        >
-          <div
-            style={{
-              width: '14px',
-              height: '14px',
-              background: colorScale(key) as string,
-            }}
-          />
-          <span>{key}</span>
-        </div>
-      ))}
-    </div>
-  );
-
   return (
     <CartesianFrame
       containerRef={parentRef}
@@ -315,7 +313,7 @@ const StackLineChart = ({
       height={height}
       parentWidth={parentWidth}
       parentHeight={parentHeight}
-      margin={margin}
+      margin={chartMargin}
       xScale={x as AxisScale<AxisDomain>}
       yScale={y as AxisScale<AxisDomain>}
       showGridVertical={showGridVertical}
@@ -345,11 +343,15 @@ const StackLineChart = ({
           </ChartTooltip>
         )
       }
-      overlay={legend}
-      containerStyle={{
-        display: 'flex',
-        justifyContent: 'center',
-      }}
+      overlay={
+        resolvedLegendItems.length > 0 ? (
+          <ChartLegend
+            items={resolvedLegendItems}
+            position={legendPosition}
+            title={legendTitle}
+          />
+        ) : null
+      }
     />
   );
 };

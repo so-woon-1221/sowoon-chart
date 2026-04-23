@@ -17,12 +17,15 @@ import { getEventPointerType, getTooltipAlign, resolveTooltipPositionMode } from
 import type {
   CartesianChartProps,
   ColorListProps,
+  LegendProps,
   TooltipOffset,
   TooltipPositionMode,
   TooltipRenderer,
   XYDatum,
 } from '../../util/types';
 import CartesianFrame from '../common/CartesianFrame';
+import ChartLegend from '../common/ChartLegend';
+import { getLegendRightInset } from '../common/chartLegend.utils';
 import ChartTooltip from '../common/ChartTooltip';
 import type { GroupedDatum } from './GroupedChart.types';
 
@@ -52,14 +55,15 @@ export type StackBarChartProps = CartesianChartProps<GroupedDatum> &
    * Offset of the tooltip from the mouse pointer.
    * @default { x: 10, y: -10 }
    */
-  tooltipOffset?: TooltipOffset;
-  /**
-   * Tooltip anchor position.
-   * `cursor` follows the mouse and `point` sticks to the matched data point.
-   * @default "point"
-   */
-  tooltipPosition?: TooltipPositionMode;
-};
+    tooltipOffset?: TooltipOffset;
+    /**
+     * Tooltip anchor position.
+     * `cursor` follows the mouse and `point` sticks to the matched data point.
+     * @default "point"
+     */
+    tooltipPosition?: TooltipPositionMode;
+  } &
+  LegendProps;
 
 const defaultMargin = {
   top: 20,
@@ -81,6 +85,10 @@ const StackBarChart = ({
   padding = 0.1,
   children,
   tooltipOffset = { x: 10, y: -10 },
+  showLegend = true,
+  legendItems,
+  legendPosition = 'bottom',
+  legendTitle,
   tooltipPosition = 'point',
   showGridHorizontal = true,
   showGridVertical = true,
@@ -90,6 +98,13 @@ const StackBarChart = ({
   const { ref: parentRef, height: parentHeight, width: parentWidth } = useParentSize();
 
   const ref = useRef<SVGSVGElement>(null);
+
+  const chartMargin = useMemo(() => {
+    return {
+      ...margin,
+      right: margin.right + getLegendRightInset(showLegend, legendPosition),
+    };
+  }, [legendPosition, margin, showLegend]);
 
   const keyList = useMemo(() => Object.keys(data[0]).filter((key) => key !== 'x'), [data]);
 
@@ -110,21 +125,37 @@ const StackBarChart = ({
       .value((d, key) => (d[key] as number) ?? 0)(data);
   }, [data, keyList]);
 
+  const resolvedLegendItems = useMemo(() => {
+    if (!showLegend) {
+      return [];
+    }
+
+    if (legendItems?.length) {
+      return legendItems;
+    }
+
+    return keyList.map((key) => ({
+      key,
+      label: key,
+      color: colorScale(key) as string,
+    }));
+  }, [colorScale, keyList, legendItems, showLegend]);
+
   const x = useMemo(
     () =>
       scaleBand()
         .domain(data.map((d) => d.x))
-        .range([margin.left, (parentWidth ?? 0) - margin.right])
+        .range([chartMargin.left, (parentWidth ?? 0) - chartMargin.right])
         .padding(padding),
-    [data, margin.left, margin.right, padding, parentWidth],
+    [chartMargin.left, chartMargin.right, data, padding, parentWidth],
   );
 
   const y = useMemo(
     () =>
       scaleLinear()
         .domain([0, max])
-        .range([(parentHeight ?? 0) - margin.bottom, margin.top]),
-    [margin.bottom, margin.top, max, parentHeight],
+        .range([(parentHeight ?? 0) - chartMargin.bottom, chartMargin.top]),
+    [chartMargin.bottom, chartMargin.top, max, parentHeight],
   );
 
   const drawChart = useCallback(() => {
@@ -174,39 +205,6 @@ const StackBarChart = ({
     drawChart();
   }, [drawChart]);
 
-  const legend = (
-    <div
-      style={{
-        position: 'absolute',
-        bottom: 0,
-        display: 'flex',
-        gap: '8px',
-        fontSize: '14px',
-        padding: '4px',
-      }}
-    >
-      {keyList.map((key) => (
-        <div
-          key={`legend-${key}`}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px',
-          }}
-        >
-          <div
-            style={{
-              width: '14px',
-              height: '14px',
-              background: colorScale(key) as string,
-            }}
-          />
-          <span>{key}</span>
-        </div>
-      ))}
-    </div>
-  );
-
   return (
     <CartesianFrame
       containerRef={parentRef}
@@ -215,7 +213,7 @@ const StackBarChart = ({
       height={height}
       parentWidth={parentWidth}
       parentHeight={parentHeight}
-      margin={margin}
+      margin={chartMargin}
       xScale={x as AxisScale<AxisDomain>}
       yScale={y as AxisScale<AxisDomain>}
       showGridVertical={showGridVertical}
@@ -238,11 +236,15 @@ const StackBarChart = ({
           </ChartTooltip>
         )
       }
-      overlay={legend}
-      containerStyle={{
-        display: 'flex',
-        justifyContent: 'center',
-      }}
+      overlay={
+        resolvedLegendItems.length > 0 ? (
+          <ChartLegend
+            items={resolvedLegendItems}
+            position={legendPosition}
+            title={legendTitle}
+          />
+        ) : null
+      }
     />
   );
 };

@@ -14,11 +14,14 @@ import { useParentSize } from '../../hooks/useParentSize';
 import { getEventPointerType, getTooltipAlign, resolveTooltipPositionMode } from '../../util/tooltip';
 import type {
   BaseChartProps,
+  LegendProps,
   TooltipOffset,
   TooltipPositionMode,
   TooltipRenderer,
 } from '../../util/types';
 import CartesianFrame from '../common/CartesianFrame';
+import ChartLegend from '../common/ChartLegend';
+import { getLegendRightInset } from '../common/chartLegend.utils';
 import ChartTooltip from '../common/ChartTooltip';
 
 const defaultMargin = {
@@ -114,6 +117,14 @@ export type HeatmapChartProps = Pick<BaseChartProps, 'height' | 'margin' | 'widt
    * @default false
    */
   showGridHorizontal?: boolean;
+} & Omit<LegendProps, 'seriesName'>;
+
+const formatLegendValue = (value: number) => {
+  if (Number.isInteger(value)) {
+    return `${value}`;
+  }
+
+  return value.toFixed(2);
 };
 
 /**
@@ -133,11 +144,22 @@ const HeatmapChart = ({
   tooltipPosition = 'point',
   showGridVertical = false,
   showGridHorizontal = false,
+  showLegend = false,
+  legendItems,
+  legendPosition = 'bottom',
+  legendTitle,
 }: HeatmapChartProps) => {
   const { tooltip, showTooltip, hideTooltip } = useChartTooltip<HeatmapDatum>();
   const { ref: parentRef, width: parentWidth, height: parentHeight } = useParentSize();
 
   const ref = useRef<SVGSVGElement>(null);
+
+  const chartMargin = useMemo(() => {
+    return {
+      ...margin,
+      right: margin.right + getLegendRightInset(showLegend, legendPosition),
+    };
+  }, [legendPosition, margin, showLegend]);
 
   const xDomain = useMemo(() => {
     return Array.from(new Set(data.map((datum) => datum.x)));
@@ -150,16 +172,16 @@ const HeatmapChart = ({
   const x = useMemo(() => {
     return scaleBand()
       .domain(xDomain)
-      .range([margin.left, (parentWidth ?? 0) - margin.right])
+      .range([chartMargin.left, (parentWidth ?? 0) - chartMargin.right])
       .padding(cellPadding);
-  }, [cellPadding, margin.left, margin.right, parentWidth, xDomain]);
+  }, [cellPadding, chartMargin.left, chartMargin.right, parentWidth, xDomain]);
 
   const y = useMemo(() => {
     return scaleBand()
       .domain(yDomain)
-      .range([margin.top, (parentHeight ?? 0) - margin.bottom])
+      .range([chartMargin.top, (parentHeight ?? 0) - chartMargin.bottom])
       .padding(cellPadding);
-  }, [cellPadding, margin.bottom, margin.top, parentHeight, yDomain]);
+  }, [cellPadding, chartMargin.bottom, chartMargin.top, parentHeight, yDomain]);
 
   const valueDomain = useMemo(() => {
     return getValueDomain(
@@ -183,6 +205,25 @@ const HeatmapChart = ({
       .domain(getColorDomain(valueDomain[0], valueDomain[1], resolvedColorList.length))
       .range(resolvedColorList);
   }, [resolvedColorList, valueDomain]);
+
+  const resolvedLegendItems = useMemo(() => {
+    if (!showLegend) {
+      return [];
+    }
+
+    if (legendItems?.length) {
+      return legendItems;
+    }
+
+    const [min, max] = valueDomain;
+    const mid = min + (max - min) / 2;
+
+    return [min, mid, max].map((value, index) => ({
+      key: `heatmap-legend-${index}`,
+      label: formatLegendValue(value),
+      color: colorScale(value),
+    }));
+  }, [colorScale, legendItems, showLegend, valueDomain]);
 
   const drawChart = useCallback(() => {
     const svg = select(ref.current);
@@ -242,7 +283,7 @@ const HeatmapChart = ({
       height={height}
       parentWidth={parentWidth}
       parentHeight={parentHeight}
-      margin={margin}
+      margin={chartMargin}
       xScale={x as AxisScale<AxisDomain>}
       yScale={y as AxisScale<AxisDomain>}
       showGridVertical={showGridVertical}
@@ -264,6 +305,15 @@ const HeatmapChart = ({
             })}
           </ChartTooltip>
         )
+      }
+      overlay={
+        resolvedLegendItems.length > 0 ? (
+          <ChartLegend
+            items={resolvedLegendItems}
+            position={legendPosition}
+            title={legendTitle}
+          />
+        ) : null
       }
     />
   );

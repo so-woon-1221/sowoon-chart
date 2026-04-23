@@ -15,12 +15,15 @@ import { useParentSize } from '../../hooks/useParentSize';
 import { getEventPointerType, getTooltipAlign, resolveTooltipPositionMode } from '../../util/tooltip';
 import type {
   ChartProps,
+  LegendProps,
   TooltipInteractionProps,
   TooltipRenderer,
   XYDatum,
 } from '../../util/types';
 import { getClosestIndex, isSameActivePoint } from '../../util/utils';
 import CartesianFrame from '../common/CartesianFrame';
+import ChartLegend from '../common/ChartLegend';
+import { getLegendRightInset } from '../common/chartLegend.utils';
 import ChartTooltip from '../common/ChartTooltip';
 
 type ActivePoint = {
@@ -33,6 +36,7 @@ type ActivePoint = {
  * Props for {@link AreaChart}.
  */
 export type AreaChartProps = ChartProps &
+  LegendProps &
   TooltipInteractionProps & {
   /**
    * Custom tooltip renderer shown while hovering.
@@ -69,6 +73,11 @@ const AreaChart = ({
   data,
   color = 'black',
   children,
+  showLegend = false,
+  legendItems,
+  legendPosition = 'bottom',
+  legendTitle,
+  seriesName,
   fillGradient = false,
   drawStroke = true,
   tooltipPosition = 'point',
@@ -84,21 +93,46 @@ const AreaChart = ({
 
   const ref = useRef<SVGSVGElement>(null);
 
+  const chartMargin = useMemo(() => {
+    return {
+      ...margin,
+      right: margin.right + getLegendRightInset(showLegend, legendPosition),
+    };
+  }, [legendPosition, margin, showLegend]);
+
   const x = useMemo(() => {
     return scaleBand()
       .domain(data.map((d) => d.x))
-      .range([margin.left, (parentWidth ?? 0) - margin.right]);
-  }, [data, margin.left, margin.right, parentWidth]);
+      .range([chartMargin.left, (parentWidth ?? 0) - chartMargin.right]);
+  }, [chartMargin.left, chartMargin.right, data, parentWidth]);
 
   const y = useMemo(() => {
     return scaleLinear()
       .domain([minY ?? 0, maxY ?? Math.max(...data.map((d) => d.y))])
-      .range([(parentHeight ?? 0) - margin.bottom, margin.top]);
-  }, [data, margin.bottom, margin.top, maxY, minY, parentHeight]);
+      .range([(parentHeight ?? 0) - chartMargin.bottom, chartMargin.top]);
+  }, [chartMargin.bottom, chartMargin.top, data, maxY, minY, parentHeight]);
 
   const xPositions = useMemo(() => {
     return data.map((d) => (x(d.x) ?? 0) + x.bandwidth() / 2);
   }, [data, x]);
+
+  const resolvedLegendItems = useMemo(() => {
+    if (!showLegend) {
+      return [];
+    }
+
+    if (legendItems?.length) {
+      return legendItems;
+    }
+
+    return [
+      {
+        key: 'area',
+        label: seriesName ?? 'Area',
+        color,
+      },
+    ];
+  }, [color, legendItems, seriesName, showLegend]);
 
   const areaGenerator = useMemo(() => {
     return area<XYDatum>()
@@ -202,15 +236,15 @@ const AreaChart = ({
             <line
               x1={activePoint.left}
               x2={activePoint.left}
-              y1={margin.top}
-              y2={parentHeight - margin.bottom}
+              y1={chartMargin.top}
+              y2={parentHeight - chartMargin.bottom}
               stroke={activePoint.color}
               strokeDasharray="4 4"
               strokeOpacity={0.35}
             />
             <line
-              x1={margin.left}
-              x2={parentWidth - margin.right}
+              x1={chartMargin.left}
+              x2={parentWidth - chartMargin.right}
               y1={activePoint.top}
               y2={activePoint.top}
               stroke={activePoint.color}
@@ -240,7 +274,7 @@ const AreaChart = ({
       height={height}
       parentWidth={parentWidth}
       parentHeight={parentHeight}
-      margin={margin}
+      margin={chartMargin}
       xScale={x as AxisScale<AxisDomain>}
       yScale={y as AxisScale<AxisDomain>}
       showGridVertical={showGridVertical}
@@ -268,6 +302,15 @@ const AreaChart = ({
             {children({ tooltipData: tooltip.data })}
           </ChartTooltip>
         )
+      }
+      overlay={
+        resolvedLegendItems.length > 0 ? (
+          <ChartLegend
+            items={resolvedLegendItems}
+            position={legendPosition}
+            title={legendTitle}
+          />
+        ) : null
       }
     />
   );

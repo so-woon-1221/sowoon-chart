@@ -10,11 +10,15 @@ import {
 } from '../../util/tooltip';
 import type {
   BaseChartProps,
+  LegendItem,
+  LegendProps,
   TooltipOffset,
   TooltipPositionMode,
   TooltipRenderer,
   XYDatum,
 } from '../../util/types';
+import ChartLegend from '../common/ChartLegend';
+import { getLegendRightInset } from '../common/chartLegend.utils';
 import ChartTooltip from '../common/ChartTooltip';
 
 /**
@@ -57,7 +61,7 @@ export type PieChartProps = Pick<BaseChartProps, 'width' | 'height'> & {
    * @default false
    */
   showLegend?: boolean;
-};
+} & Omit<LegendProps, 'seriesName'>;
 
 /**
  * Renders a donut-style pie chart with optional center content, legend highlighting, and tooltip support.
@@ -72,6 +76,9 @@ const PieChart = ({
   tooltipOffset = { x: 10, y: -10 },
   tooltipPosition = 'cursor',
   showLegend = false,
+  legendItems,
+  legendPosition = 'bottom',
+  legendTitle,
 }: PieChartProps) => {
   const { tooltip, showTooltip, hideTooltip } = useChartTooltip<XYDatum>();
   const [activeKey, setActiveKey] = useState<string | null>(null);
@@ -80,13 +87,16 @@ const PieChart = ({
 
   const ref = useRef<SVGSVGElement>(null);
 
+  const pieWidth = useMemo(() => {
+    return Math.max(parentWidth - getLegendRightInset(showLegend, legendPosition), 0);
+  }, [legendPosition, parentWidth, showLegend]);
+
   const colorScale = useMemo(() => {
     return scaleOrdinal()
       .domain(data.map((d) => d.x))
       .range(colorList);
   }, [colorList, data]);
 
-  const pieWidth = parentWidth;
   const pieHeight = parentHeight;
 
   const radius = useMemo(() => Math.min(pieWidth, pieHeight) / 2, [pieHeight, pieWidth]);
@@ -104,6 +114,22 @@ const PieChart = ({
 
     return pieGenerator(data);
   }, [data]);
+
+  const resolvedLegendItems = useMemo(() => {
+    if (!showLegend) {
+      return [];
+    }
+
+    if (legendItems?.length) {
+      return legendItems;
+    }
+
+    return data.map((datum) => ({
+      key: datum.x,
+      label: datum.x,
+      color: colorScale(datum.x) as string,
+    }));
+  }, [colorScale, data, legendItems, showLegend]);
 
   const drawChart = useCallback(() => {
     const svg = select(ref.current);
@@ -175,14 +201,15 @@ const PieChart = ({
   }, [activeKey, chartData]);
 
   const handleLegendEnter = useCallback(
-    (datum: XYDatum) => {
-      setActiveKey(datum.x);
+    (item: LegendItem) => {
+      const datum = data.find((entry) => entry.x === item.key);
+      setActiveKey(item.key);
 
-      if (!children) {
+      if (!children || !datum) {
         return;
       }
 
-      const activeArc = chartData.find((entry) => entry.data.x === datum.x);
+      const activeArc = chartData.find((entry) => entry.data.x === item.key);
       if (!activeArc) {
         return;
       }
@@ -195,59 +222,13 @@ const PieChart = ({
         positionMode: 'point',
       });
     },
-    [arcValue, chartData, children, pieHeight, pieWidth, showTooltip],
+    [arcValue, chartData, children, data, pieHeight, pieWidth, showTooltip],
   );
 
   const handleLegendLeave = useCallback(() => {
     setActiveKey(null);
     hideTooltip();
   }, [hideTooltip]);
-
-  const legend = showLegend ? (
-    <div
-      style={{
-        position: 'absolute',
-        bottom: 0,
-        display: 'flex',
-        gap: '8px',
-        fontSize: '14px',
-        padding: '4px',
-        flexWrap: 'wrap',
-        justifyContent: 'center',
-      }}
-    >
-      {data.map((datum) => (
-        <button
-          key={`legend-${datum.x}`}
-          type="button"
-          onPointerEnter={() => handleLegendEnter(datum)}
-          onPointerLeave={handleLegendLeave}
-          onFocus={() => handleLegendEnter(datum)}
-          onBlur={handleLegendLeave}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px',
-            background: 'transparent',
-            border: 0,
-            padding: 0,
-            cursor: 'pointer',
-            opacity: !activeKey || activeKey === datum.x ? 1 : 0.45,
-          }}
-        >
-          <span
-            style={{
-              width: '14px',
-              height: '14px',
-              background: colorScale(datum.x) as string,
-              display: 'inline-block',
-            }}
-          />
-          <span>{datum.x}</span>
-        </button>
-      ))}
-    </div>
-  ) : null;
 
   return (
     <div
@@ -266,7 +247,7 @@ const PieChart = ({
           style={{
             position: 'absolute',
             top: '50%',
-            left: '50%',
+            left: pieWidth / 2,
             transform: 'translate(-50%, -50%)',
           }}
         >
@@ -284,7 +265,18 @@ const PieChart = ({
           {children({ tooltipData: tooltip.data })}
         </ChartTooltip>
       )}
-      {legend}
+      {resolvedLegendItems.length > 0 && (
+        <ChartLegend
+          items={resolvedLegendItems}
+          title={legendTitle}
+          position={legendPosition}
+          activeKey={activeKey}
+          onItemEnter={handleLegendEnter}
+          onItemLeave={handleLegendLeave}
+          onItemFocus={handleLegendEnter}
+          onItemBlur={handleLegendLeave}
+        />
+      )}
     </div>
   );
 };

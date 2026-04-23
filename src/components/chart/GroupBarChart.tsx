@@ -15,6 +15,7 @@ import { getEventPointerType, getTooltipAlign, resolveTooltipPositionMode } from
 import type {
   CartesianChartProps,
   ColorListProps,
+  LegendProps,
   TooltipOffset,
   TooltipPositionMode,
   TooltipRenderer,
@@ -22,6 +23,8 @@ import type {
 } from '../../util/types';
 import { getClosestIndex } from '../../util/utils';
 import CartesianFrame from '../common/CartesianFrame';
+import ChartLegend from '../common/ChartLegend';
+import { getLegendRightInset } from '../common/chartLegend.utils';
 import ChartTooltip from '../common/ChartTooltip';
 import type { GroupedDatum } from './GroupedChart.types';
 
@@ -52,8 +55,9 @@ export type GroupBarChartProps = CartesianChartProps<GroupedDatum> &
    * `cursor` follows the mouse and `point` sticks to the matched data point.
    * @default "point"
    */
-  tooltipPosition?: TooltipPositionMode;
-};
+    tooltipPosition?: TooltipPositionMode;
+  } &
+  LegendProps;
 
 const defaultMargin = {
   top: 20,
@@ -85,6 +89,10 @@ const GroupBarChart = ({
   ],
   tooltipOffset = { x: 10, y: -10 },
   padding = 0.1,
+  showLegend = false,
+  legendItems,
+  legendPosition = 'bottom',
+  legendTitle,
   tooltipPosition = 'point',
   maxY,
   minY,
@@ -97,6 +105,13 @@ const GroupBarChart = ({
 
   const ref = useRef<SVGSVGElement>(null);
 
+  const chartMargin = useMemo(() => {
+    return {
+      ...margin,
+      right: margin.right + getLegendRightInset(showLegend, legendPosition),
+    };
+  }, [legendPosition, margin, showLegend]);
+
   const keyList = useMemo(() => {
     return Object.keys(data[0]).filter((key) => key !== 'x');
   }, [data]);
@@ -104,9 +119,9 @@ const GroupBarChart = ({
   const x = useMemo(() => {
     return scaleBand()
       .domain(data.map((d) => d.x))
-      .range([margin.left, (parentWidth ?? 0) - margin.right])
+      .range([chartMargin.left, (parentWidth ?? 0) - chartMargin.right])
       .padding(padding);
-  }, [data, margin.left, margin.right, padding, parentWidth]);
+  }, [chartMargin.left, chartMargin.right, data, padding, parentWidth]);
 
   const y = useMemo(() => {
     const maxYList = keyList.map((key) => {
@@ -116,8 +131,8 @@ const GroupBarChart = ({
 
     return scaleLinear()
       .domain([minY ?? 0, maxY ?? max])
-      .range([(parentHeight ?? 0) - margin.bottom, margin.top]);
-  }, [data, keyList, margin.bottom, margin.top, maxY, minY, parentHeight]);
+      .range([(parentHeight ?? 0) - chartMargin.bottom, chartMargin.top]);
+  }, [chartMargin.bottom, chartMargin.top, data, keyList, maxY, minY, parentHeight]);
 
   const colorScale = useMemo(() => {
     return scaleOrdinal().domain(keyList).range(colorList);
@@ -134,6 +149,22 @@ const GroupBarChart = ({
   const barPositions = useMemo(() => {
     return keyList.map((key) => (barScale(key) ?? 0) + barScale.bandwidth() / 2);
   }, [barScale, keyList]);
+
+  const resolvedLegendItems = useMemo(() => {
+    if (!showLegend) {
+      return [];
+    }
+
+    if (legendItems?.length) {
+      return legendItems;
+    }
+
+    return keyList.map((key) => ({
+      key,
+      label: key,
+      color: colorScale(key) as string,
+    }));
+  }, [colorScale, keyList, legendItems, showLegend]);
 
   const drawChart = useCallback(() => {
     const svg = select(ref.current);
@@ -218,7 +249,7 @@ const GroupBarChart = ({
       height={height}
       parentWidth={parentWidth}
       parentHeight={parentHeight}
-      margin={margin}
+      margin={chartMargin}
       xScale={x as AxisScale<AxisDomain>}
       yScale={y as AxisScale<AxisDomain>}
       showGridVertical={showGridVertical}
@@ -244,6 +275,15 @@ const GroupBarChart = ({
             })}
           </ChartTooltip>
         )
+      }
+      overlay={
+        resolvedLegendItems.length > 0 ? (
+          <ChartLegend
+            items={resolvedLegendItems}
+            position={legendPosition}
+            title={legendTitle}
+          />
+        ) : null
       }
     />
   );

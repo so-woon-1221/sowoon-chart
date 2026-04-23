@@ -16,6 +16,7 @@ import { getEventPointerType, getTooltipAlign, resolveTooltipPositionMode } from
 import type {
   CartesianChartProps,
   ColorListProps,
+  LegendProps,
   TooltipInteractionProps,
   TooltipOffset,
   TooltipRenderer,
@@ -23,6 +24,8 @@ import type {
 } from '../../util/types';
 import { getClosestIndex, isSameActivePoint } from '../../util/utils';
 import CartesianFrame from '../common/CartesianFrame';
+import ChartLegend from '../common/ChartLegend';
+import { getLegendRightInset } from '../common/chartLegend.utils';
 import ChartTooltip from '../common/ChartTooltip';
 import type { GroupedDatum } from './GroupedChart.types';
 
@@ -51,6 +54,7 @@ export type GroupLineChartProps = CartesianChartProps<GroupedDatum> &
      */
     tooltipOffset?: TooltipOffset;
   } &
+  LegendProps &
   TooltipInteractionProps;
 
 const defaultMargin = {
@@ -73,6 +77,10 @@ const GroupLineChart = ({
   maxY,
   colorList = ['#98abc5', '#8a89a6', '#7b6888', '#6b486b', '#a05d56', '#d0743c', '#ff8c00'],
   tooltipOffset = { x: 10, y: -10 },
+  showLegend = false,
+  legendItems,
+  legendPosition = 'bottom',
+  legendTitle,
   tooltipPosition = 'point',
   showActiveMarker = false,
   showCrosshair = false,
@@ -86,6 +94,13 @@ const GroupLineChart = ({
 
   const ref = useRef<SVGSVGElement>(null);
 
+  const chartMargin = useMemo(() => {
+    return {
+      ...margin,
+      right: margin.right + getLegendRightInset(showLegend, legendPosition),
+    };
+  }, [legendPosition, margin, showLegend]);
+
   const keyList = useMemo(() => {
     return Object.keys(data[0]).filter((key) => key !== 'x');
   }, [data]);
@@ -93,8 +108,8 @@ const GroupLineChart = ({
   const x = useMemo(() => {
     return scaleBand()
       .domain(data.map((d) => d.x))
-      .range([margin.left, (parentWidth ?? 0) - margin.right]);
-  }, [data, margin.left, margin.right, parentWidth]);
+      .range([chartMargin.left, (parentWidth ?? 0) - chartMargin.right]);
+  }, [chartMargin.left, chartMargin.right, data, parentWidth]);
 
   const xPositions = useMemo(() => {
     return data.map((d) => (x(d.x) ?? 0) + x.bandwidth() / 2);
@@ -108,8 +123,8 @@ const GroupLineChart = ({
 
     return scaleLinear()
       .domain([minY ?? 0, maxY ?? max])
-      .range([(parentHeight ?? 0) - margin.bottom, margin.top]);
-  }, [data, keyList, margin.bottom, margin.top, maxY, minY, parentHeight]);
+      .range([(parentHeight ?? 0) - chartMargin.bottom, chartMargin.top]);
+  }, [chartMargin.bottom, chartMargin.top, data, keyList, maxY, minY, parentHeight]);
 
   const colorScale = useMemo(() => {
     return scaleOrdinal().domain(keyList).range(colorList);
@@ -120,6 +135,22 @@ const GroupLineChart = ({
       .x((d) => (x(d.x) as number) + x.bandwidth() / 2)
       .y((d) => y(d.y));
   }, [x, y]);
+
+  const resolvedLegendItems = useMemo(() => {
+    if (!showLegend) {
+      return [];
+    }
+
+    if (legendItems?.length) {
+      return legendItems;
+    }
+
+    return keyList.map((key) => ({
+      key,
+      label: key,
+      color: colorScale(key) as string,
+    }));
+  }, [colorScale, keyList, legendItems, showLegend]);
 
   const drawChart = useCallback(() => {
     const svg = select(ref.current);
@@ -236,15 +267,15 @@ const GroupLineChart = ({
             <line
               x1={activePoint.left}
               x2={activePoint.left}
-              y1={margin.top}
-              y2={parentHeight - margin.bottom}
+              y1={chartMargin.top}
+              y2={parentHeight - chartMargin.bottom}
               stroke={activePoint.color}
               strokeDasharray="4 4"
               strokeOpacity={0.35}
             />
             <line
-              x1={margin.left}
-              x2={parentWidth - margin.right}
+              x1={chartMargin.left}
+              x2={parentWidth - chartMargin.right}
               y1={activePoint.top}
               y2={activePoint.top}
               stroke={activePoint.color}
@@ -274,7 +305,7 @@ const GroupLineChart = ({
       height={height}
       parentWidth={parentWidth}
       parentHeight={parentHeight}
-      margin={margin}
+      margin={chartMargin}
       xScale={x as AxisScale<AxisDomain>}
       yScale={y as AxisScale<AxisDomain>}
       showGridVertical={showGridVertical}
@@ -305,6 +336,15 @@ const GroupLineChart = ({
             })}
           </ChartTooltip>
         )
+      }
+      overlay={
+        resolvedLegendItems.length > 0 ? (
+          <ChartLegend
+            items={resolvedLegendItems}
+            position={legendPosition}
+            title={legendTitle}
+          />
+        ) : null
       }
     />
   );

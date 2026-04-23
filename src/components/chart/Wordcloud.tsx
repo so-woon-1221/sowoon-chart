@@ -5,22 +5,25 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import WordCloudWorker from 'web-worker:./lib/wordcloud.worker.js';
 
 import { useParentSize } from '../../hooks/useParentSize';
-import { type ChartProps } from '../../util/types';
+import { type ChartProps, type LegendProps } from '../../util/types';
+import ChartLegend from '../common/ChartLegend';
+import { getLegendRightInset } from '../common/chartLegend.utils';
 
 /**
  * Props for {@link Wordcloud}.
  */
-export type WordcloudProps = Omit<ChartProps, 'maxY' | 'minY' | 'color'> & {
-  /**
-   * Colors cycled across generated words.
-   */
-  colorList?: string[];
-  /**
-   * Extra space between placed words.
-   * @default 1
-   */
-  padding?: number;
-};
+export type WordcloudProps = Omit<ChartProps, 'maxY' | 'minY' | 'color'> &
+  LegendProps & {
+    /**
+     * Colors cycled across generated words.
+     */
+    colorList?: string[];
+    /**
+     * Extra space between placed words.
+     * @default 1
+     */
+    padding?: number;
+  };
 
 /**
  * Renders a worker-driven word cloud where `x` becomes text and `y` controls font size.
@@ -31,12 +34,21 @@ const Wordcloud = ({
   data,
   padding = 1,
   colorList = ['#0A0908', '#0891b2', '#C6AC8F', '#60D394', '#D1495B', '#9b5de5'],
+  showLegend = false,
+  legendItems,
+  legendPosition = 'bottom',
+  legendTitle,
+  seriesName,
 }: WordcloudProps) => {
   const { ref: parentRef, width: parentWidth, height: parentHeight } = useParentSize();
 
   const ref = useRef<SVGSVGElement>(null);
   const workerRef = useRef<Worker | null>(null);
   const requestIdRef = useRef(0);
+
+  const layoutWidth = useMemo(() => {
+    return Math.max(parentWidth - getLegendRightInset(showLegend, legendPosition), 0);
+  }, [legendPosition, parentWidth, showLegend]);
 
   const [words, setWords] = useState<
     | {
@@ -66,14 +78,32 @@ const Wordcloud = ({
     return map;
   }, [colorList, data]);
 
+  const resolvedLegendItems = useMemo(() => {
+    if (!showLegend) {
+      return [];
+    }
+
+    if (legendItems?.length) {
+      return legendItems;
+    }
+
+    return [
+      {
+        key: 'wordcloud',
+        label: seriesName ?? 'Words',
+        color: colorList[0] ?? '#0A0908',
+      },
+    ];
+  }, [colorList, legendItems, seriesName, showLegend]);
+
   const wordData = useMemo(
     () => data.map((d) => ({ text: d.x, size: fontScale(d.y) })),
     [data, fontScale],
   );
   const hasLayoutBounds =
-    typeof parentWidth === 'number' &&
+    typeof layoutWidth === 'number' &&
     typeof parentHeight === 'number' &&
-    parentWidth > 0 &&
+    layoutWidth > 0 &&
     parentHeight > 0;
   const shouldRenderWords = hasLayoutBounds && wordData.length > 0;
 
@@ -117,12 +147,12 @@ const Wordcloud = ({
     worker.postMessage({
       type: 'layout',
       requestId,
-      width: parentWidth,
+      width: layoutWidth,
       height: parentHeight,
       data: wordData,
       padding,
     });
-  }, [padding, parentHeight, parentWidth, shouldRenderWords, wordData]);
+  }, [layoutWidth, padding, parentHeight, shouldRenderWords, wordData]);
 
   const drawChart = useCallback(() => {
     const svg = select(ref.current);
@@ -131,7 +161,7 @@ const Wordcloud = ({
 
     chartContainer.attr(
       'transform',
-      `translate(${(parentWidth ?? 0) / 2}, ${(parentHeight ?? 0) / 2})`,
+      `translate(${(layoutWidth ?? 0) / 2}, ${(parentHeight ?? 0) / 2})`,
     );
     const wordEl = chartContainer.selectAll('text').data(renderedWords);
 
@@ -154,7 +184,7 @@ const Wordcloud = ({
       .on('mouseout', () => {
         chartContainer.selectAll('text').attr('opacity', 1);
       });
-  }, [colorMap, parentHeight, parentWidth, shouldRenderWords, words]);
+  }, [colorMap, layoutWidth, parentHeight, shouldRenderWords, words]);
 
   useEffect(() => {
     drawChart();
@@ -166,11 +196,15 @@ const Wordcloud = ({
       style={{
         width: width ?? '100%',
         height: height ?? '100%',
+        position: 'relative',
       }}
     >
       <svg width={'100%'} height={'100%'} ref={ref}>
         <g className={'word-container'} />
       </svg>
+      {resolvedLegendItems.length > 0 && (
+        <ChartLegend items={resolvedLegendItems} position={legendPosition} title={legendTitle} />
+      )}
     </div>
   );
 };

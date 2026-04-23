@@ -18,6 +18,7 @@ import {
 } from '../../util/tooltip';
 import type {
   CartesianChartProps,
+  LegendProps,
   Margin,
   TooltipOffset,
   TooltipPositionMode,
@@ -25,6 +26,8 @@ import type {
   XYDatum,
 } from '../../util/types';
 import CartesianFrame from '../common/CartesianFrame';
+import ChartLegend from '../common/ChartLegend';
+import { getLegendRightInset } from '../common/chartLegend.utils';
 import ChartTooltip from '../common/ChartTooltip';
 
 /**
@@ -37,52 +40,53 @@ export type ScatterDatum = XYDatum & {
 /**
  * Props for {@link ScatterChart}.
  */
-export type ScatterChartProps = CartesianChartProps<ScatterDatum> & {
-  /**
-   * Tooltip children.
-   * @param tooltipData
-   */
-  children?: TooltipRenderer<ScatterDatum>;
-  /**
-   * Min size of circle.
-   */
-  minSize?: number;
-  /**
-   * Max size of circle.
-   */
-  maxSize?: number;
-  /**
-   * Min y value.
-   */
-  minY?: number;
-  /**
-   * Max y value.
-   */
-  maxY?: number;
-  /**
-   * Offset of tooltip.
-   * @default { x: 20, y: -20 }
-   */
-  tooltipOffset?: TooltipOffset;
-  /**
-   * color of the chart.
-   */
-  color?: string;
-  /**
-   * Display grid lines along the x-axis.
-   */
-  showGridVertical?: boolean;
-  /**
-   * Display grid lines along the y-axis.
-   */
-  showGridHorizontal?: boolean;
-  /**
-   * Tooltip anchor position.
-   * `cursor` follows the mouse and `point` sticks to the matched data point.
-   * @default "cursor"
-   */
-  tooltipPosition?: TooltipPositionMode;
-};
+export type ScatterChartProps = CartesianChartProps<ScatterDatum> &
+  LegendProps & {
+    /**
+     * Tooltip children.
+     * @param tooltipData
+     */
+    children?: TooltipRenderer<ScatterDatum>;
+    /**
+     * Min size of circle.
+     */
+    minSize?: number;
+    /**
+     * Max size of circle.
+     */
+    maxSize?: number;
+    /**
+     * Min y value.
+     */
+    minY?: number;
+    /**
+     * Max y value.
+     */
+    maxY?: number;
+    /**
+     * Offset of tooltip.
+     * @default { x: 20, y: -20 }
+     */
+    tooltipOffset?: TooltipOffset;
+    /**
+     * color of the chart.
+     */
+    color?: string;
+    /**
+     * Display grid lines along the x-axis.
+     */
+    showGridVertical?: boolean;
+    /**
+     * Display grid lines along the y-axis.
+     */
+    showGridHorizontal?: boolean;
+    /**
+     * Tooltip anchor position.
+     * `cursor` follows the mouse and `point` sticks to the matched data point.
+     * @default "cursor"
+     */
+    tooltipPosition?: TooltipPositionMode;
+  };
 
 const defaultMargin: Margin = {
   top: 20,
@@ -106,6 +110,11 @@ const ScatterChart = ({
   maxY,
   tooltipOffset = { x: 20, y: -20 },
   color = 'black',
+  showLegend = false,
+  legendItems,
+  legendPosition = 'bottom',
+  legendTitle,
+  seriesName,
   showGridHorizontal = true,
   showGridVertical = true,
   tooltipPosition = 'cursor',
@@ -116,24 +125,49 @@ const ScatterChart = ({
 
   const ref = useRef<SVGSVGElement>(null);
 
+  const chartMargin = useMemo(() => {
+    return {
+      ...margin,
+      right: margin.right + getLegendRightInset(showLegend, legendPosition),
+    };
+  }, [legendPosition, margin, showLegend]);
+
   const x = useMemo(() => {
     return scaleBand()
       .domain(data.map((d) => d.x))
-      .range([margin.left, (parentWidth ?? 0) - margin.right]);
-  }, [data, margin.left, margin.right, parentWidth]);
+      .range([chartMargin.left, (parentWidth ?? 0) - chartMargin.right]);
+  }, [chartMargin.left, chartMargin.right, data, parentWidth]);
 
   const y = useMemo(() => {
     return scaleLinear()
       .domain([minY ?? 0, maxY ?? Math.max(...data.map((d) => d.y))])
       .nice()
-      .range([(parentHeight ?? 0) - margin.bottom, margin.top]);
-  }, [data, margin.bottom, margin.top, maxY, minY, parentHeight]);
+      .range([(parentHeight ?? 0) - chartMargin.bottom, chartMargin.top]);
+  }, [chartMargin.bottom, chartMargin.top, data, maxY, minY, parentHeight]);
 
   const sizeScale = useMemo(() => {
     return scaleLinear()
       .domain(extent(data, (d) => d.value) as [number, number])
       .range([minSize ?? 5, maxSize ?? 20]);
   }, [data, maxSize, minSize]);
+
+  const resolvedLegendItems = useMemo(() => {
+    if (!showLegend) {
+      return [];
+    }
+
+    if (legendItems?.length) {
+      return legendItems;
+    }
+
+    return [
+      {
+        key: 'scatter',
+        label: seriesName ?? 'Scatter',
+        color,
+      },
+    ];
+  }, [color, legendItems, seriesName, showLegend]);
 
   const drawChart = useCallback(() => {
     const svg = select(ref.current);
@@ -196,7 +230,7 @@ const ScatterChart = ({
       height={height}
       parentWidth={parentWidth}
       parentHeight={parentHeight}
-      margin={margin}
+      margin={chartMargin}
       xScale={x as AxisScale<AxisDomain>}
       yScale={y as AxisScale<AxisDomain>}
       showGridVertical={showGridVertical}
@@ -218,6 +252,11 @@ const ScatterChart = ({
             })}
           </ChartTooltip>
         )
+      }
+      overlay={
+        resolvedLegendItems.length > 0 ? (
+          <ChartLegend items={resolvedLegendItems} position={legendPosition} title={legendTitle} />
+        ) : null
       }
     />
   );

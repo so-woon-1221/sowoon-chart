@@ -2,21 +2,24 @@ import { hierarchy, hsl, pack, select } from 'd3';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 
 import { useParentSize } from '../../hooks/useParentSize';
-import type { ChartProps } from '../../util/types';
+import type { ChartProps, LegendProps } from '../../util/types';
+import ChartLegend from '../common/ChartLegend';
+import { getLegendRightInset } from '../common/chartLegend.utils';
 
 /**
  * Props for {@link BubbleChart}.
  */
-export type BubbleChartProps = Pick<ChartProps, 'width' | 'height' | 'data' | 'margin'> & {
-  /**
-   * Reserved slot for future custom overlays.
-   */
-  children?: React.ReactNode;
-  /**
-   * Color palette applied to bubble nodes in order.
-   */
-  colorList?: string[];
-};
+export type BubbleChartProps = Pick<ChartProps, 'width' | 'height' | 'data' | 'margin'> &
+  LegendProps & {
+    /**
+     * Reserved slot for future custom overlays.
+     */
+    children?: React.ReactNode;
+    /**
+     * Color palette applied to bubble nodes in order.
+     */
+    colorList?: string[];
+  };
 
 /**
  * Renders packed circles sized by each datum's `y` value.
@@ -27,9 +30,19 @@ const BubbleChart = ({
   data,
   margin = { top: 10, left: 30, right: 30, bottom: 10 },
   colorList = ['#0A0908', '#0891b2', '#C6AC8F', '#60D394', '#D1495B', '#9b5de5'],
+  showLegend = false,
+  legendItems,
+  legendPosition = 'bottom',
+  legendTitle,
+  seriesName,
+  children,
 }: BubbleChartProps) => {
   const { ref: parentRef, height: parentHeight, width: parentWidth } = useParentSize();
   const ref = useRef<SVGSVGElement>(null);
+
+  const layoutWidth = useMemo(() => {
+    return Math.max(parentWidth - getLegendRightInset(showLegend, legendPosition), 0);
+  }, [legendPosition, parentWidth, showLegend]);
 
   const packData = useMemo(() => {
     return {
@@ -46,9 +59,27 @@ const BubbleChart = ({
 
   const packGenerator = useMemo(() => {
     return pack<{ key: string; value: number }>()
-      .size([parentWidth - margin.left - margin.right, parentHeight - margin.top - margin.bottom])
+      .size([layoutWidth - margin.left - margin.right, parentHeight - margin.top - margin.bottom])
       .padding(1);
-  }, [margin.bottom, margin.left, margin.right, margin.top, parentHeight, parentWidth]);
+  }, [layoutWidth, margin.bottom, margin.left, margin.right, margin.top, parentHeight]);
+
+  const resolvedLegendItems = useMemo(() => {
+    if (!showLegend) {
+      return [];
+    }
+
+    if (legendItems?.length) {
+      return legendItems;
+    }
+
+    return [
+      {
+        key: 'bubble',
+        label: seriesName ?? 'Bubbles',
+        color: colorList[0] ?? '#0A0908',
+      },
+    ];
+  }, [colorList, legendItems, seriesName, showLegend]);
 
   const drawChart = useCallback(() => {
     const svg = select(ref.current);
@@ -95,11 +126,16 @@ const BubbleChart = ({
       style={{
         width: width ?? '100%',
         height: height ?? '100%',
+        position: 'relative',
       }}
     >
       <svg width={'100%'} height={'100%'} ref={ref}>
         <g className={'chart'} />
       </svg>
+      {children}
+      {resolvedLegendItems.length > 0 && (
+        <ChartLegend items={resolvedLegendItems} position={legendPosition} title={legendTitle} />
+      )}
     </div>
   );
 };

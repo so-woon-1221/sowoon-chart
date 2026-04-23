@@ -4,15 +4,24 @@ import { type PointerEventHandler, useCallback, useEffect, useMemo, useRef } fro
 import { useChartTooltip } from '../../hooks/useChartTooltip';
 import { useParentSize } from '../../hooks/useParentSize';
 import { getEventPointerType, getTooltipAlign, resolveTooltipPositionMode } from '../../util/tooltip';
-import type { ChartProps, TooltipPositionMode, TooltipRenderer, XYDatum } from '../../util/types';
+import type {
+  ChartProps,
+  LegendProps,
+  TooltipPositionMode,
+  TooltipRenderer,
+  XYDatum,
+} from '../../util/types';
 import { getClosestIndex } from '../../util/utils';
 import CartesianFrame from '../common/CartesianFrame';
+import ChartLegend from '../common/ChartLegend';
+import { getLegendRightInset } from '../common/chartLegend.utils';
 import ChartTooltip from '../common/ChartTooltip';
 
 /**
  * Props for {@link BarChart}.
  */
-export type BarChartProps = ChartProps & {
+export type BarChartProps = ChartProps &
+  LegendProps & {
   /**
    * Padding between bars.
    * @default 0.1
@@ -28,7 +37,7 @@ export type BarChartProps = ChartProps & {
    * @default "point"
    */
   tooltipPosition?: TooltipPositionMode;
-};
+  };
 
 const defaultMargin = {
   top: 20,
@@ -50,6 +59,11 @@ const BarChart = ({
   maxY,
   padding = 0.1,
   children,
+  showLegend = false,
+  legendItems,
+  legendPosition = 'bottom',
+  legendTitle,
+  seriesName,
   tooltipPosition = 'point',
   showGridVertical = true,
   showGridHorizontal = true,
@@ -60,22 +74,47 @@ const BarChart = ({
 
   const ref = useRef<SVGSVGElement>(null);
 
+  const chartMargin = useMemo(() => {
+    return {
+      ...margin,
+      right: margin.right + getLegendRightInset(showLegend, legendPosition),
+    };
+  }, [legendPosition, margin, showLegend]);
+
   const x = useMemo(() => {
     return scaleBand()
       .domain(data.map((d) => d.x))
-      .range([margin.left, (parentWidth ?? 0) - margin.right])
+      .range([chartMargin.left, (parentWidth ?? 0) - chartMargin.right])
       .padding(padding);
-  }, [data, margin.left, margin.right, padding, parentWidth]);
+  }, [chartMargin.left, chartMargin.right, data, padding, parentWidth]);
 
   const y = useMemo(() => {
     return scaleLinear()
       .domain([minY ?? 0, maxY ?? Math.max(...data.map((d) => d.y))])
-      .range([(parentHeight ?? 0) - margin.bottom, margin.top]);
-  }, [data, margin.bottom, margin.top, maxY, minY, parentHeight]);
+      .range([(parentHeight ?? 0) - chartMargin.bottom, chartMargin.top]);
+  }, [chartMargin.bottom, chartMargin.top, data, maxY, minY, parentHeight]);
 
   const xPositions = useMemo(() => {
     return data.map((d) => (x(d.x) ?? 0) + x.bandwidth() / 2);
   }, [data, x]);
+
+  const resolvedLegendItems = useMemo(() => {
+    if (!showLegend) {
+      return [];
+    }
+
+    if (legendItems?.length) {
+      return legendItems;
+    }
+
+    return [
+      {
+        key: 'bar',
+        label: seriesName ?? 'Bars',
+        color,
+      },
+    ];
+  }, [color, legendItems, seriesName, showLegend]);
 
   const drawChart = useCallback(() => {
     const svg = select(ref.current);
@@ -89,8 +128,8 @@ const BarChart = ({
       .attr('y', (d) => y(d.y) ?? 0)
       .attr('fill', color)
       .attr('width', x.bandwidth())
-      .attr('height', (d) => (parentHeight ?? 0) - y(d.y) - margin.bottom);
-  }, [color, data, margin.bottom, parentHeight, x, y]);
+      .attr('height', (d) => (parentHeight ?? 0) - y(d.y) - chartMargin.bottom);
+  }, [chartMargin.bottom, color, data, parentHeight, x, y]);
 
   useEffect(() => {
     drawChart();
@@ -136,7 +175,7 @@ const BarChart = ({
       height={height}
       parentWidth={parentWidth}
       parentHeight={parentHeight}
-      margin={margin}
+      margin={chartMargin}
       xScale={x as AxisScale<AxisDomain>}
       yScale={y as AxisScale<AxisDomain>}
       showGridVertical={showGridVertical}
@@ -158,6 +197,15 @@ const BarChart = ({
             {children({ tooltipData: tooltip.data })}
           </ChartTooltip>
         )
+      }
+      overlay={
+        resolvedLegendItems.length > 0 ? (
+          <ChartLegend
+            items={resolvedLegendItems}
+            position={legendPosition}
+            title={legendTitle}
+          />
+        ) : null
       }
     />
   );

@@ -10,11 +10,14 @@ import {
 } from '../../util/tooltip';
 import type {
   BaseChartProps,
+  LegendProps,
   TooltipOffset,
   TooltipPositionMode,
   TooltipRenderer,
   XYDatum,
 } from '../../util/types';
+import ChartLegend from '../common/ChartLegend';
+import { getLegendRightInset } from '../common/chartLegend.utils';
 import ChartTooltip from '../common/ChartTooltip';
 
 /**
@@ -61,7 +64,7 @@ export type RadarChartProps = Pick<BaseChartProps, 'width' | 'height'> & {
    * @default "cursor"
    */
   tooltipPosition?: TooltipPositionMode;
-};
+} & Omit<LegendProps, 'seriesName'>;
 
 /**
  * Renders radial polygon series for comparing multiple categories at once.
@@ -75,6 +78,10 @@ const RadarChart = ({
   children,
   tooltipOffset = { x: 10, y: -10 },
   tooltipPosition = 'cursor',
+  showLegend = true,
+  legendItems,
+  legendPosition = 'bottom',
+  legendTitle,
 }: RadarChartProps) => {
   const { tooltip, showTooltip, hideTooltip } = useChartTooltip<XYDatum>();
   const [activeKey, setActiveKey] = useState<string | null>(null);
@@ -82,6 +89,10 @@ const RadarChart = ({
   const { ref: parentRef, height: parentHeight, width: parentWidth } = useParentSize();
 
   const ref = useRef<SVGSVGElement>(null);
+
+  const chartWidth = useMemo(() => {
+    return Math.max(parentWidth - getLegendRightInset(showLegend, legendPosition), 0);
+  }, [legendPosition, parentWidth, showLegend]);
 
   const color = useMemo(
     () =>
@@ -113,8 +124,8 @@ const RadarChart = ({
     () =>
       scaleLinear()
         .domain([0, maxY!])
-        .range([0, Math.min(parentHeight, parentWidth) / 2 - margin]),
-    [margin, maxY, parentHeight, parentWidth],
+        .range([0, Math.min(parentHeight, chartWidth) / 2 - margin]),
+    [chartWidth, margin, maxY, parentHeight],
   );
 
   const radarLine = useMemo(
@@ -129,7 +140,7 @@ const RadarChart = ({
   const drawChart = useCallback(() => {
     const svg = select(ref.current);
     const chartContainer = svg.select('.chart');
-    chartContainer.attr('transform', `translate(${parentWidth / 2}, ${parentHeight / 2})`);
+    chartContainer.attr('transform', `translate(${chartWidth / 2}, ${parentHeight / 2})`);
 
     chartContainer
       .selectAll('path.axis')
@@ -199,7 +210,7 @@ const RadarChart = ({
     seriesPoints
       .on('pointermove', (e, d) => {
         const [xPoint, yPoint] = pointer(e, ref.current);
-        const pointX = parentWidth / 2 + rScale(d.y) * Math.cos(angleSlice * d.index - Math.PI / 2);
+        const pointX = chartWidth / 2 + rScale(d.y) * Math.cos(angleSlice * d.index - Math.PI / 2);
         const pointY =
           parentHeight / 2 + rScale(d.y) * Math.sin(angleSlice * d.index - Math.PI / 2);
         const resolvedTooltipPosition = resolveTooltipPositionMode(
@@ -235,8 +246,8 @@ const RadarChart = ({
     data,
     hideTooltip,
     maxY,
+    chartWidth,
     parentHeight,
-    parentWidth,
     rScale,
     radarLine,
     showTooltip,
@@ -263,6 +274,22 @@ const RadarChart = ({
   }, [activeKey, data]);
 
   const keyList = useMemo(() => data.map((d) => d.key), [data]);
+
+  const resolvedLegendItems = useMemo(() => {
+    if (!showLegend) {
+      return [];
+    }
+
+    if (legendItems?.length) {
+      return legendItems;
+    }
+
+    return keyList.map((key) => ({
+      key,
+      label: key,
+      color: color(key),
+    }));
+  }, [color, keyList, legendItems, showLegend]);
 
   return (
     <div
@@ -291,49 +318,18 @@ const RadarChart = ({
           })}
         </ChartTooltip>
       )}
-      <div
-        style={{
-          position: 'absolute',
-          bottom: 0,
-          display: 'flex',
-          gap: '8px',
-          fontSize: '14px',
-          padding: '4px',
-        }}
-      >
-        {keyList.map((key) => (
-          <button
-            key={`legend-${key}`}
-            type="button"
-            onPointerEnter={() => setActiveKey(key)}
-            onPointerLeave={() => setActiveKey(null)}
-            onFocus={() => setActiveKey(key)}
-            onBlur={() => setActiveKey(null)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              cursor: 'pointer',
-              background: 'transparent',
-              border: 0,
-              padding: 0,
-              color: 'inherit',
-              font: 'inherit',
-              opacity: !activeKey || activeKey === key ? 1 : 0.45,
-            }}
-          >
-            <span
-              style={{
-                width: '14px',
-                height: '14px',
-                background: color(key),
-                display: 'inline-block',
-              }}
-            />
-            <span>{key}</span>
-          </button>
-        ))}
-      </div>
+      {resolvedLegendItems.length > 0 && (
+        <ChartLegend
+          items={resolvedLegendItems}
+          title={legendTitle}
+          position={legendPosition}
+          activeKey={activeKey}
+          onItemEnter={(item) => setActiveKey(item.key)}
+          onItemLeave={() => setActiveKey(null)}
+          onItemFocus={(item) => setActiveKey(item.key)}
+          onItemBlur={() => setActiveKey(null)}
+        />
+      )}
     </div>
   );
 };

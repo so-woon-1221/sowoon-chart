@@ -22,6 +22,9 @@ import {
 import { useEffect, useMemo, useRef } from 'react';
 
 import { useParentSize } from '../../hooks/useParentSize';
+import type { LegendProps } from '../../util/types';
+import ChartLegend from '../common/ChartLegend';
+import { getLegendRightInset } from '../common/chartLegend.utils';
 
 /**
  * One node used by {@link NetworkChart}.
@@ -52,7 +55,7 @@ export interface NetworkChartData {
 /**
  * Props for {@link NetworkChart}.
  */
-export type NetworkChartProps = {
+export type NetworkChartProps = LegendProps & {
   /**
    * Node and link data rendered by the force simulation.
    */
@@ -134,9 +137,18 @@ const NetworkChart = ({
   maxLinkWidth = 10,
   minLinkWidth = 1,
   color = '#9b5de5',
+  showLegend = false,
+  legendItems,
+  legendPosition = 'bottom',
+  legendTitle,
+  seriesName,
 }: NetworkChartProps) => {
   const { ref: parentRef, width: parentWidth, height: parentHeight } = useParentSize();
   const ref = useRef<SVGSVGElement>(null);
+
+  const layoutWidth = useMemo(() => {
+    return Math.max(parentWidth - getLegendRightInset(showLegend, legendPosition), 0);
+  }, [legendPosition, parentWidth, showLegend]);
 
   const strokeScale = useMemo(
     () =>
@@ -163,6 +175,24 @@ const NetworkChart = ({
         .range([minRadius, maxRadius]),
     [data.nodes, maxRadius, minRadius],
   );
+
+  const resolvedLegendItems = useMemo(() => {
+    if (!showLegend) {
+      return [];
+    }
+
+    if (legendItems?.length) {
+      return legendItems;
+    }
+
+    return [
+      {
+        key: 'network',
+        label: seriesName ?? 'Nodes',
+        color,
+      },
+    ];
+  }, [color, legendItems, seriesName, showLegend]);
 
   const nodeDrag = (
     simulation: Simulation<Node, Link>,
@@ -195,7 +225,7 @@ const NetworkChart = ({
 
   useEffect(() => {
     const svgElement = ref.current;
-    if (!svgElement || parentWidth <= 0 || parentHeight <= 0) {
+    if (!svgElement || layoutWidth <= 0 || parentHeight <= 0) {
       return;
     }
 
@@ -226,7 +256,7 @@ const NetworkChart = ({
           .id((node) => node.id)
           .distance(100),
       )
-      .force('center', forceCenter(parentWidth / 2, parentHeight / 2))
+      .force('center', forceCenter(layoutWidth / 2, parentHeight / 2))
       .force('charge', forceManyBody().strength(-200))
       .force(
         'collide',
@@ -234,7 +264,7 @@ const NetworkChart = ({
           .radius((node) => circleScale(+node.value) + 10)
           .strength(1),
       )
-      .force('x', forceX(parentWidth))
+      .force('x', forceX(layoutWidth))
       .force('y', forceY(parentHeight));
 
     const nodeLinkStatus: Record<string, boolean> = {};
@@ -375,7 +405,7 @@ const NetworkChart = ({
       .scaleExtent([0.7, 1.5])
       .extent([
         [0, 0],
-        [parentWidth, parentHeight],
+        [layoutWidth, parentHeight],
       ])
       .on('zoom', (event) => {
         chartArea.attr('transform', event.transform.toString());
@@ -389,7 +419,7 @@ const NetworkChart = ({
       svg.on('.zoom', null);
       chartArea.selectAll('*').interrupt();
     };
-  }, [circleScale, color, data.links, data.nodes, parentHeight, parentWidth, strokeScale]);
+  }, [circleScale, color, data.links, data.nodes, layoutWidth, parentHeight, strokeScale]);
 
   return (
     <div
@@ -397,6 +427,7 @@ const NetworkChart = ({
       style={{
         width: width ?? '100%',
         height: height ?? '100%',
+        position: 'relative',
       }}
     >
       <svg width={'100%'} height={'100%'} ref={ref} className="z-[-1]">
@@ -406,6 +437,9 @@ const NetworkChart = ({
           <g className="text" />
         </g>
       </svg>
+      {resolvedLegendItems.length > 0 && (
+        <ChartLegend items={resolvedLegendItems} position={legendPosition} title={legendTitle} />
+      )}
     </div>
   );
 };

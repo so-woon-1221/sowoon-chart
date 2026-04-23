@@ -29,6 +29,20 @@ export type TooltipAnchorMode = 'cursor' | 'point';
 export type TooltipPositionMode = TooltipAnchorMode | 'auto';
 
 /**
+ * Legend placement relative to the chart.
+ */
+export type LegendPosition = 'bottom' | 'right';
+
+/**
+ * One rendered legend entry.
+ */
+export type LegendItem = {
+  key: string;
+  label: string;
+  color: string;
+};
+
+/**
  * Shared x/y data shape used by single-series charts.
  */
 export type XYDatum = {
@@ -81,6 +95,31 @@ export interface BaseChartProps {
    * @default { top: 20, right: 20, bottom: 50, left: 50 }
    */
   margin?: Margin;
+}
+
+export interface LegendProps {
+  /**
+   * Toggle legend rendering.
+   * @default false
+   */
+  showLegend?: boolean;
+  /**
+   * Optional manual legend items. When omitted, charts may derive items from their own data.
+   */
+  legendItems?: LegendItem[];
+  /**
+   * Legend placement relative to the chart.
+   * @default "bottom"
+   */
+  legendPosition?: LegendPosition;
+  /**
+   * Optional legend heading.
+   */
+  legendTitle?: string;
+  /**
+   * Display label used by single-series charts when auto-generating legend items.
+   */
+  seriesName?: string;
 }
 
 export interface CartesianChartProps<TData = XYDatum> extends BaseChartProps {
