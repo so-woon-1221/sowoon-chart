@@ -1,7 +1,5 @@
 import { extent, scaleLinear } from 'd3';
 import { useEffect, useMemo, useRef, useState } from 'react';
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-expect-error
 import WordCloudWorker from 'web-worker:./lib/wordcloud.worker.js';
 
 import { useParentSize } from '../../hooks/useParentSize';
@@ -24,6 +22,30 @@ export type WordcloudProps = Omit<ChartProps, 'maxY' | 'minY' | 'color'> &
      */
     padding?: number;
   };
+
+type WordcloudLayoutWord = {
+  text: string;
+  size: number;
+  x: number;
+  y: number;
+  rotate: number;
+};
+
+type WordcloudWorkerMessage =
+  | {
+      type: 'start';
+      requestId: number;
+    }
+  | {
+      type: 'end';
+      requestId: number;
+      data: WordcloudLayoutWord[];
+    }
+  | {
+      type: 'error';
+      requestId: number;
+      message: string;
+    };
 
 /**
  * Renders a worker-driven word cloud where `x` becomes text and `y` controls font size.
@@ -52,16 +74,7 @@ const Wordcloud = ({
     return Math.max(parentWidth - getLegendRightInset(showLegend, legendPosition), 0);
   }, [legendPosition, parentWidth, showLegend]);
 
-  const [words, setWords] = useState<
-    | {
-        text: string;
-        size: number;
-        x: number;
-        y: number;
-        rotate: number;
-      }[]
-    | null
-  >(null);
+  const [words, setWords] = useState<WordcloudLayoutWord[] | null>(null);
 
   const fontScale = useMemo(
     () =>
@@ -113,14 +126,30 @@ const Wordcloud = ({
     const worker: Worker = new WordCloudWorker();
     workerRef.current = worker;
 
-    worker.onmessage = (e) => {
-      if (e.data.requestId !== requestIdRef.current) {
+    worker.onmessage = (event: MessageEvent<WordcloudWorkerMessage>) => {
+      const message = event.data;
+
+      if (message.requestId !== requestIdRef.current) {
         return;
       }
 
-      if (e.data.type === 'end') {
-        setWords(e.data.data);
+      if (message.type === 'start') {
+        setWords(null);
+        return;
       }
+
+      if (message.type === 'end') {
+        setWords(message.data);
+        return;
+      }
+
+      if (message.type === 'error') {
+        setWords([]);
+      }
+    };
+
+    worker.onerror = () => {
+      setWords([]);
     };
 
     return () => {
@@ -142,6 +171,7 @@ const Wordcloud = ({
     if (!shouldRenderWords) {
       worker.postMessage({
         type: 'cancel',
+        requestId,
       });
       return;
     }
