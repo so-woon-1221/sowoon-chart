@@ -12,6 +12,12 @@ export default meta;
 
 type Story = StoryObj<typeof Wordcloud>;
 
+const renderTooltip = ({ tooltipData }: { tooltipData: { x: string; y: number } }) => (
+  <div style={{ background: '#111827', color: '#fff', padding: '4px 6px' }}>
+    {tooltipData.x}: {tooltipData.y}
+  </div>
+);
+
 export const 워드클라우드: Story = {
   args: {
     data: [
@@ -22,6 +28,7 @@ export const 워드클라우드: Story = {
       { x: 'E', y: 50 },
     ],
     height: 400,
+    children: renderTooltip,
   },
   argTypes: {
     padding: {
@@ -29,6 +36,21 @@ export const 워드클라우드: Story = {
         type: 'number',
       },
     },
+  },
+};
+
+export const 커서툴팁: Story = {
+  args: {
+    data: [
+      { x: 'React', y: 42 },
+      { x: 'D3', y: 36 },
+      { x: 'SVG', y: 28 },
+      { x: 'Tooltip', y: 24 },
+      { x: 'Worker', y: 18 },
+    ],
+    height: 400,
+    tooltipPosition: 'cursor',
+    children: renderTooltip,
   },
 };
 

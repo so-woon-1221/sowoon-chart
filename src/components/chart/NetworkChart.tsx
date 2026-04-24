@@ -8,6 +8,7 @@ import {
   forceX,
   forceY,
   hsl,
+  pointer,
   scaleLinear,
   type Simulation,
   type SimulationLinkDatum,
@@ -23,10 +24,23 @@ import {
   type WheelEvent,
 } from 'react';
 
+import { useChartTooltip } from '../../hooks/useChartTooltip';
 import { useParentSize } from '../../hooks/useParentSize';
-import type { AccessibilityProps, LegendProps } from '../../util/types';
+import {
+  getEventPointerType,
+  getTooltipAlign,
+  resolveTooltipPositionMode,
+} from '../../util/tooltip';
+import type {
+  AccessibilityProps,
+  LegendProps,
+  TooltipOffset,
+  TooltipPositionMode,
+  TooltipRenderer,
+} from '../../util/types';
 import ChartLegend from '../common/ChartLegend';
 import { getLegendRightInset } from '../common/chartLegend.utils';
+import ChartTooltip from '../common/ChartTooltip';
 
 /**
  * One node used by {@link NetworkChart}.
@@ -96,6 +110,20 @@ export type NetworkChartProps = AccessibilityProps &
      * @default "#9b5de5"
      */
     color?: string;
+    /**
+     * Custom tooltip renderer shown while hovering a node.
+     */
+    children?: TooltipRenderer<NetworkNodeDatum>;
+    /**
+     * Offset of the tooltip from the pointer or node.
+     * @default { x: 10, y: -10 }
+     */
+    tooltipOffset?: TooltipOffset;
+    /**
+     * Tooltip anchor position.
+     * @default "point"
+     */
+    tooltipPosition?: TooltipPositionMode;
   };
 
 interface Node extends SimulationNodeDatum {
@@ -178,6 +206,9 @@ const NetworkChart = ({
   maxLinkWidth = 10,
   minLinkWidth = 1,
   color = '#9b5de5',
+  children,
+  tooltipOffset = { x: 10, y: -10 },
+  tooltipPosition = 'point',
   showLegend = false,
   legendItems,
   legendPosition = 'bottom',
@@ -186,6 +217,7 @@ const NetworkChart = ({
   ariaLabel = 'Network chart',
   ariaDescription,
 }: NetworkChartProps) => {
+  const { tooltip, showTooltip, hideTooltip } = useChartTooltip<NetworkNodeDatum>();
   const { ref: parentRef, width: parentWidth, height: parentHeight } = useParentSize();
   const ref = useRef<SVGSVGElement>(null);
   const simulationRef = useRef<Simulation<Node, Link> | null>(null);
@@ -471,6 +503,7 @@ const NetworkChart = ({
   const handleNodePointerDown = useCallback(
     (event: PointerEvent<SVGCircleElement>, node: Node) => {
       event.stopPropagation();
+      hideTooltip();
       draggedNodeIdRef.current = node.id;
       event.currentTarget.setPointerCapture(event.pointerId);
 
@@ -483,12 +516,69 @@ const NetworkChart = ({
         simulation.alphaTarget(0.3).restart();
       }
     },
-    [getChartPoint],
+    [getChartPoint, hideTooltip],
+  );
+
+  const showNodeTooltip = useCallback(
+    (event: PointerEvent<SVGCircleElement>, node: Node) => {
+      setActiveNodeId(node.id);
+
+      if (!children) {
+        return;
+      }
+
+      const [xPoint, yPoint] = pointer(event, ref.current ?? event.currentTarget);
+      const resolvedTooltipPosition = resolveTooltipPositionMode(
+        tooltipPosition,
+        getEventPointerType(event),
+      );
+      const isPointTooltip = resolvedTooltipPosition === 'point';
+
+      showTooltip({
+        left: isPointTooltip ? (node.x ?? 0) * transform.k + transform.x : xPoint,
+        top: isPointTooltip ? (node.y ?? 0) * transform.k + transform.y : yPoint,
+        data: {
+          id: node.id,
+          group: node.group,
+          value: node.value,
+        },
+        positionMode: resolvedTooltipPosition,
+      });
+    },
+    [children, showTooltip, tooltipPosition, transform.k, transform.x, transform.y],
+  );
+
+  const hideNodeTooltip = useCallback(() => {
+    setActiveNodeId(null);
+    hideTooltip();
+  }, [hideTooltip]);
+
+  const focusNode = useCallback(
+    (node: Node) => {
+      setActiveNodeId(node.id);
+
+      if (!children) {
+        return;
+      }
+
+      showTooltip({
+        left: (node.x ?? 0) * transform.k + transform.x,
+        top: (node.y ?? 0) * transform.k + transform.y,
+        data: {
+          id: node.id,
+          group: node.group,
+          value: node.value,
+        },
+        positionMode: 'point',
+      });
+    },
+    [children, showTooltip, transform.k, transform.x, transform.y],
   );
 
   const handleNodePointerMove = useCallback(
     (event: PointerEvent<SVGCircleElement>, node: Node) => {
       if (draggedNodeIdRef.current !== node.id) {
+        showNodeTooltip(event, node);
         return;
       }
 
@@ -502,7 +592,7 @@ const NetworkChart = ({
         links: [...prev.links],
       }));
     },
-    [getChartPoint],
+    [getChartPoint, showNodeTooltip],
   );
 
   const handleNodePointerEnd = useCallback((event: PointerEvent<SVGCircleElement>, node: Node) => {
@@ -592,13 +682,13 @@ const NetworkChart = ({
                   opacity={isConnected ? 1 : 0.1}
                   tabIndex={0}
                   aria-label={`${node.id}: ${node.value}`}
-                  onPointerEnter={() => setActiveNodeId(node.id)}
-                  onPointerLeave={() => setActiveNodeId(null)}
-                  onFocus={() => setActiveNodeId(node.id)}
-                  onBlur={() => setActiveNodeId(null)}
+                  onPointerEnter={(event) => showNodeTooltip(event, node)}
+                  onPointerLeave={hideNodeTooltip}
+                  onFocus={() => focusNode(node)}
+                  onBlur={hideNodeTooltip}
                   onKeyDown={(event) => {
                     if (event.key === 'Escape') {
-                      setActiveNodeId(null);
+                      hideNodeTooltip();
                     }
                   }}
                   onPointerDown={(event) => handleNodePointerDown(event, node)}
@@ -633,6 +723,17 @@ const NetworkChart = ({
       </svg>
       {resolvedLegendItems.length > 0 && (
         <ChartLegend items={resolvedLegendItems} position={legendPosition} title={legendTitle} />
+      )}
+      {children && tooltip.isOpen && tooltip.data && (
+        <ChartTooltip
+          left={tooltip.left}
+          top={tooltip.top}
+          align={getTooltipAlign(tooltip.positionMode)}
+          offsetX={tooltipOffset.x}
+          offsetY={tooltipOffset.y}
+        >
+          {children({ tooltipData: tooltip.data })}
+        </ChartTooltip>
       )}
     </div>
   );

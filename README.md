@@ -193,6 +193,9 @@ tooltip은 `children` render prop으로 전달합니다.
 - `ScatterChart`
 - `PieChart`
 - `RadarChart`
+- `BubbleChart`
+- `NetworkChart`
+- `Wordcloud`
 
 예시:
 
