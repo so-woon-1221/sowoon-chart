@@ -54,6 +54,23 @@ export const 포인트툴팁: Story = {
   },
 };
 
+export const 축옵션과값라벨: Story = {
+  args: {
+    data,
+    height: 400,
+    margin: { top: 20, right: 24, bottom: 72, left: 64 },
+    tooltipPosition: 'point',
+    xTickAngle: -35,
+    xAxisLabel: 'Category',
+    yAxisLabel: 'Value',
+    yTickCount: 5,
+    yTickFormat: (value) => `${value}`,
+    showValueLabels: true,
+    valueLabelFormatter: (value) => `${value}건`,
+    children: renderTooltip,
+  },
+};
+
 export const 단일데이터: Story = {
   args: {
     data: singleDatumData,

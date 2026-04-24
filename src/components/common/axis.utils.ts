@@ -1,5 +1,7 @@
 import type { AxisDomain, AxisScale } from 'd3';
 
+import type { AxisTickFormatter } from '../../util/types';
+
 type TickableScale = AxisScale<AxisDomain> & {
   ticks?: (count?: number) => AxisDomain[];
   tickFormat?: (count?: number) => (value: AxisDomain, index: number) => string;
@@ -22,7 +24,14 @@ const getScaleTicks = (scale: AxisScale<AxisDomain>, count: number) => {
     return tickableScale.ticks(count);
   }
 
-  return scale.domain();
+  const domain = scale.domain();
+
+  if (count <= 0 || domain.length <= count) {
+    return domain;
+  }
+
+  const step = Math.ceil(domain.length / count);
+  return domain.filter((_, index) => index % step === 0);
 };
 
 const getScaleTickFormatter = (scale: AxisScale<AxisDomain>, count: number) => {
@@ -41,8 +50,13 @@ const getScaleBandwidth = (scale: AxisScale<AxisDomain>) => {
   return typeof bandLikeScale.bandwidth === 'function' ? bandLikeScale.bandwidth() : 0;
 };
 
-export const getAxisTickItems = (scale: AxisScale<AxisDomain>, count = 10): AxisTickItem[] => {
-  const formatter = getScaleTickFormatter(scale, count);
+export const getAxisTickItems = (
+  scale: AxisScale<AxisDomain>,
+  count = 10,
+  tickFormat?: AxisTickFormatter,
+): AxisTickItem[] => {
+  const defaultFormatter = getScaleTickFormatter(scale, count);
+  const formatter = tickFormat ?? defaultFormatter;
   const bandwidthOffset = getScaleBandwidth(scale) / 2;
 
   return getScaleTicks(scale, count).flatMap((value, index) => {

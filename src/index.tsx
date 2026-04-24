@@ -35,6 +35,8 @@ export { default as Wordcloud } from './components/chart/Wordcloud';
 export type { ExportImageProps } from './components/common/ExportImage';
 export { default as ExportImage } from './components/common/ExportImage';
 export type {
+  AxisOptionProps,
+  AxisTickFormatter,
   BaseChartProps,
   CartesianChartProps,
   ChartProps,
@@ -50,5 +52,7 @@ export type {
   TooltipPositionMode,
   TooltipRenderer,
   TooltipRenderProps,
+  ValueLabelFormatter,
+  ValueLabelProps,
   XYDatum,
 } from './util/types';

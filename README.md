@@ -108,6 +108,12 @@ export default function Example() {
 - `maxY?`: y축 최대값
 - `showGridVertical?`: 세로 grid 표시 여부
 - `showGridHorizontal?`: 가로 grid 표시 여부
+- `xTickCount?`, `yTickCount?`: 축 tick 개수
+- `xTickFormat?`, `yTickFormat?`: 축 tick 라벨 포맷터
+- `xTickAngle?`: x축 tick 라벨 회전 각도
+- `xAxisLabel?`, `yAxisLabel?`: 축 라벨
+- `showValueLabels?`: 데이터 값 라벨 표시 여부
+- `valueLabelFormatter?`: 데이터 값 라벨 포맷터
 
 예시:
 
@@ -122,6 +128,9 @@ export default function Example() {
   color="#0f766e"
   minY={0}
   maxY={30}
+  showValueLabels
+  yAxisLabel="Sales"
+  valueLabelFormatter={(value) => `${value}건`}
 />
 ```
 

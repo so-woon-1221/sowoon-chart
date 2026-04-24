@@ -20,6 +20,7 @@ import CartesianFrame from '../common/CartesianFrame';
 import ChartLegend from '../common/ChartLegend';
 import { getLegendRightInset } from '../common/chartLegend.utils';
 import ChartTooltip from '../common/ChartTooltip';
+import { formatValueLabel, getValueLabelDy } from '../common/valueLabel.utils';
 
 type ActivePoint = {
   left: number;
@@ -68,6 +69,15 @@ const LineChart = ({
   showCrosshair = false,
   showGridVertical = true,
   showGridHorizontal = true,
+  xTickCount,
+  yTickCount,
+  xTickFormat,
+  yTickFormat,
+  xTickAngle,
+  xAxisLabel,
+  yAxisLabel,
+  showValueLabels = false,
+  valueLabelFormatter,
   ariaLabel = 'Line chart',
   ariaDescription,
 }: LineChartProps) => {
@@ -262,6 +272,13 @@ const LineChart = ({
       yScale={y as AxisScale<AxisDomain>}
       showGridVertical={showGridVertical}
       showGridHorizontal={showGridHorizontal}
+      xTickCount={xTickCount}
+      yTickCount={yTickCount}
+      xTickFormat={xTickFormat}
+      yTickFormat={yTickFormat}
+      xTickAngle={xTickAngle}
+      xAxisLabel={xAxisLabel}
+      yAxisLabel={yAxisLabel}
       onPointerMove={onMouseMove}
       onPointerLeave={onMouseLeave}
       onPointerUp={onMouseLeave}
@@ -271,6 +288,27 @@ const LineChart = ({
       chart={
         <>
           <path d={linePath ?? undefined} fill="none" stroke={color} strokeWidth={1.5} />
+          {showValueLabels && (
+            <g
+              className="value-labels"
+              pointerEvents="none"
+              fontFamily="sans-serif"
+              fontSize={10}
+              fill="currentColor"
+            >
+              {data.map((datum, index) => (
+                <text
+                  key={`${datum.x}-${index}-value-label`}
+                  x={xPositions[index]}
+                  y={y(datum.y)}
+                  dy={getValueLabelDy(datum.y)}
+                  textAnchor="middle"
+                >
+                  {formatValueLabel(datum.y, datum, valueLabelFormatter)}
+                </text>
+              ))}
+            </g>
+          )}
           {(children || showActiveMarker || showCrosshair) && (
             <g className="keyboard-targets">
               {data.map((datum, index) => (

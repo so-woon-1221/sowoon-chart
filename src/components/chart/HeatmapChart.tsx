@@ -1,4 +1,4 @@
-import { type AxisDomain, type AxisScale, extent, pointer, scaleBand, scaleLinear } from 'd3';
+import { type AxisDomain, type AxisScale, extent, hsl, pointer, scaleBand, scaleLinear } from 'd3';
 import { type PointerEvent, useCallback, useMemo, useRef } from 'react';
 
 import { useChartTooltip } from '../../hooks/useChartTooltip';
@@ -9,16 +9,19 @@ import {
   resolveTooltipPositionMode,
 } from '../../util/tooltip';
 import type {
+  AxisOptionProps,
   BaseChartProps,
   LegendProps,
   TooltipOffset,
   TooltipPositionMode,
   TooltipRenderer,
+  ValueLabelProps,
 } from '../../util/types';
 import CartesianFrame from '../common/CartesianFrame';
 import ChartLegend from '../common/ChartLegend';
 import { getLegendRightInset } from '../common/chartLegend.utils';
 import ChartTooltip from '../common/ChartTooltip';
+import { formatValueLabel } from '../common/valueLabel.utils';
 
 const defaultMargin = {
   top: 20,
@@ -68,7 +71,9 @@ const getColorDomain = (min: number, max: number, stopCount: number) => {
 export type HeatmapChartProps = Pick<
   BaseChartProps,
   'ariaDescription' | 'ariaLabel' | 'height' | 'margin' | 'width'
-> & {
+> &
+  AxisOptionProps &
+  ValueLabelProps<HeatmapDatum> & {
   /**
    * Heatmap cell data.
    */
@@ -143,6 +148,15 @@ const HeatmapChart = ({
   tooltipPosition = 'point',
   showGridVertical = false,
   showGridHorizontal = false,
+  xTickCount,
+  yTickCount,
+  xTickFormat,
+  yTickFormat,
+  xTickAngle,
+  xAxisLabel,
+  yAxisLabel,
+  showValueLabels = false,
+  valueLabelFormatter,
   showLegend = false,
   legendItems,
   legendPosition = 'bottom',
@@ -284,38 +298,65 @@ const HeatmapChart = ({
       yScale={y as AxisScale<AxisDomain>}
       showGridVertical={showGridVertical}
       showGridHorizontal={showGridHorizontal}
+      xTickCount={xTickCount}
+      yTickCount={yTickCount}
+      xTickFormat={xTickFormat}
+      yTickFormat={yTickFormat}
+      xTickAngle={xTickAngle}
+      xAxisLabel={xAxisLabel}
+      yAxisLabel={yAxisLabel}
       ariaLabel={ariaLabel}
       ariaDescription={ariaDescription}
       chart={
         <g className="chart">
-          {data.map((datum) => (
-            <rect
-              key={`${datum.x}-${datum.y}`}
-              x={x(datum.x) ?? 0}
-              y={y(datum.y) ?? 0}
-              width={x.bandwidth()}
-              height={y.bandwidth()}
-              rx={4}
-              ry={4}
-              fill={colorScale(datum.value)}
-              stroke="#ffffff"
-              strokeWidth={1}
-              cursor={children ? 'pointer' : 'default'}
-              tabIndex={children ? 0 : undefined}
-              aria-label={children ? `${datum.x}, ${datum.y}: ${datum.value}` : undefined}
-              onPointerMove={(event) => onCellPointerMove(event, datum)}
-              onPointerLeave={onCellPointerEnd}
-              onPointerUp={onCellPointerEnd}
-              onPointerCancel={onCellPointerEnd}
-              onFocus={() => onCellFocus(datum)}
-              onBlur={onCellPointerEnd}
-              onKeyDown={(event) => {
-                if (event.key === 'Escape') {
-                  onCellPointerEnd();
-                }
-              }}
-            />
-          ))}
+          {data.map((datum) => {
+            const fill = colorScale(datum.value);
+            const textFill = hsl(fill).l > 0.58 ? '#111827' : '#ffffff';
+
+            return (
+              <g key={`${datum.x}-${datum.y}`}>
+                <rect
+                  x={x(datum.x) ?? 0}
+                  y={y(datum.y) ?? 0}
+                  width={x.bandwidth()}
+                  height={y.bandwidth()}
+                  rx={4}
+                  ry={4}
+                  fill={fill}
+                  stroke="#ffffff"
+                  strokeWidth={1}
+                  cursor={children ? 'pointer' : 'default'}
+                  tabIndex={children ? 0 : undefined}
+                  aria-label={children ? `${datum.x}, ${datum.y}: ${datum.value}` : undefined}
+                  onPointerMove={(event) => onCellPointerMove(event, datum)}
+                  onPointerLeave={onCellPointerEnd}
+                  onPointerUp={onCellPointerEnd}
+                  onPointerCancel={onCellPointerEnd}
+                  onFocus={() => onCellFocus(datum)}
+                  onBlur={onCellPointerEnd}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Escape') {
+                      onCellPointerEnd();
+                    }
+                  }}
+                />
+                {showValueLabels && (
+                  <text
+                    x={(x(datum.x) ?? 0) + x.bandwidth() / 2}
+                    y={(y(datum.y) ?? 0) + y.bandwidth() / 2}
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                    fontFamily="sans-serif"
+                    fontSize={10}
+                    fill={textFill}
+                    pointerEvents="none"
+                  >
+                    {formatValueLabel(datum.value, datum, valueLabelFormatter)}
+                  </text>
+                )}
+              </g>
+            );
+          })}
         </g>
       }
       tooltip={

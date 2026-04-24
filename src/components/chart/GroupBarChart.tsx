@@ -22,6 +22,7 @@ import CartesianFrame from '../common/CartesianFrame';
 import ChartLegend from '../common/ChartLegend';
 import { getLegendRightInset } from '../common/chartLegend.utils';
 import ChartTooltip from '../common/ChartTooltip';
+import { formatValueLabel, getValueLabelDy } from '../common/valueLabel.utils';
 import type { GroupedDatum } from './GroupedChart.types';
 
 /**
@@ -93,6 +94,15 @@ const GroupBarChart = ({
   minY,
   showGridHorizontal = true,
   showGridVertical = true,
+  xTickCount,
+  yTickCount,
+  xTickFormat,
+  yTickFormat,
+  xTickAngle,
+  xAxisLabel,
+  yAxisLabel,
+  showValueLabels = false,
+  valueLabelFormatter,
   ariaLabel = 'Grouped bar chart',
   ariaDescription,
 }: GroupBarChartProps) => {
@@ -253,6 +263,13 @@ const GroupBarChart = ({
       yScale={y as AxisScale<AxisDomain>}
       showGridVertical={showGridVertical}
       showGridHorizontal={showGridHorizontal}
+      xTickCount={xTickCount}
+      yTickCount={yTickCount}
+      xTickFormat={xTickFormat}
+      yTickFormat={yTickFormat}
+      xTickAngle={xTickAngle}
+      xAxisLabel={xAxisLabel}
+      yAxisLabel={yAxisLabel}
       onPointerMove={onMouseMove}
       onPointerLeave={onMouseLeave}
       onPointerUp={onMouseLeave}
@@ -269,25 +286,41 @@ const GroupBarChart = ({
             >
               {keyList.map((key) => {
                 const value = datum[key] as number;
+                const barX = barScale(key) ?? 0;
 
                 return (
-                  <rect
-                    key={key}
-                    x={barScale(key) ?? 0}
-                    y={Math.min(y(0), y(value))}
-                    width={barScale.bandwidth()}
-                    height={Math.abs(y(0) - y(value))}
-                    fill={colorScale(key) as string}
-                    tabIndex={children ? 0 : undefined}
-                    aria-label={children ? `${key}, ${datum.x}: ${value}` : undefined}
-                    onFocus={() => onBarFocus(datum, key)}
-                    onBlur={onMouseLeave}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Escape') {
-                        onMouseLeave();
-                      }
-                    }}
-                  />
+                  <g key={key}>
+                    <rect
+                      x={barX}
+                      y={Math.min(y(0), y(value))}
+                      width={barScale.bandwidth()}
+                      height={Math.abs(y(0) - y(value))}
+                      fill={colorScale(key) as string}
+                      tabIndex={children ? 0 : undefined}
+                      aria-label={children ? `${key}, ${datum.x}: ${value}` : undefined}
+                      onFocus={() => onBarFocus(datum, key)}
+                      onBlur={onMouseLeave}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Escape') {
+                          onMouseLeave();
+                        }
+                      }}
+                    />
+                    {showValueLabels && (
+                      <text
+                        x={barX + barScale.bandwidth() / 2}
+                        y={y(value)}
+                        dy={getValueLabelDy(value)}
+                        textAnchor="middle"
+                        fontFamily="sans-serif"
+                        fontSize={10}
+                        fill="currentColor"
+                        pointerEvents="none"
+                      >
+                        {formatValueLabel(value, datum, valueLabelFormatter, key)}
+                      </text>
+                    )}
+                  </g>
                 );
               })}
             </g>

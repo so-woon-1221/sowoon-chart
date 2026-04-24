@@ -1,7 +1,7 @@
 import type { AxisDomain, AxisScale } from 'd3';
 import type { CSSProperties, PointerEventHandler, ReactNode, RefObject } from 'react';
 
-import type { Margin } from '../../util/types';
+import type { AxisOptionProps, Margin } from '../../util/types';
 import AxisBottom from './AxisBottom';
 import AxisLeft from './AxisLeft';
 import GridHorizontal from './GridHorizontal';
@@ -19,6 +19,13 @@ type Props = {
   yScale: AxisScale<AxisDomain>;
   showGridVertical?: boolean;
   showGridHorizontal?: boolean;
+  xTickCount?: AxisOptionProps['xTickCount'];
+  yTickCount?: AxisOptionProps['yTickCount'];
+  xTickFormat?: AxisOptionProps['xTickFormat'];
+  yTickFormat?: AxisOptionProps['yTickFormat'];
+  xTickAngle?: AxisOptionProps['xTickAngle'];
+  xAxisLabel?: AxisOptionProps['xAxisLabel'];
+  yAxisLabel?: AxisOptionProps['yAxisLabel'];
   onPointerMove?: PointerEventHandler<SVGSVGElement>;
   onPointerLeave?: PointerEventHandler<SVGSVGElement>;
   onPointerUp?: PointerEventHandler<SVGSVGElement>;
@@ -44,6 +51,13 @@ const CartesianFrame = ({
   yScale,
   showGridVertical = true,
   showGridHorizontal = true,
+  xTickCount,
+  yTickCount,
+  xTickFormat,
+  yTickFormat,
+  xTickAngle,
+  xAxisLabel,
+  yAxisLabel,
   onPointerMove,
   onPointerLeave,
   onPointerUp,
@@ -93,8 +107,21 @@ const CartesianFrame = ({
             left={margin.left}
           />
         )}
-        <AxisBottom scale={xScale} top={parentHeight - margin.bottom} />
-        <AxisLeft scale={yScale} left={margin.left} />
+        <AxisBottom
+          scale={xScale}
+          top={parentHeight - margin.bottom}
+          tickCount={xTickCount}
+          tickFormat={xTickFormat}
+          tickAngle={xTickAngle}
+          label={xAxisLabel}
+        />
+        <AxisLeft
+          scale={yScale}
+          left={margin.left}
+          tickCount={yTickCount}
+          tickFormat={yTickFormat}
+          label={yAxisLabel}
+        />
         {chart}
         {defs}
       </svg>

@@ -22,6 +22,7 @@ import CartesianFrame from '../common/CartesianFrame';
 import ChartLegend from '../common/ChartLegend';
 import { getLegendRightInset } from '../common/chartLegend.utils';
 import ChartTooltip from '../common/ChartTooltip';
+import { formatValueLabel } from '../common/valueLabel.utils';
 
 /**
  * Data shape used by scatter charts.
@@ -111,6 +112,15 @@ const ScatterChart = ({
   showGridHorizontal = true,
   showGridVertical = true,
   tooltipPosition = 'cursor',
+  xTickCount,
+  yTickCount,
+  xTickFormat,
+  yTickFormat,
+  xTickAngle,
+  xAxisLabel,
+  yAxisLabel,
+  showValueLabels = false,
+  valueLabelFormatter,
   ariaLabel = 'Scatter chart',
   ariaDescription,
 }: ScatterChartProps) => {
@@ -212,32 +222,58 @@ const ScatterChart = ({
       yScale={y as AxisScale<AxisDomain>}
       showGridVertical={showGridVertical}
       showGridHorizontal={showGridHorizontal}
+      xTickCount={xTickCount}
+      yTickCount={yTickCount}
+      xTickFormat={xTickFormat}
+      yTickFormat={yTickFormat}
+      xTickAngle={xTickAngle}
+      xAxisLabel={xAxisLabel}
+      yAxisLabel={yAxisLabel}
       ariaLabel={ariaLabel}
       ariaDescription={ariaDescription}
       chart={
         <g className="bar">
-          {data.map((datum) => (
-            <circle
-              key={`${datum.x}-${datum.y}-${datum.value}`}
-              cx={x(datum.x)! + x.bandwidth() / 2}
-              cy={y(datum.y)}
-              r={sizeScale(datum.value)}
-              fill={color}
-              tabIndex={children ? 0 : undefined}
-              aria-label={children ? `${datum.x}: ${datum.y}, value ${datum.value}` : undefined}
-              onPointerMove={(event) => onPointPointerMove(event, datum)}
-              onPointerLeave={onPointPointerEnd}
-              onPointerUp={onPointPointerEnd}
-              onPointerCancel={onPointPointerEnd}
-              onFocus={() => onPointFocus(datum)}
-              onBlur={onPointPointerEnd}
-              onKeyDown={(event) => {
-                if (event.key === 'Escape') {
-                  onPointPointerEnd();
-                }
-              }}
-            />
-          ))}
+          {data.map((datum) => {
+            const pointLeft = x(datum.x)! + x.bandwidth() / 2;
+            const pointTop = y(datum.y);
+
+            return (
+              <g key={`${datum.x}-${datum.y}-${datum.value}`}>
+                <circle
+                  cx={pointLeft}
+                  cy={pointTop}
+                  r={sizeScale(datum.value)}
+                  fill={color}
+                  tabIndex={children ? 0 : undefined}
+                  aria-label={children ? `${datum.x}: ${datum.y}, value ${datum.value}` : undefined}
+                  onPointerMove={(event) => onPointPointerMove(event, datum)}
+                  onPointerLeave={onPointPointerEnd}
+                  onPointerUp={onPointPointerEnd}
+                  onPointerCancel={onPointPointerEnd}
+                  onFocus={() => onPointFocus(datum)}
+                  onBlur={onPointPointerEnd}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Escape') {
+                      onPointPointerEnd();
+                    }
+                  }}
+                />
+                {showValueLabels && (
+                  <text
+                    x={pointLeft}
+                    y={pointTop - sizeScale(datum.value) - 6}
+                    textAnchor="middle"
+                    fontFamily="sans-serif"
+                    fontSize={10}
+                    fill="currentColor"
+                    pointerEvents="none"
+                  >
+                    {formatValueLabel(datum.value, datum, valueLabelFormatter)}
+                  </text>
+                )}
+              </g>
+            );
+          })}
         </g>
       }
       tooltip={

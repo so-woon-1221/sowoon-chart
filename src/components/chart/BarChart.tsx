@@ -20,6 +20,7 @@ import CartesianFrame from '../common/CartesianFrame';
 import ChartLegend from '../common/ChartLegend';
 import { getLegendRightInset } from '../common/chartLegend.utils';
 import ChartTooltip from '../common/ChartTooltip';
+import { formatValueLabel, getValueLabelDy } from '../common/valueLabel.utils';
 
 /**
  * Props for {@link BarChart}.
@@ -71,6 +72,15 @@ const BarChart = ({
   tooltipPosition = 'point',
   showGridVertical = true,
   showGridHorizontal = true,
+  xTickCount,
+  yTickCount,
+  xTickFormat,
+  yTickFormat,
+  xTickAngle,
+  xAxisLabel,
+  yAxisLabel,
+  showValueLabels = false,
+  valueLabelFormatter,
   ariaLabel = 'Bar chart',
   ariaDescription,
 }: BarChartProps) => {
@@ -183,6 +193,13 @@ const BarChart = ({
       yScale={y as AxisScale<AxisDomain>}
       showGridVertical={showGridVertical}
       showGridHorizontal={showGridHorizontal}
+      xTickCount={xTickCount}
+      yTickCount={yTickCount}
+      xTickFormat={xTickFormat}
+      yTickFormat={yTickFormat}
+      xTickAngle={xTickAngle}
+      xAxisLabel={xAxisLabel}
+      yAxisLabel={yAxisLabel}
       onPointerMove={onMouseMove}
       onPointerLeave={onMouseLeave}
       onPointerUp={onMouseLeave}
@@ -191,25 +208,45 @@ const BarChart = ({
       ariaDescription={ariaDescription}
       chart={
         <g className="bar">
-          {data.map((datum, index) => (
-            <rect
-              key={`${datum.x}-${index}`}
-              x={x(datum.x) ?? 0}
-              y={Math.min(y(0), y(datum.y))}
-              fill={color}
-              width={x.bandwidth()}
-              height={Math.abs(y(0) - y(datum.y))}
-              tabIndex={children ? 0 : undefined}
-              aria-label={children ? `${datum.x}: ${datum.y}` : undefined}
-              onFocus={() => onBarFocus(datum)}
-              onBlur={onMouseLeave}
-              onKeyDown={(event) => {
-                if (event.key === 'Escape') {
-                  onMouseLeave();
-                }
-              }}
-            />
-          ))}
+          {data.map((datum, index) => {
+            const barX = x(datum.x) ?? 0;
+            const barTop = Math.min(y(0), y(datum.y));
+
+            return (
+              <g key={`${datum.x}-${index}`}>
+                <rect
+                  x={barX}
+                  y={barTop}
+                  fill={color}
+                  width={x.bandwidth()}
+                  height={Math.abs(y(0) - y(datum.y))}
+                  tabIndex={children ? 0 : undefined}
+                  aria-label={children ? `${datum.x}: ${datum.y}` : undefined}
+                  onFocus={() => onBarFocus(datum)}
+                  onBlur={onMouseLeave}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Escape') {
+                      onMouseLeave();
+                    }
+                  }}
+                />
+                {showValueLabels && (
+                  <text
+                    x={barX + x.bandwidth() / 2}
+                    y={y(datum.y)}
+                    dy={getValueLabelDy(datum.y)}
+                    textAnchor="middle"
+                    fontFamily="sans-serif"
+                    fontSize={10}
+                    fill="currentColor"
+                    pointerEvents="none"
+                  >
+                    {formatValueLabel(datum.y, datum, valueLabelFormatter)}
+                  </text>
+                )}
+              </g>
+            );
+          })}
         </g>
       }
       tooltip={

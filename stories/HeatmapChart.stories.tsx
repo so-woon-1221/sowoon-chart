@@ -72,3 +72,17 @@ export const 멀티컬러: Story = {
     children: renderTooltip,
   },
 };
+
+export const 축옵션과값라벨: Story = {
+  args: {
+    data,
+    height: 400,
+    margin: { top: 20, right: 20, bottom: 64, left: 72 },
+    tooltipPosition: 'point',
+    xAxisLabel: 'Day',
+    yAxisLabel: 'Team',
+    showValueLabels: true,
+    valueLabelFormatter: (value) => `${value}`,
+    children: renderTooltip,
+  },
+};

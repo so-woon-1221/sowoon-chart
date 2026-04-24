@@ -1,17 +1,24 @@
 import type { AxisDomain, AxisScale } from 'd3';
 import { useMemo } from 'react';
 
+import type { AxisTickFormatter } from '../../util/types';
 import { getAxisTickItems, getScaleRange } from './axis.utils';
 
 interface Props {
   scale: AxisScale<AxisDomain>;
   left?: number;
   tickCount?: number;
+  tickFormat?: AxisTickFormatter;
+  label?: string;
 }
 
-const AxisLeft = ({ scale, left, tickCount = 10 }: Props) => {
-  const ticks = useMemo(() => getAxisTickItems(scale, tickCount), [scale, tickCount]);
+const AxisLeft = ({ scale, left, tickCount = 10, tickFormat, label }: Props) => {
+  const ticks = useMemo(
+    () => getAxisTickItems(scale, tickCount, tickFormat),
+    [scale, tickCount, tickFormat],
+  );
   const range = useMemo(() => getScaleRange(scale), [scale]);
+  const axisCenter = (range.start + range.end) / 2;
 
   return (
     <g
@@ -35,6 +42,15 @@ const AxisLeft = ({ scale, left, tickCount = 10 }: Props) => {
           </text>
         </g>
       ))}
+      {label && (
+        <text
+          fill="currentColor"
+          textAnchor="middle"
+          transform={`translate(-42, ${axisCenter}) rotate(-90)`}
+        >
+          {label}
+        </text>
+      )}
     </g>
   );
 };

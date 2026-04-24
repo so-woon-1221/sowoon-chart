@@ -59,6 +59,17 @@ export const 커서툴팁: Story = {
   },
 };
 
+export const 값라벨: Story = {
+  args: {
+    data,
+    height: 400,
+    tooltipPosition: 'point',
+    showValueLabels: true,
+    valueLabelFormatter: (value) => `${value}%`,
+    children: renderTooltip,
+  },
+};
+
 export const 단일데이터: Story = {
   args: {
     data: singleDatumData,

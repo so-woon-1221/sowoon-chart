@@ -31,6 +31,7 @@ import CartesianFrame from '../common/CartesianFrame';
 import ChartLegend from '../common/ChartLegend';
 import { getLegendRightInset } from '../common/chartLegend.utils';
 import ChartTooltip from '../common/ChartTooltip';
+import { formatValueLabel } from '../common/valueLabel.utils';
 import type { GroupedDatum } from './GroupedChart.types';
 
 /**
@@ -96,6 +97,15 @@ const StackBarChart = ({
   tooltipPosition = 'point',
   showGridHorizontal = true,
   showGridVertical = true,
+  xTickCount,
+  yTickCount,
+  xTickFormat,
+  yTickFormat,
+  xTickAngle,
+  xAxisLabel,
+  yAxisLabel,
+  showValueLabels = false,
+  valueLabelFormatter,
   ariaLabel = 'Stacked bar chart',
   ariaDescription,
 }: StackBarChartProps) => {
@@ -221,38 +231,64 @@ const StackBarChart = ({
       yScale={y as AxisScale<AxisDomain>}
       showGridVertical={showGridVertical}
       showGridHorizontal={showGridHorizontal}
+      xTickCount={xTickCount}
+      yTickCount={yTickCount}
+      xTickFormat={xTickFormat}
+      yTickFormat={yTickFormat}
+      xTickAngle={xTickAngle}
+      xAxisLabel={xAxisLabel}
+      yAxisLabel={yAxisLabel}
       ariaLabel={ariaLabel}
       ariaDescription={ariaDescription}
       chart={
         <g className="chart">
           {series.map((stackedSeries) => (
             <g key={stackedSeries.key} fill={colorScale(stackedSeries.key) as string}>
-              {stackedSeries.map((segment) => (
-                <rect
-                  key={`${stackedSeries.key}-${segment.data.x}`}
-                  x={x(segment.data.x)!}
-                  y={Math.min(y(segment[0]), y(segment[1]))}
-                  height={Math.abs(y(segment[0]) - y(segment[1]))}
-                  width={x.bandwidth()}
-                  tabIndex={children ? 0 : undefined}
-                  aria-label={
-                    children
-                      ? `${stackedSeries.key}, ${segment.data.x}: ${segment[1] - segment[0]}`
-                      : undefined
-                  }
-                  onPointerMove={(event) => onSegmentPointerMove(event, segment)}
-                  onPointerLeave={onSegmentPointerEnd}
-                  onPointerUp={onSegmentPointerEnd}
-                  onPointerCancel={onSegmentPointerEnd}
-                  onFocus={() => onSegmentFocus(segment)}
-                  onBlur={onSegmentPointerEnd}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Escape') {
-                      onSegmentPointerEnd();
-                    }
-                  }}
-                />
-              ))}
+              {stackedSeries.map((segment) => {
+                const value = segment[1] - segment[0];
+                const segmentTop = Math.min(y(segment[0]), y(segment[1]));
+                const segmentHeight = Math.abs(y(segment[0]) - y(segment[1]));
+
+                return (
+                  <g key={`${stackedSeries.key}-${segment.data.x}`}>
+                    <rect
+                      x={x(segment.data.x)!}
+                      y={segmentTop}
+                      height={segmentHeight}
+                      width={x.bandwidth()}
+                      tabIndex={children ? 0 : undefined}
+                      aria-label={
+                        children ? `${stackedSeries.key}, ${segment.data.x}: ${value}` : undefined
+                      }
+                      onPointerMove={(event) => onSegmentPointerMove(event, segment)}
+                      onPointerLeave={onSegmentPointerEnd}
+                      onPointerUp={onSegmentPointerEnd}
+                      onPointerCancel={onSegmentPointerEnd}
+                      onFocus={() => onSegmentFocus(segment)}
+                      onBlur={onSegmentPointerEnd}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Escape') {
+                          onSegmentPointerEnd();
+                        }
+                      }}
+                    />
+                    {showValueLabels && segmentHeight >= 14 && (
+                      <text
+                        x={x(segment.data.x)! + x.bandwidth() / 2}
+                        y={segmentTop + segmentHeight / 2}
+                        textAnchor="middle"
+                        dominantBaseline="middle"
+                        fontFamily="sans-serif"
+                        fontSize={10}
+                        fill="currentColor"
+                        pointerEvents="none"
+                      >
+                        {formatValueLabel(value, segment.data, valueLabelFormatter, stackedSeries.key)}
+                      </text>
+                    )}
+                  </g>
+                );
+              })}
             </g>
           ))}
         </g>

@@ -30,6 +30,7 @@ import CartesianFrame from '../common/CartesianFrame';
 import ChartLegend from '../common/ChartLegend';
 import { getLegendRightInset } from '../common/chartLegend.utils';
 import ChartTooltip from '../common/ChartTooltip';
+import { formatValueLabel, getValueLabelDy } from '../common/valueLabel.utils';
 import type { GroupedDatum } from './GroupedChart.types';
 
 type ActivePoint = {
@@ -88,6 +89,15 @@ const GroupLineChart = ({
   showCrosshair = false,
   showGridHorizontal = true,
   showGridVertical = true,
+  xTickCount,
+  yTickCount,
+  xTickFormat,
+  yTickFormat,
+  xTickAngle,
+  xAxisLabel,
+  yAxisLabel,
+  showValueLabels = false,
+  valueLabelFormatter,
   ariaLabel = 'Grouped line chart',
   ariaDescription,
 }: GroupLineChartProps) => {
@@ -338,6 +348,13 @@ const GroupLineChart = ({
       yScale={y as AxisScale<AxisDomain>}
       showGridVertical={showGridVertical}
       showGridHorizontal={showGridHorizontal}
+      xTickCount={xTickCount}
+      yTickCount={yTickCount}
+      xTickFormat={xTickFormat}
+      yTickFormat={yTickFormat}
+      xTickAngle={xTickAngle}
+      xAxisLabel={xAxisLabel}
+      yAxisLabel={yAxisLabel}
       onPointerMove={onMouseMove}
       onPointerLeave={onMouseLeave}
       onPointerUp={onMouseLeave}
@@ -356,6 +373,37 @@ const GroupLineChart = ({
                 strokeWidth={1.5}
               />
             ))}
+            {showValueLabels && (
+              <g
+                className="value-labels"
+                pointerEvents="none"
+                fontFamily="sans-serif"
+                fontSize={10}
+                fill="currentColor"
+              >
+                {keyList.map((key) =>
+                  data.map((datum, index) => {
+                    const value = datum[key];
+
+                    if (typeof value !== 'number') {
+                      return null;
+                    }
+
+                    return (
+                      <text
+                        key={`${key}-${datum.x}-${index}-value-label`}
+                        x={xPositions[index]}
+                        y={y(value)}
+                        dy={getValueLabelDy(value)}
+                        textAnchor="middle"
+                      >
+                        {formatValueLabel(value, datum, valueLabelFormatter, key)}
+                      </text>
+                    );
+                  }),
+                )}
+              </g>
+            )}
           </g>
           {(children || showActiveMarker || showCrosshair) && (
             <g className="keyboard-targets">

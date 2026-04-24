@@ -1,3 +1,4 @@
+import type { AxisDomain } from 'd3';
 import type { ReactNode } from 'react';
 
 /**
@@ -76,6 +77,64 @@ export type TooltipRenderProps<TData> = {
  */
 export type TooltipRenderer<TData> = (props: TooltipRenderProps<TData>) => ReactNode;
 
+/**
+ * Formats one axis tick label.
+ */
+export type AxisTickFormatter = (value: AxisDomain, index: number) => string;
+
+export interface AxisOptionProps {
+  /**
+   * Preferred number of x-axis ticks.
+   */
+  xTickCount?: number;
+  /**
+   * Preferred number of y-axis ticks.
+   */
+  yTickCount?: number;
+  /**
+   * Custom x-axis tick label formatter.
+   */
+  xTickFormat?: AxisTickFormatter;
+  /**
+   * Custom y-axis tick label formatter.
+   */
+  yTickFormat?: AxisTickFormatter;
+  /**
+   * Angle in degrees for x-axis tick labels.
+   * @default 0
+   */
+  xTickAngle?: number;
+  /**
+   * Optional x-axis label.
+   */
+  xAxisLabel?: string;
+  /**
+   * Optional y-axis label.
+   */
+  yAxisLabel?: string;
+}
+
+/**
+ * Formats one rendered value label.
+ */
+export type ValueLabelFormatter<TData> = (
+  value: number,
+  datum: TData,
+  key?: string,
+) => string | number;
+
+export interface ValueLabelProps<TData = XYDatum> {
+  /**
+   * Show value labels near chart marks.
+   * @default false
+   */
+  showValueLabels?: boolean;
+  /**
+   * Custom value label formatter.
+   */
+  valueLabelFormatter?: ValueLabelFormatter<TData>;
+}
+
 export interface TooltipInteractionProps {
   /**
    * Tooltip anchor position.
@@ -136,7 +195,10 @@ export interface LegendProps {
   seriesName?: string;
 }
 
-export interface CartesianChartProps<TData = XYDatum> extends BaseChartProps {
+export interface CartesianChartProps<TData = XYDatum>
+  extends BaseChartProps,
+    AxisOptionProps,
+    ValueLabelProps<TData> {
   /**
    * Data to be displayed in the chart.
    */

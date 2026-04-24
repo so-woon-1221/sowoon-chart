@@ -34,6 +34,7 @@ import CartesianFrame from '../common/CartesianFrame';
 import ChartLegend from '../common/ChartLegend';
 import { getLegendRightInset } from '../common/chartLegend.utils';
 import ChartTooltip from '../common/ChartTooltip';
+import { formatValueLabel, getValueLabelDy } from '../common/valueLabel.utils';
 import type { GroupedDatum } from './GroupedChart.types';
 
 type ActivePoint = {
@@ -97,6 +98,15 @@ const StackLineChart = ({
   showCrosshair = false,
   showGridVertical = true,
   showGridHorizontal = true,
+  xTickCount,
+  yTickCount,
+  xTickFormat,
+  yTickFormat,
+  xTickAngle,
+  xAxisLabel,
+  yAxisLabel,
+  showValueLabels = false,
+  valueLabelFormatter,
   ariaLabel = 'Stacked line chart',
   ariaDescription,
 }: StackLineChartProps) => {
@@ -333,6 +343,13 @@ const StackLineChart = ({
       yScale={y as AxisScale<AxisDomain>}
       showGridVertical={showGridVertical}
       showGridHorizontal={showGridHorizontal}
+      xTickCount={xTickCount}
+      yTickCount={yTickCount}
+      xTickFormat={xTickFormat}
+      yTickFormat={yTickFormat}
+      xTickAngle={xTickAngle}
+      xAxisLabel={xAxisLabel}
+      yAxisLabel={yAxisLabel}
       onPointerMove={onMouseMove}
       onPointerLeave={onMouseLeave}
       onPointerUp={onMouseLeave}
@@ -351,6 +368,33 @@ const StackLineChart = ({
                 strokeWidth={1.5}
               />
             ))}
+            {showValueLabels && (
+              <g
+                className="value-labels"
+                pointerEvents="none"
+                fontFamily="sans-serif"
+                fontSize={10}
+                fill="currentColor"
+              >
+                {series.map((stackedSeries) =>
+                  stackedSeries.map((segment, index) => {
+                    const value = segment[1] - segment[0];
+
+                    return (
+                      <text
+                        key={`${stackedSeries.key}-${segment.data.x}-${index}-value-label`}
+                        x={xPositions[index]}
+                        y={y(segment[1] as number)}
+                        dy={getValueLabelDy(value)}
+                        textAnchor="middle"
+                      >
+                        {formatValueLabel(value, segment.data, valueLabelFormatter, stackedSeries.key)}
+                      </text>
+                    );
+                  }),
+                )}
+              </g>
+            )}
           </g>
           {(children || showActiveMarker || showCrosshair) && (
             <g className="keyboard-targets">
