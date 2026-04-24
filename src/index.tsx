@@ -4,6 +4,12 @@ export type { BarChartProps } from './components/chart/BarChart';
 export { default as BarChart } from './components/chart/BarChart';
 export type { BubbleChartProps } from './components/chart/BubbleChart';
 export { default as BubbleChart } from './components/chart/BubbleChart';
+export type {
+  ComboChartProps,
+  ComboChartTooltipDatum,
+  ComboSeriesType,
+} from './components/chart/ComboChart';
+export { default as ComboChart } from './components/chart/ComboChart';
 export type { GroupBarChartProps } from './components/chart/GroupBarChart';
 export { default as GroupBarChart } from './components/chart/GroupBarChart';
 export type { GroupedDatum } from './components/chart/GroupedChart.types';

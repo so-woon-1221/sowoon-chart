@@ -2,7 +2,7 @@
 
 `Sowoon Chart`는 React와 D3 기반으로 만든 차트 라이브러리입니다.
 
-라인, 바, 영역, 그룹형, 스택형, 산점도, 파이, 레이더, 버블, 네트워크, 워드클라우드까지 한 프로젝트 안에서 일관된 방식으로 사용할 수 있도록 구성되어 있습니다.
+라인, 바, 영역, 그룹형, 스택형, 콤보, 산점도, 파이, 레이더, 버블, 네트워크, 워드클라우드까지 한 프로젝트 안에서 일관된 방식으로 사용할 수 있도록 구성되어 있습니다.
 
 ## 특징
 
@@ -82,6 +82,7 @@ export default function Example() {
 - `GroupLineChart`
 - `StackBarChart`
 - `StackLineChart`
+- `ComboChart`
 
 ### 특수 차트
 
@@ -145,6 +146,13 @@ export default function Example() {
 - `BarChart`, `GroupBarChart`, `StackBarChart`
   - `padding?`
   - `tooltipPosition?: 'auto' | 'cursor' | 'point'`
+- `ComboChart`
+  - `barKeys: string[]`
+  - `lineKeys: string[]`
+  - `padding?`
+  - `showActiveMarker?`
+  - `showCrosshair?`
+  - `tooltipPosition?: 'auto' | 'cursor' | 'point'`
 - `ScatterChart`
   - `minSize?`
   - `maxSize?`
@@ -190,6 +198,7 @@ tooltip은 `children` render prop으로 전달합니다.
 - `GroupLineChart`
 - `StackBarChart`
 - `StackLineChart`
+- `ComboChart`
 - `ScatterChart`
 - `PieChart`
 - `RadarChart`
@@ -264,6 +273,24 @@ import type { LineChartProps, TooltipPositionMode, TooltipRenderer, XYDatum } fr
   { x: 'B', sales: 20, profit: 8, cost: 12 },
   { x: 'C', sales: 15, profit: 5, cost: 10 },
 ];
+```
+
+### 콤보 차트
+
+`ComboChart`는 같은 그룹형 데이터에서 `barKeys`는 막대로, `lineKeys`는 선으로 렌더링합니다. 현재는 하나의 y축을 공유합니다.
+
+```tsx
+<ComboChart
+  data={[
+    { x: '1월', sales: 120, profit: 38, target: 110 },
+    { x: '2월', sales: 160, profit: 52, target: 145 },
+    { x: '3월', sales: 135, profit: 44, target: 150 },
+  ]}
+  barKeys={['sales', 'profit']}
+  lineKeys={['target']}
+  height={360}
+  showLegend
+/>
 ```
 
 ### 산점도
