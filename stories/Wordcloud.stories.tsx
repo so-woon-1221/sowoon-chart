@@ -31,3 +31,10 @@ export const 워드클라우드: Story = {
     },
   },
 };
+
+export const 빈데이터: Story = {
+  args: {
+    data: [],
+    height: 400,
+  },
+};

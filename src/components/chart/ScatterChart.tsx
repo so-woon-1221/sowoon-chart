@@ -1,4 +1,4 @@
-import { type AxisDomain, type AxisScale, extent, pointer, scaleBand, scaleLinear } from 'd3';
+import { type AxisDomain, type AxisScale, pointer, scaleBand, scaleLinear } from 'd3';
 import { type PointerEvent, useCallback, useMemo, useRef } from 'react';
 
 import { useChartTooltip } from '../../hooks/useChartTooltip';
@@ -17,6 +17,7 @@ import type {
   TooltipRenderer,
   XYDatum,
 } from '../../util/types';
+import { getFiniteExtentDomain, getZeroBaselineDomain } from '../../util/utils';
 import CartesianFrame from '../common/CartesianFrame';
 import ChartLegend from '../common/ChartLegend';
 import { getLegendRightInset } from '../common/chartLegend.utils';
@@ -134,14 +135,14 @@ const ScatterChart = ({
 
   const y = useMemo(() => {
     return scaleLinear()
-      .domain([minY ?? 0, maxY ?? Math.max(...data.map((d) => d.y))])
+      .domain(getZeroBaselineDomain(data.map((d) => d.y), minY, maxY))
       .nice()
       .range([(parentHeight ?? 0) - chartMargin.bottom, chartMargin.top]);
   }, [chartMargin.bottom, chartMargin.top, data, maxY, minY, parentHeight]);
 
   const sizeScale = useMemo(() => {
     return scaleLinear()
-      .domain(extent(data, (d) => d.value) as [number, number])
+      .domain(getFiniteExtentDomain(data.map((d) => d.value)))
       .range([minSize ?? 5, maxSize ?? 20]);
   }, [data, maxSize, minSize]);
 

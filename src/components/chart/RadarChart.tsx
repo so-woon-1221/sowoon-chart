@@ -107,18 +107,21 @@ const RadarChart = ({
     [colorList, data],
   );
 
-  const axisList = useMemo(() => data[0].data.map((d) => d.x), [data]);
+  const axisList = useMemo(() => data[0]?.data.map((d) => d.x) ?? [], [data]);
 
-  const angleSlice = useMemo(() => (Math.PI * 2) / data[0].data.length, [data]);
+  const angleSlice = useMemo(
+    () => (axisList.length > 0 ? (Math.PI * 2) / axisList.length : 0),
+    [axisList.length],
+  );
 
-  const maxY = useMemo(() => max(data, (d) => max(d.data, (a) => a.y)), [data]);
+  const maxY = useMemo(() => max(data, (d) => max(d.data, (a) => a.y)) ?? 0, [data]);
 
   const backLineList = useMemo(() => {
     const list = [];
     for (const step of [1, 2, 3, 4]) {
       const line = [];
       for (const _ of axisList) {
-        line.push(maxY! * (step / 4));
+        line.push(maxY * (step / 4));
       }
       list.push(line);
     }
@@ -128,7 +131,7 @@ const RadarChart = ({
   const rScale = useMemo(
     () =>
       scaleLinear()
-        .domain([0, maxY!])
+        .domain([0, maxY > 0 ? maxY : 1])
         .range([0, Math.min(parentHeight, chartWidth) / 2 - margin]),
     [chartWidth, margin, maxY, parentHeight],
   );
@@ -241,8 +244,8 @@ const RadarChart = ({
             />
           ))}
           {axisList.map((axis, index) => {
-            const axisX = rScale(maxY! * 1.1) * Math.cos(angleSlice * index - Math.PI / 2);
-            const axisY = rScale(maxY! * 1.1) * Math.sin(angleSlice * index - Math.PI / 2);
+            const axisX = rScale(maxY * 1.1) * Math.cos(angleSlice * index - Math.PI / 2);
+            const axisY = rScale(maxY * 1.1) * Math.sin(angleSlice * index - Math.PI / 2);
 
             return (
               <g key={`${axis}-${index}`}>

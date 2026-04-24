@@ -26,6 +26,7 @@ import type {
   TooltipRenderer,
   XYDatum,
 } from '../../util/types';
+import { getZeroBaselineDomain } from '../../util/utils';
 import CartesianFrame from '../common/CartesianFrame';
 import ChartLegend from '../common/ChartLegend';
 import { getLegendRightInset } from '../common/chartLegend.utils';
@@ -84,6 +85,7 @@ const StackBarChart = ({
   data,
   colorList = ['#98abc5', '#8a89a6', '#7b6888', '#6b486b', '#a05d56', '#d0743c', '#ff8c00'],
   maxY,
+  minY,
   padding = 0.1,
   children,
   tooltipOffset = { x: 10, y: -10 },
@@ -110,14 +112,7 @@ const StackBarChart = ({
     };
   }, [legendPosition, margin, showLegend]);
 
-  const keyList = useMemo(() => Object.keys(data[0]).filter((key) => key !== 'x'), [data]);
-
-  const max = useMemo(() => {
-    if (maxY) {
-      return maxY;
-    }
-    return Math.max(...data.map((d) => keyList.reduce((acc, key) => acc + (d[key] as number), 0)));
-  }, [data, keyList, maxY]);
+  const keyList = useMemo(() => Object.keys(data[0] ?? {}).filter((key) => key !== 'x'), [data]);
 
   const colorScale = useMemo(() => {
     return scaleOrdinal().domain(keyList).range(colorList);
@@ -128,6 +123,14 @@ const StackBarChart = ({
       .keys(keyList)
       .value((d, key) => (d[key] as number) ?? 0)(data);
   }, [data, keyList]);
+
+  const yDomain = useMemo(() => {
+    const values = series.flatMap((stackedSeries) =>
+      stackedSeries.flatMap((segment) => [segment[0], segment[1]]),
+    );
+
+    return getZeroBaselineDomain(values, minY, maxY);
+  }, [maxY, minY, series]);
 
   const resolvedLegendItems = useMemo(() => {
     if (!showLegend) {
@@ -157,9 +160,9 @@ const StackBarChart = ({
   const y = useMemo(
     () =>
       scaleLinear()
-        .domain([0, max])
+        .domain(yDomain)
         .range([(parentHeight ?? 0) - chartMargin.bottom, chartMargin.top]),
-    [chartMargin.bottom, chartMargin.top, max, parentHeight],
+    [chartMargin.bottom, chartMargin.top, parentHeight, yDomain],
   );
 
   const onSegmentPointerMove = useCallback(
@@ -177,7 +180,7 @@ const StackBarChart = ({
 
       showTooltip({
         left: isPointTooltip ? x(segment.data.x)! + x.bandwidth() / 2 : pointerX,
-        top: isPointTooltip ? y(segment[1]) : pointerY,
+        top: isPointTooltip ? Math.min(y(segment[0]), y(segment[1])) : pointerY,
         data: { x: segment.data.x, y: segment[1] - segment[0] },
         positionMode: resolvedTooltipPosition,
       });
@@ -197,7 +200,7 @@ const StackBarChart = ({
 
       showTooltip({
         left: x(segment.data.x)! + x.bandwidth() / 2,
-        top: y(segment[1]),
+        top: Math.min(y(segment[0]), y(segment[1])),
         data: { x: segment.data.x, y: segment[1] - segment[0] },
         positionMode: 'point',
       });
@@ -228,8 +231,8 @@ const StackBarChart = ({
                 <rect
                   key={`${stackedSeries.key}-${segment.data.x}`}
                   x={x(segment.data.x)!}
-                  y={y(segment[1])}
-                  height={y(segment[0]) - y(segment[1])}
+                  y={Math.min(y(segment[0]), y(segment[1]))}
+                  height={Math.abs(y(segment[0]) - y(segment[1]))}
                   width={x.bandwidth()}
                   tabIndex={children ? 0 : undefined}
                   aria-label={

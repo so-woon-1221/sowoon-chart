@@ -74,3 +74,12 @@ export const 자동툴팁범례강조: Story = {
     },
   },
 };
+
+export const 빈데이터: Story = {
+  args: {
+    data: [],
+    height: 400,
+    colorList: ['#0A0908', '#0891b2'],
+    children: renderTooltip,
+  },
+};

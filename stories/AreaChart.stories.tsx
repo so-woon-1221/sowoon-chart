@@ -59,6 +59,17 @@ export const 커서툴팁: Story = {
   },
 };
 
+export const 그라데이션: Story = {
+  args: {
+    data,
+    height: 400,
+    color: '#0891b2',
+    fillGradient: true,
+    tooltipPosition: 'point',
+    children: renderTooltip,
+  },
+};
+
 export const 음수값: Story = {
   args: {
     data: negativeData,

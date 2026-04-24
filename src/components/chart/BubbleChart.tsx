@@ -62,8 +62,11 @@ const BubbleChart = ({
   );
 
   const packGenerator = useMemo(() => {
+    const chartWidth = Math.max(layoutWidth - margin.left - margin.right, 0);
+    const chartHeight = Math.max(parentHeight - margin.top - margin.bottom, 0);
+
     return pack<{ key: string; value: number }>()
-      .size([layoutWidth - margin.left - margin.right, parentHeight - margin.top - margin.bottom])
+      .size([chartWidth, chartHeight])
       .padding(1);
   }, [layoutWidth, margin.bottom, margin.left, margin.right, margin.top, parentHeight]);
 

@@ -29,7 +29,7 @@ import type {
   TooltipRenderer,
   XYDatum,
 } from '../../util/types';
-import { getClosestIndex, isSameActivePoint } from '../../util/utils';
+import { getClosestIndex, getZeroBaselineDomain, isSameActivePoint } from '../../util/utils';
 import CartesianFrame from '../common/CartesianFrame';
 import ChartLegend from '../common/ChartLegend';
 import { getLegendRightInset } from '../common/chartLegend.utils';
@@ -114,24 +114,7 @@ const StackLineChart = ({
     };
   }, [legendPosition, margin, showLegend]);
 
-  const keyList = useMemo(() => Object.keys(data[0]).filter((key) => key !== 'x'), [data]);
-
-  const max = useMemo(() => {
-    if (maxY) {
-      return maxY;
-    }
-    return Math.max(...data.map((d) => keyList.reduce((acc, key) => acc + (d[key] as number), 0)));
-  }, [data, keyList, maxY]);
-
-  const min = useMemo(() => {
-    if (minY) {
-      return minY;
-    }
-    const list = keyList.map((key) => {
-      return Math.min(...data.map((d) => d[key] as number));
-    });
-    return Math.min(...list);
-  }, [data, keyList, minY]);
+  const keyList = useMemo(() => Object.keys(data[0] ?? {}).filter((key) => key !== 'x'), [data]);
 
   const colorScale = useMemo(() => {
     return scaleOrdinal().domain(keyList).range(colorList);
@@ -142,6 +125,14 @@ const StackLineChart = ({
       .keys(keyList)
       .value((d, key) => (d[key] as number) ?? 0)(data);
   }, [data, keyList]);
+
+  const yDomain = useMemo(() => {
+    const values = series.flatMap((stackedSeries) =>
+      stackedSeries.flatMap((segment) => [segment[0], segment[1]]),
+    );
+
+    return getZeroBaselineDomain(values, minY, maxY);
+  }, [maxY, minY, series]);
 
   const x = useMemo(
     () =>
@@ -158,9 +149,9 @@ const StackLineChart = ({
   const y = useMemo(
     () =>
       scaleLinear()
-        .domain([min, max])
+        .domain(yDomain)
         .range([(parentHeight ?? 0) - chartMargin.bottom, chartMargin.top]),
-    [chartMargin.bottom, chartMargin.top, max, min, parentHeight],
+    [chartMargin.bottom, chartMargin.top, parentHeight, yDomain],
   );
 
   const lineGenerator: Line<[number, number]> = useMemo(() => {

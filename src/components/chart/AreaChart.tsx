@@ -1,5 +1,5 @@
 import { area, type AxisDomain, type AxisScale, line, pointer, scaleBand, scaleLinear } from 'd3';
-import { type PointerEventHandler, useCallback, useMemo, useRef, useState } from 'react';
+import { type PointerEventHandler, useCallback, useId, useMemo, useRef, useState } from 'react';
 
 import { useChartTooltip } from '../../hooks/useChartTooltip';
 import { useParentSize } from '../../hooks/useParentSize';
@@ -15,7 +15,7 @@ import type {
   TooltipRenderer,
   XYDatum,
 } from '../../util/types';
-import { getClosestIndex, isSameActivePoint } from '../../util/utils';
+import { getClosestIndex, getZeroBaselineDomain, isSameActivePoint } from '../../util/utils';
 import CartesianFrame from '../common/CartesianFrame';
 import ChartLegend from '../common/ChartLegend';
 import { getLegendRightInset } from '../common/chartLegend.utils';
@@ -89,6 +89,11 @@ const AreaChart = ({
   const { ref: parentRef, height: parentHeight, width: parentWidth } = useParentSize();
 
   const ref = useRef<SVGSVGElement>(null);
+  const rawGradientId = useId();
+  const gradientId = useMemo(
+    () => `area-gradient-${rawGradientId.replace(/:/g, '')}`,
+    [rawGradientId],
+  );
 
   const chartMargin = useMemo(() => {
     return {
@@ -105,7 +110,7 @@ const AreaChart = ({
 
   const y = useMemo(() => {
     return scaleLinear()
-      .domain([minY ?? 0, maxY ?? Math.max(...data.map((d) => d.y))])
+      .domain(getZeroBaselineDomain(data.map((d) => d.y), minY, maxY))
       .range([(parentHeight ?? 0) - chartMargin.bottom, chartMargin.top]);
   }, [chartMargin.bottom, chartMargin.top, data, maxY, minY, parentHeight]);
 
@@ -146,7 +151,7 @@ const AreaChart = ({
 
   const areaPath = useMemo(() => areaGenerator(data), [areaGenerator, data]);
   const linePath = useMemo(() => lineGenerator(data), [data, lineGenerator]);
-  const fillColor = fillGradient ? `url(#${color})` : color;
+  const fillColor = fillGradient ? `url(#${gradientId})` : color;
 
   const onMouseMove: PointerEventHandler = useCallback(
     (e) => {
@@ -234,7 +239,7 @@ const AreaChart = ({
 
   const defs = fillGradient ? (
     <defs>
-      <linearGradient id={color} x1="0" x2="0" y1="0" y2="1">
+      <linearGradient id={gradientId} x1="0" x2="0" y1="0" y2="1">
         <stop offset="0%" stopColor={color} stopOpacity={1} />
         <stop offset="100%" stopColor={color} stopOpacity={0} />
       </linearGradient>

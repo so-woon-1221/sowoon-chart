@@ -15,7 +15,7 @@ import type {
   TooltipRenderer,
   XYDatum,
 } from '../../util/types';
-import { getClosestIndex } from '../../util/utils';
+import { getClosestIndex, getZeroBaselineDomain } from '../../util/utils';
 import CartesianFrame from '../common/CartesianFrame';
 import ChartLegend from '../common/ChartLegend';
 import { getLegendRightInset } from '../common/chartLegend.utils';
@@ -96,7 +96,7 @@ const BarChart = ({
 
   const y = useMemo(() => {
     return scaleLinear()
-      .domain([minY ?? 0, maxY ?? Math.max(...data.map((d) => d.y))])
+      .domain(getZeroBaselineDomain(data.map((d) => d.y), minY, maxY))
       .range([(parentHeight ?? 0) - chartMargin.bottom, chartMargin.top]);
   }, [chartMargin.bottom, chartMargin.top, data, maxY, minY, parentHeight]);
 
@@ -195,10 +195,10 @@ const BarChart = ({
             <rect
               key={`${datum.x}-${index}`}
               x={x(datum.x) ?? 0}
-              y={y(datum.y) ?? 0}
+              y={Math.min(y(0), y(datum.y))}
               fill={color}
               width={x.bandwidth()}
-              height={(parentHeight ?? 0) - y(datum.y) - chartMargin.bottom}
+              height={Math.abs(y(0) - y(datum.y))}
               tabIndex={children ? 0 : undefined}
               aria-label={children ? `${datum.x}: ${datum.y}` : undefined}
               onFocus={() => onBarFocus(datum)}

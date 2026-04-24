@@ -1,9 +1,10 @@
-import { extent, scaleLinear } from 'd3';
+import { scaleLinear } from 'd3';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import WordCloudWorker from 'web-worker:./lib/wordcloud.worker.js';
 
 import { useParentSize } from '../../hooks/useParentSize';
 import { type ChartProps, type LegendProps } from '../../util/types';
+import { getFiniteExtentDomain } from '../../util/utils';
 import ChartLegend from '../common/ChartLegend';
 import { getLegendRightInset } from '../common/chartLegend.utils';
 
@@ -79,7 +80,7 @@ const Wordcloud = ({
   const fontScale = useMemo(
     () =>
       scaleLinear()
-        .domain(extent(data.map((d) => +d.y)) as [number, number])
+        .domain(getFiniteExtentDomain(data.map((d) => +d.y)))
         .range([15, 80]),
     [data],
   );

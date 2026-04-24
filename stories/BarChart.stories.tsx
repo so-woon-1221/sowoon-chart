@@ -21,6 +21,12 @@ const data = [
 ];
 
 const singleDatumData = [{ x: 'A', y: 18 }];
+const negativeData = [
+  { x: 'A', y: 18 },
+  { x: 'B', y: -12 },
+  { x: 'C', y: 24 },
+  { x: 'D', y: -8 },
+];
 
 const renderTooltip = ({ tooltipData }: { tooltipData: { x: string; y: number } }) => (
   <div>
@@ -56,6 +62,15 @@ export const 커서툴팁: Story = {
 export const 단일데이터: Story = {
   args: {
     data: singleDatumData,
+    height: 400,
+    tooltipPosition: 'point',
+    children: renderTooltip,
+  },
+};
+
+export const 음수값: Story = {
+  args: {
+    data: negativeData,
     height: 400,
     tooltipPosition: 'point',
     children: renderTooltip,

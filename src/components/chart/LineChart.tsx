@@ -15,7 +15,7 @@ import type {
   TooltipRenderer,
   XYDatum,
 } from '../../util/types';
-import { getClosestIndex, isSameActivePoint } from '../../util/utils';
+import { getClosestIndex, getZeroBaselineDomain, isSameActivePoint } from '../../util/utils';
 import CartesianFrame from '../common/CartesianFrame';
 import ChartLegend from '../common/ChartLegend';
 import { getLegendRightInset } from '../common/chartLegend.utils';
@@ -93,7 +93,7 @@ const LineChart = ({
 
   const y = useMemo(() => {
     return scaleLinear()
-      .domain([minY ?? 0, maxY ?? Math.max(...data.map((d) => d.y))])
+      .domain(getZeroBaselineDomain(data.map((d) => d.y), minY, maxY))
       .range([(parentHeight ?? 0) - chartMargin.bottom, chartMargin.top]);
   }, [chartMargin.bottom, chartMargin.top, data, maxY, minY, parentHeight]);
 

@@ -17,7 +17,7 @@ import type {
   TooltipRenderer,
   XYDatum,
 } from '../../util/types';
-import { getClosestIndex } from '../../util/utils';
+import { getClosestIndex, getZeroBaselineDomain } from '../../util/utils';
 import CartesianFrame from '../common/CartesianFrame';
 import ChartLegend from '../common/ChartLegend';
 import { getLegendRightInset } from '../common/chartLegend.utils';
@@ -110,7 +110,7 @@ const GroupBarChart = ({
   }, [legendPosition, margin, showLegend]);
 
   const keyList = useMemo(() => {
-    return Object.keys(data[0]).filter((key) => key !== 'x');
+    return Object.keys(data[0] ?? {}).filter((key) => key !== 'x');
   }, [data]);
 
   const x = useMemo(() => {
@@ -121,13 +121,16 @@ const GroupBarChart = ({
   }, [chartMargin.left, chartMargin.right, data, padding, parentWidth]);
 
   const y = useMemo(() => {
-    const maxYList = keyList.map((key) => {
-      return Math.max(...data.map((d) => d[key] as number));
-    });
-    const max = Math.max(...maxYList);
+    const values = data.flatMap((datum) =>
+      keyList.flatMap((key) => {
+        const value = datum[key];
+
+        return typeof value === 'number' ? [value] : [];
+      }),
+    );
 
     return scaleLinear()
-      .domain([minY ?? 0, maxY ?? max])
+      .domain(getZeroBaselineDomain(values, minY, maxY))
       .range([(parentHeight ?? 0) - chartMargin.bottom, chartMargin.top]);
   }, [chartMargin.bottom, chartMargin.top, data, keyList, maxY, minY, parentHeight]);
 
@@ -271,9 +274,9 @@ const GroupBarChart = ({
                   <rect
                     key={key}
                     x={barScale(key) ?? 0}
-                    y={y(value)}
+                    y={Math.min(y(0), y(value))}
                     width={barScale.bandwidth()}
-                    height={y(0) - y(value)}
+                    height={Math.abs(y(0) - y(value))}
                     fill={colorScale(key) as string}
                     tabIndex={children ? 0 : undefined}
                     aria-label={children ? `${key}, ${datum.x}: ${value}` : undefined}

@@ -25,7 +25,7 @@ import type {
   TooltipRenderer,
   XYDatum,
 } from '../../util/types';
-import { getClosestIndex, isSameActivePoint } from '../../util/utils';
+import { getClosestIndex, getZeroBaselineDomain, isSameActivePoint } from '../../util/utils';
 import CartesianFrame from '../common/CartesianFrame';
 import ChartLegend from '../common/ChartLegend';
 import { getLegendRightInset } from '../common/chartLegend.utils';
@@ -106,7 +106,7 @@ const GroupLineChart = ({
   }, [legendPosition, margin, showLegend]);
 
   const keyList = useMemo(() => {
-    return Object.keys(data[0]).filter((key) => key !== 'x');
+    return Object.keys(data[0] ?? {}).filter((key) => key !== 'x');
   }, [data]);
 
   const x = useMemo(() => {
@@ -120,13 +120,16 @@ const GroupLineChart = ({
   }, [data, x]);
 
   const y = useMemo(() => {
-    const maxYList = keyList.map((key) => {
-      return Math.max(...data.map((d) => d[key] as number));
-    });
-    const max = Math.max(...maxYList);
+    const values = data.flatMap((datum) =>
+      keyList.flatMap((key) => {
+        const value = datum[key];
+
+        return typeof value === 'number' ? [value] : [];
+      }),
+    );
 
     return scaleLinear()
-      .domain([minY ?? 0, maxY ?? max])
+      .domain(getZeroBaselineDomain(values, minY, maxY))
       .range([(parentHeight ?? 0) - chartMargin.bottom, chartMargin.top]);
   }, [chartMargin.bottom, chartMargin.top, data, keyList, maxY, minY, parentHeight]);
 
